@@ -2,8 +2,8 @@
 
 import { LogOut, Menu } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { Monogram } from "@/components/monogram";
 import { Button } from "@/components/ui/button";
@@ -125,6 +125,9 @@ function IsiNavigasi({
 }
 
 function KartuPengguna({ sesi, onKeluar }: { sesi: Sesi; onKeluar: () => Promise<void> }) {
+  const router = useRouter();
+  const [sedangKeluar, mulaiKeluar] = useTransition();
+
   const inisial = sesi.nama
     .split(/\s+/)
     .slice(0, 2)
@@ -152,9 +155,22 @@ function KartuPengguna({ sesi, onKeluar }: { sesi: Sesi; onKeluar: () => Promise
             <span className="block truncate text-xs text-muted-foreground">{sesi.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => void onKeluar()}>
+          {/* Server action WAJIB dipanggil di dalam transition. Dipanggil
+              telanjang dari onClick, React melempar galat di browser sebelum
+              satu pun permintaan terkirim — halaman jadi layar error tanpa
+              meninggalkan jejak apa pun di log server. */}
+          <DropdownMenuItem
+            disabled={sedangKeluar}
+            onClick={() =>
+              mulaiKeluar(async () => {
+                await onKeluar();
+                router.replace("/masuk");
+                router.refresh();
+              })
+            }
+          >
             <LogOut className="size-4" />
-            Keluar
+            {sedangKeluar ? "Keluar…" : "Keluar"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
