@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { sesiSekarang } from "@/lib/auth";
+import { penggunaAktif } from "@/lib/auth";
 
 export default async function Beranda() {
-  redirect((await sesiSekarang()) ? "/dasbor" : "/masuk");
+  redirect((await penggunaAktif()) ? "/dasbor" : "/masuk");
 }

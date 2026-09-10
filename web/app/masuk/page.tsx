@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Monogram } from "@/components/monogram";
-import { sesiSekarang } from "@/lib/auth";
+import { penggunaAktif } from "@/lib/auth";
 
 import { FormMasuk } from "./form-masuk";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HalamanMasuk() {
-  if (await sesiSekarang()) {
+  if (await penggunaAktif()) {
     redirect("/dasbor");
   }
 

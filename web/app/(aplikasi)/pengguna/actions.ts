@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { buatHashSandi, PERAN, sesiSekarang } from "@/lib/auth";
+import { buatHashSandi, PERAN } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
 
@@ -118,10 +118,9 @@ export async function simpanPengguna(
 }
 
 export async function ubahStatusPengguna(id: string): Promise<void> {
-  await pastikanPeran();
+  const sesi = await pastikanPeran();
 
-  const sesi = await sesiSekarang();
-  if (sesi?.id === id) {
+  if (sesi.id === id) {
     throw new Error("Anda tidak bisa menonaktifkan akun Anda sendiri.");
   }
 

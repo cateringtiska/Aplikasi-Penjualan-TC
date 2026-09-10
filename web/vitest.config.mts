@@ -7,7 +7,13 @@ const akar = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
-    alias: { "@": akar },
+    alias: {
+      "@": akar,
+      // "server-only" sengaja melempar galat kalau diimpor di luar konteks
+      // server. Di dalam tes ia diarahkan ke modul kosong supaya berkas yang
+      // memakainya tetap bisa diuji.
+      "server-only": path.join(akar, "vitest.server-only.ts"),
+    },
   },
 
   test: {

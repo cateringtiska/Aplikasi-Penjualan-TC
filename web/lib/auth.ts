@@ -127,7 +127,55 @@ export async function keluar(): Promise<void> {
   (await cookies()).delete(NAMA_COOKIE);
 }
 
-/** Sesi yang sedang berjalan, atau null bila belum login. */
+/**
+ * Sesi yang sudah dipastikan ke database.
+ *
+ * Cookie sesi adalah SALINAN data pengguna pada saat login, dan salinan itu
+ * tidak pernah berubah sendiri sampai kedaluwarsa. Kalau hak akses hanya
+ * dibaca dari sana, tiga hal jadi salah sampai 8 jam ke depan:
+ *
+ *   - Pengguna yang dinonaktifkan tetap bisa membuka semua halaman.
+ *   - Pengguna yang perannya diturunkan tetap memegang akses lamanya.
+ *   - Nama dan email di sidebar tetap yang lama setelah diubah.
+ *
+ * Karena itu setiap halaman terlindungi membaca ulang penggunanya dari
+ * database. Biayanya satu pencarian lewat kunci utama — jauh lebih murah
+ * daripada membiarkan akses yang seharusnya sudah dicabut tetap hidup.
+ * Aplikasi Laravel-nya juga memeriksa is_active di setiap permintaan.
+ */
+export async function penggunaAktif(): Promise<Sesi | null> {
+  const sesi = await sesiSekarang();
+  if (!sesi) return null;
+
+  let id: bigint;
+  try {
+    id = BigInt(sesi.id);
+  } catch {
+    return null;
+  }
+
+  const pengguna = await prisma.users.findUnique({
+    where: { id },
+    select: { id: true, name: true, email: true, role: true, is_active: true },
+  });
+
+  // Akun dihapus atau dinonaktifkan sejak login: perlakukan sebagai belum login.
+  if (!pengguna || !pengguna.is_active) return null;
+
+  return {
+    id: pengguna.id.toString(),
+    nama: pengguna.name,
+    email: pengguna.email,
+    peran: pengguna.role as Peran,
+  };
+}
+
+/**
+ * Isi cookie sesi apa adanya, tanpa menyentuh database.
+ *
+ * Hanya untuk keperluan yang tidak menentukan hak akses. Untuk memutuskan
+ * boleh-tidaknya seseorang membuka sesuatu, pakai penggunaAktif().
+ */
 export async function sesiSekarang(): Promise<Sesi | null> {
   const token = (await cookies()).get(NAMA_COOKIE)?.value;
   if (!token) return null;

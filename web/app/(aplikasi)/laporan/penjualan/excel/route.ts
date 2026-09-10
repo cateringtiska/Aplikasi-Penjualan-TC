@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import ExcelJS from "exceljs";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { sesiSekarang } from "@/lib/auth";
+import { penggunaAktif } from "@/lib/auth";
 
 import { ambilLaporan, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
 
@@ -18,9 +18,14 @@ export const dynamic = "force-dynamic";
  * di Excel. Formatnya diberi pemisah ribuan gaya Indonesia.
  */
 export async function GET(request: NextRequest) {
-  const sesi = await sesiSekarang();
+  // Dibaca ulang dari database, bukan dari cookie: pengguna yang sudah
+  // dinonaktifkan tidak boleh masih bisa mengunduh laporan penjualan.
+  const sesi = await penggunaAktif();
   if (!sesi) {
     return NextResponse.json({ pesan: "Silakan masuk lebih dulu." }, { status: 401 });
+  }
+  if (!["admin", "sales", "finance"].includes(sesi.peran)) {
+    return NextResponse.json({ pesan: "Anda tidak punya akses." }, { status: 403 });
   }
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());

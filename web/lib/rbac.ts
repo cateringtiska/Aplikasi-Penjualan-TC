@@ -2,7 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import { type Peran, sesiSekarang, type Sesi } from "./auth";
+import { penggunaAktif, type Peran, type Sesi } from "./auth";
 
 /* ==========================================================================
    PENJAGA HAK AKSES
@@ -11,11 +11,16 @@ import { type Peran, sesiSekarang, type Sesi } from "./auth";
    langsung. Setiap halaman dan setiap server action HARUS memanggil salah
    satu fungsi di bawah ini sebelum menyentuh data.
 
+   Semuanya membaca pengguna ULANG dari database lewat penggunaAktif(), bukan
+   dari cookie. Cookie hanya salinan pada saat login: tanpa pembacaan ulang,
+   pengguna yang dinonaktifkan atau diturunkan perannya tetap memegang akses
+   lamanya sampai sesinya kedaluwarsa.
+
    Sesuai perilaku Laravel: peran admin selalu lolos, apa pun yang diminta.
    ========================================================================== */
 
 export async function wajibSesi(): Promise<Sesi> {
-  const sesi = await sesiSekarang();
+  const sesi = await penggunaAktif();
   if (!sesi) redirect("/masuk");
   return sesi;
 }
@@ -35,9 +40,9 @@ export async function wajibPeran(...diizinkan: Peran[]): Promise<Sesi> {
 
 /** Versi untuk server action: melempar, bukan mengalihkan halaman. */
 export async function pastikanPeran(...diizinkan: Peran[]): Promise<Sesi> {
-  const sesi = await sesiSekarang();
+  const sesi = await penggunaAktif();
 
-  if (!sesi) throw new Error("Sesi berakhir. Silakan masuk kembali.");
+  if (!sesi) throw new Error("Sesi berakhir atau akun dinonaktifkan. Silakan masuk kembali.");
   if (sesi.peran === "admin") return sesi;
   if (diizinkan.includes(sesi.peran)) return sesi;
 
