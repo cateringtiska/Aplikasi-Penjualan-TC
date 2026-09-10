@@ -11,7 +11,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -150,10 +149,16 @@ function KartuPengguna({ sesi, onKeluar }: { sesi: Sesi; onKeluar: () => Promise
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-56">
-          <DropdownMenuLabel className="font-normal">
-            <span className="block text-sm font-medium">{sesi.nama}</span>
+          {/* Blok identitas ini sengaja div biasa, bukan DropdownMenuLabel.
+              Komponen itu memetakan ke Menu.GroupLabel milik Base UI, yang
+              MELEMPAR GALAT bila tidak berada di dalam Menu.Group — dan
+              galatnya terjadi saat menu dibuka, sehingga menjatuhkan seluruh
+              halaman. Lagi pula ini kepala identitas, bukan label sebuah
+              kelompok item. */}
+          <div className="px-2 py-1.5">
+            <span className="block truncate text-sm font-medium">{sesi.nama}</span>
             <span className="block truncate text-xs text-muted-foreground">{sesi.email}</span>
-          </DropdownMenuLabel>
+          </div>
           <DropdownMenuSeparator />
           {/* Server action WAJIB dipanggil di dalam transition. Dipanggil
               telanjang dari onClick, React melempar galat di browser sebelum
