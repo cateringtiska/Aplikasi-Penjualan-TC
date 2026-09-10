@@ -14,6 +14,7 @@ import {
   rupiah,
   sisaTagihan,
   subtotalBaris,
+  uraikanRupiah,
   type BarisItem,
 } from "./uang";
 
@@ -283,6 +284,24 @@ describe("Tampilan", () => {
   it("membulatkan tampilan ke rupiah utuh", () => {
     expect(bulatkanRupiah("1500.5").toString()).toBe("1501");
     expect(angka("1500.4")).toBe("1.500");
+  });
+
+  it("membaca angka bergaya Indonesia", () => {
+    // Titik adalah pemisah RIBUAN, bukan desimal. Ini kesalahan yang membuat
+    // harga 85 ribu tersimpan jadi 85 rupiah.
+    expect(uraikanRupiah("85.000")?.toString()).toBe("85000");
+    expect(uraikanRupiah("1.250.000")?.toString()).toBe("1250000");
+    expect(uraikanRupiah("85000")?.toString()).toBe("85000");
+    expect(uraikanRupiah("2.500,75")?.toString()).toBe("2500.75");
+    expect(uraikanRupiah(" 45.000 ")?.toString()).toBe("45000");
+    expect(uraikanRupiah(0)?.toString()).toBe("0");
+  });
+
+  it("menolak isian yang bukan angka alih-alih diam-diam menjadikannya nol", () => {
+    expect(uraikanRupiah("")).toBeNull();
+    expect(uraikanRupiah("Rp 85.000")).toBeNull();
+    expect(uraikanRupiah("delapan puluh lima ribu")).toBeNull();
+    expect(uraikanRupiah(null)).toBeNull();
   });
 
   it("menomori grup item dengan angka Romawi seperti di dokumen cetak", () => {

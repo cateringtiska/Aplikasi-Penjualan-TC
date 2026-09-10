@@ -257,6 +257,35 @@ export function rupiah(nilai: NilaiUang): string {
   return `Rp ${angka(nilai)}`;
 }
 
+/**
+ * Membaca angka yang diketik orang Indonesia menjadi Decimal.
+ *
+ * Di Indonesia titik adalah pemisah ribuan dan koma adalah pemisah desimal —
+ * kebalikan dari cara JavaScript membaca angka. Tanpa penerjemahan ini,
+ * "85.000" akan terbaca sebagai delapan puluh lima koma nol, dan harga
+ * delapan puluh lima ribu tersimpan menjadi delapan puluh lima rupiah.
+ *
+ * Mengembalikan null kalau isinya bukan angka, supaya pemanggil bisa
+ * menampilkan pesan kesalahan alih-alih diam-diam menyimpan nol.
+ */
+export function uraikanRupiah(teks: unknown): Decimal | null {
+  if (teks === null || teks === undefined) return null;
+
+  const bersih = String(teks).trim().replace(/\s/g, "");
+  if (bersih === "") return null;
+
+  // Buang pemisah ribuan, lalu ubah koma desimal menjadi titik.
+  const normal = bersih.replace(/\./g, "").replace(",", ".");
+
+  if (!/^-?\d+(\.\d+)?$/.test(normal)) return null;
+
+  try {
+    return new Decimal(normal);
+  } catch {
+    return null;
+  }
+}
+
 /** Angka Romawi untuk penomoran grup item di PDF: I, II, III, IV... */
 export function romawi(angka: number): string {
   if (angka <= 0) return String(angka);
