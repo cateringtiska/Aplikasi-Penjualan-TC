@@ -26,15 +26,35 @@ Buka http://localhost:3000.
 | `npm test` | Menjalankan tes perhitungan uang |
 | `npm run build` | Membangun versi produksi (dipakai Vercel) |
 | `npm run db:tarik` | Membaca ulang struktur tabel dari Supabase |
+| `node scripts/cek-koneksi.mjs` | Menguji koneksi database |
 
-## Empat hal yang mudah bikin bingung
+## Lima hal yang mudah bikin bingung
 
 **1. Password database mengandung tanda `+`.**
 Di dalam URL koneksi, tanda `+` berarti spasi. Harus ditulis `%2B`. Kalau
 disalin apa adanya, kegagalannya muncul sebagai "password authentication
 failed" — pesan yang menyesatkan, karena passwordnya sebenarnya benar.
 
-**2. `DATABASE_URL` wajib berakhiran `&uselibpqcompat=true`.**
+**2. Ada DUA URL database, dan portnya berbeda. Jangan tertukar.**
+
+| Variabel | Port | Dipakai oleh | Kenapa |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | **6543** | Aplikasi | Transaction pooler — koneksi dipulangkan tiap selesai transaksi, sanggup melayani banyak salinan fungsi serverless |
+| `DIRECT_DATABASE_URL` | **5432** | Perintah Prisma CLI | Session pooler — migrasi butuh satu koneksi yang bertahan |
+
+Kalau aplikasi memakai port 5432, produksi akan tumbang begitu ada beberapa
+pengunjung bersamaan:
+
+```
+(EMAXCONNSESSION) max clients reached in session mode
+max clients are limited to pool_size: 15
+```
+
+Selain portnya, `lib/prisma.ts` juga membatasi `max: 1` koneksi per salinan
+fungsi. Tanpa itu, pustaka `pg` membuka sampai 10 koneksi per salinan — tiga
+salinan saja sudah melampaui jatah.
+
+**3. `DATABASE_URL` wajib berakhiran `&uselibpqcompat=true`.**
 Driver `pg` versi baru memperlakukan `sslmode=require` sebagai `verify-full`,
 yaitu ikut memeriksa penerbit sertifikat. Supabase memakai CA sendiri, jadi
 tanpa parameter itu koneksi ditolak dengan "self-signed certificate in
@@ -44,7 +64,7 @@ verifikasi penerbitnya — sama seperti perilaku `psql` dan Laravel.
 Perhatikan: parameter ini **hanya** untuk Prisma/Node. `psql` tidak
 mengenalnya dan akan menolak URL yang memuatnya.
 
-**3. Jangan mengisi environment variable Vercel lewat pipe PowerShell.**
+**4. Jangan mengisi environment variable Vercel lewat pipe PowerShell.**
 Perintah `$nilai | vercel env add NAMA production` memotong nilainya diam-diam.
 `DATABASE_URL` sepanjang 151 karakter pernah tersimpan hanya 11 karakter
 (`postgresql:`), dan gejalanya sama sekali tidak menunjuk ke sana:
@@ -58,7 +78,7 @@ vercel env pull cek.txt --environment=production
 # DATABASE_URL harus 151 karakter, AUTH_SECRET harus 44
 ```
 
-**4. Sandi lama Laravel berawalan `$2y$`.**
+**5. Sandi lama Laravel berawalan `$2y$`.**
 Pustaka bcrypt JavaScript hanya mengenali `$2a$` dan `$2b$`. Algoritmanya
 sama persis, hanya penanda versinya berbeda. `lib/auth.ts` menyetarakan
 keduanya, sehingga akun lama tetap bisa login dengan sandi yang sama.
@@ -71,6 +91,7 @@ keduanya, sehingga akun lama tetap bisa login dengan sandi yang sama.
 | `app/(aplikasi)` | Semua halaman yang wajib login |
 | `lib/uang.ts` | Rumus service charge, PB1, status bayar, margin |
 | `lib/auth.ts` | Login dan sesi |
+| `lib/prisma.ts` | Koneksi database — baca komentarnya sebelum mengubah |
 | `lib/navigasi.ts` | Menu sekaligus hak akses per peran |
 | `prisma/schema.prisma` | Cerminan tabel Supabase — jangan ditulis tangan |
 
