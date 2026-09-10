@@ -35,6 +35,36 @@ export async function kodeProdukBerikutnya(): Promise<string> {
   return `PRD-${await urutanBerikutnya("products", "product_code")}`;
 }
 
+/**
+ * Nomor dokumen bertahun: QUO-2026-0001, INV-2026-0014, PAY-2026-0003.
+ *
+ * Urutannya dihitung per tahun berjalan, jadi setiap Januari nomornya
+ * kembali ke 0001 — sama seperti kebiasaan penomoran dokumen di Laravel-nya.
+ */
+export async function nomorDokumenBerikutnya(
+  tabel: "quotations" | "invoices" | "payments",
+  kolom: string,
+  awalan: string,
+): Promise<string> {
+  const tahun = new Date().getFullYear();
+  const pola = `${awalan}-${tahun}-`;
+
+  const hasil = await prisma.$queryRawUnsafe<{ maks: number | null }[]>(
+    `SELECT MAX(CAST(RIGHT("${kolom}", 4) AS INTEGER)) AS maks
+       FROM "${tabel}"
+      WHERE "${kolom}" LIKE $1
+        AND RIGHT("${kolom}", 4) ~ '^[0-9]{4}$'`,
+    `${pola}%`,
+  );
+
+  const berikutnya = (hasil[0]?.maks ?? 0) + 1;
+  return `${pola}${String(berikutnya).padStart(4, "0")}`;
+}
+
+export function nomorPenawaranBerikutnya(): Promise<string> {
+  return nomorDokumenBerikutnya("quotations", "quotation_number", "QUO");
+}
+
 async function urutanBerikutnya(tabel: string, kolom: string): Promise<string> {
   // Mengambil empat karakter terakhir kode, membuang yang bukan angka,
   // lalu mencari nilai terbesarnya.

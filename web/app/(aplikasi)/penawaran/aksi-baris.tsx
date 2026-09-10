@@ -1,0 +1,148 @@
+"use client";
+
+import {
+  Check,
+  FileText,
+  MoreHorizontal,
+  PencilLine,
+  Send,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { hapusPenawaran, ubahStatusPenawaran } from "./actions";
+
+export function AksiBaris({
+  id,
+  nomor,
+  status,
+}: {
+  id: string;
+  nomor: string;
+  status: string;
+}) {
+  const router = useRouter();
+  const [menunggu, mulai] = useTransition();
+
+  function jalankan(kerja: () => Promise<void>, pesanSukses: string) {
+    mulai(async () => {
+      try {
+        await kerja();
+        toast.success(pesanSukses);
+      } catch (galat) {
+        toast.error(galat instanceof Error ? galat.message : "Tindakan gagal.");
+      }
+    });
+  }
+
+  const bolehUbah = status !== "approved";
+  const bolehHapus = status === "draft";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            disabled={menunggu}
+            aria-label={`Tindakan untuk ${nomor}`}
+          />
+        }
+      >
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => router.push(`/penawaran/${id}`)}>
+          <FileText className="size-4" />
+          Lihat detail
+        </DropdownMenuItem>
+
+        {bolehUbah ? (
+          <DropdownMenuItem onSelect={() => router.push(`/penawaran/${id}/ubah`)}>
+            <PencilLine className="size-4" />
+            Ubah
+          </DropdownMenuItem>
+        ) : null}
+
+        <DropdownMenuSeparator />
+
+        {status === "draft" ? (
+          <DropdownMenuItem
+            onSelect={() =>
+              jalankan(
+                () => ubahStatusPenawaran(id, "sent"),
+                `${nomor} ditandai terkirim.`,
+              )
+            }
+          >
+            <Send className="size-4" />
+            Tandai terkirim
+          </DropdownMenuItem>
+        ) : null}
+
+        {status === "sent" ? (
+          <>
+            <DropdownMenuItem
+              onSelect={() =>
+                jalankan(
+                  () => ubahStatusPenawaran(id, "approved"),
+                  `${nomor} disetujui pelanggan.`,
+                )
+              }
+            >
+              <Check className="size-4" />
+              Tandai disetujui
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() =>
+                jalankan(() => ubahStatusPenawaran(id, "rejected"), `${nomor} ditandai ditolak.`)
+              }
+            >
+              <X className="size-4" />
+              Tandai ditolak
+            </DropdownMenuItem>
+          </>
+        ) : null}
+
+        {status === "expired" || status === "rejected" ? (
+          <DropdownMenuItem
+            onSelect={() =>
+              jalankan(() => ubahStatusPenawaran(id, "sent"), `${nomor} dikirim ulang.`)
+            }
+          >
+            <Send className="size-4" />
+            Kirim ulang
+          </DropdownMenuItem>
+        ) : null}
+
+        {bolehHapus ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => jalankan(() => hapusPenawaran(id), `${nomor} dihapus.`)}
+            >
+              <Trash2 className="size-4" />
+              Hapus
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

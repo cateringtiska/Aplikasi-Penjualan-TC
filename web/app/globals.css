@@ -240,6 +240,26 @@
   }
 }
 
+/* Dokumen cetak: A4 dengan tepi 12mm, dan warna latar tabel tetap tercetak.
+   Tanpa print-color-adjust, browser membuang latar abu pada bilah judul dan
+   baris total — persis bagian yang membuat dokumen terbaca sebagai dokumen. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
