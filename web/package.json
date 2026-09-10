@@ -12,7 +12,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:pantau": "vitest",
-    "db:tarik": "prisma db pull && prisma generate"
+    "db:tarik": "prisma db pull && prisma generate",
+    "uji:alur": "vitest run --config vitest.alur.config.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
