@@ -152,7 +152,7 @@ function KartuPengguna({ sesi, onKeluar }: { sesi: Sesi; onKeluar: () => Promise
             <span className="block truncate text-xs text-muted-foreground">{sesi.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => void onKeluar()}>
+          <DropdownMenuItem onClick={() => void onKeluar()}>
             <LogOut className="size-4" />
             Keluar
           </DropdownMenuItem>

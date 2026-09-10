@@ -63,13 +63,13 @@ export function AksiBaris({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onSelect={() => router.push(`/tagihan/${id}`)}>
+        <DropdownMenuItem onClick={() => router.push(`/tagihan/${id}`)}>
           <FileText className="size-4" />
           Lihat detail
         </DropdownMenuItem>
 
         {bolehUbah ? (
-          <DropdownMenuItem onSelect={() => router.push(`/tagihan/${id}/ubah`)}>
+          <DropdownMenuItem onClick={() => router.push(`/tagihan/${id}/ubah`)}>
             <PencilLine className="size-4" />
             Ubah
           </DropdownMenuItem>
@@ -79,7 +79,7 @@ export function AksiBaris({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={() => router.push(`/pembayaran/baru?tagihan=${id}`)}
+              onClick={() => router.push(`/pembayaran/baru?tagihan=${id}`)}
             >
               <Wallet className="size-4" />
               Catat pembayaran
@@ -91,7 +91,7 @@ export function AksiBaris({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={() =>
+              onClick={() =>
                 jalankan(() => batalkanTagihan(id), `${nomor} dibatalkan.`)
               }
             >
@@ -100,7 +100,7 @@ export function AksiBaris({
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
-              onSelect={() => jalankan(() => hapusTagihan(id), `${nomor} dihapus.`)}
+              onClick={() => jalankan(() => hapusTagihan(id), `${nomor} dihapus.`)}
             >
               <Trash2 className="size-4" />
               Hapus

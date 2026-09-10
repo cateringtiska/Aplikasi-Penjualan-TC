@@ -37,14 +37,14 @@ export function AksiBaris({ id, nomor }: { id: string; nomor: string }) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem onSelect={() => router.push(`/pembayaran/${id}`)}>
+        <DropdownMenuItem onClick={() => router.push(`/pembayaran/${id}`)}>
           <FileText className="size-4" />
           Lihat detail
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
-          onSelect={() =>
+          onClick={() =>
             mulai(async () => {
               try {
                 await hapusPembayaran(id);

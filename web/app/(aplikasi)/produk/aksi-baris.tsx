@@ -50,11 +50,11 @@ export function AksiBaris({ produk, aktif }: { produk: Produk; aktif: boolean })
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onSelect={() => setBukaUbah(true)}>
+          <DropdownMenuItem onClick={() => setBukaUbah(true)}>
             <PencilLine className="size-4" />
             Ubah data
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={gantiStatus}>
+          <DropdownMenuItem onClick={gantiStatus}>
             <Power className="size-4" />
             {aktif ? "Nonaktifkan" : "Aktifkan"}
           </DropdownMenuItem>

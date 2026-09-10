@@ -45,13 +45,13 @@ export function AksiBaris({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onSelect={() => setBukaUbah(true)}>
+          <DropdownMenuItem onClick={() => setBukaUbah(true)}>
             <PencilLine className="size-4" />
             Ubah data
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={diriSendiri}
-            onSelect={() =>
+            onClick={() =>
               mulai(async () => {
                 try {
                   await ubahStatusPengguna(pengguna.id);

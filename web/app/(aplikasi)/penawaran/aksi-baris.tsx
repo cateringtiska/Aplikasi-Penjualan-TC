@@ -67,13 +67,13 @@ export function AksiBaris({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem onSelect={() => router.push(`/penawaran/${id}`)}>
+        <DropdownMenuItem onClick={() => router.push(`/penawaran/${id}`)}>
           <FileText className="size-4" />
           Lihat detail
         </DropdownMenuItem>
 
         {bolehUbah ? (
-          <DropdownMenuItem onSelect={() => router.push(`/penawaran/${id}/ubah`)}>
+          <DropdownMenuItem onClick={() => router.push(`/penawaran/${id}/ubah`)}>
             <PencilLine className="size-4" />
             Ubah
           </DropdownMenuItem>
@@ -83,7 +83,7 @@ export function AksiBaris({
 
         {status === "draft" ? (
           <DropdownMenuItem
-            onSelect={() =>
+            onClick={() =>
               jalankan(
                 () => ubahStatusPenawaran(id, "sent"),
                 `${nomor} ditandai terkirim.`,
@@ -98,7 +98,7 @@ export function AksiBaris({
         {status === "sent" ? (
           <>
             <DropdownMenuItem
-              onSelect={() =>
+              onClick={() =>
                 jalankan(
                   () => ubahStatusPenawaran(id, "approved"),
                   `${nomor} disetujui pelanggan.`,
@@ -109,7 +109,7 @@ export function AksiBaris({
               Tandai disetujui
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() =>
+              onClick={() =>
                 jalankan(() => ubahStatusPenawaran(id, "rejected"), `${nomor} ditandai ditolak.`)
               }
             >
@@ -121,7 +121,7 @@ export function AksiBaris({
 
         {status === "expired" || status === "rejected" ? (
           <DropdownMenuItem
-            onSelect={() =>
+            onClick={() =>
               jalankan(() => ubahStatusPenawaran(id, "sent"), `${nomor} dikirim ulang.`)
             }
           >
@@ -135,7 +135,7 @@ export function AksiBaris({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onSelect={() => jalankan(() => hapusPenawaran(id), `${nomor} dihapus.`)}
+              onClick={() => jalankan(() => hapusPenawaran(id), `${nomor} dihapus.`)}
             >
               <Trash2 className="size-4" />
               Hapus
