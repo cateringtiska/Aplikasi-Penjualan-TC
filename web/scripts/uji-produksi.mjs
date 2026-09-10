@@ -1,7 +1,8 @@
 /**
- * Memeriksa halaman produksi dengan sesi yang sah.
+ * Memeriksa setiap halaman produksi benar-benar tampil, dengan sesi yang sah.
  *
  *   node scripts/uji-produksi.mjs
+ *   UJI_BASIS=http://localhost:3000 node scripts/uji-produksi.mjs
  *
  * Cookie sesi ditandatangani memakai AUTH_SECRET yang sama dengan server,
  * jadi ini melewati penjaga login secara benar — bukan menembusnya.
@@ -17,10 +18,19 @@ const BASIS = process.env.UJI_BASIS ?? "https://penjualan-tc.vercel.app";
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 1 }),
 });
+
 const admin = await prisma.users.findFirst({
   where: { role: "admin" },
   select: { id: true, name: true, email: true, role: true },
 });
+
+// Satu dokumen contoh dari tiap jenis, supaya halaman ber-parameter ikut diuji.
+const [penawaran, tagihan, pembayaran] = await Promise.all([
+  prisma.quotations.findFirst({ select: { id: true }, orderBy: { id: "desc" } }),
+  prisma.invoices.findFirst({ select: { id: true }, orderBy: { id: "desc" } }),
+  prisma.payments.findFirst({ select: { id: true }, orderBy: { id: "desc" } }),
+]);
+
 await prisma.$disconnect();
 
 if (!admin) {
@@ -40,54 +50,77 @@ const cookie = `sesi_tc=${await new SignJWT({
   .sign(new TextEncoder().encode(process.env.AUTH_SECRET))}`;
 
 const halaman = [
-  {
-    jalur: "/dasbor",
-    periksa: [
-      ["kartu Piutang berjalan", /Piutang berjalan/],
-      ["kartu Jatuh tempo", /Jatuh tempo/],
-      ["panel Tagihan terbaru", /Tagihan terbaru/],
-    ],
-  },
-  {
-    jalur: "/pelanggan",
-    periksa: [
-      ["judul", /Pelanggan/],
-      ["tombol tambah", /Tambah pelanggan/],
-      ["kotak pencarian", /Cari nama, kode, PIC/],
-      ["keadaan kosong", /Belum ada pelanggan/],
-    ],
-  },
-  {
-    jalur: "/produk",
-    periksa: [
-      ["judul", /Produk/],
-      ["tombol tambah", /Tambah produk/],
-      ["kotak pencarian", /Cari nama, kode, atau keterangan/],
-      ["keadaan kosong", /Belum ada produk/],
-    ],
-  },
-  {
-    jalur: "/pelanggan?cari=zzzz",
-    periksa: [["hasil kosong saat dicari", /Tidak ada yang cocok/]],
-  },
+  ["/dasbor", [/Piutang berjalan/, /Tagihan terbaru/]],
+  ["/pelanggan", [/Tambah pelanggan/]],
+  ["/produk", [/Tambah produk/]],
+  ["/penawaran", [/Buat penawaran/, /Kadaluarsa/]],
+  ["/penawaran/baru", [/Rincian penawaran/, /Service charge/, /Detail acara/]],
+  ["/tagihan", [/Buat tagihan/, /Jatuh tempo/]],
+  ["/tagihan/baru", [/Rincian tagihan/, /Jatuh tempo/]],
+  ["/pembayaran", [/Catat pembayaran/]],
+  ["/pembayaran/baru", [/Alokasi ke tagihan/, /Uang diterima/]],
+  ["/laporan/penjualan", [/Laporan penjualan/, /Excel/, /Nilai tagihan/]],
+  ["/laporan/piutang", [/Kartu piutang/, /Belum jatuh tempo/, /Lebih dari 60 hari/]],
+  ["/laporan/margin", [/Laporan margin/, /Margin rata-rata/]],
+  ["/pengguna", [/Tambah pengguna/, /Tidak ada pendaftaran mandiri/]],
+  ["/perusahaan", [/Pengaturan perusahaan/, /Rekening pembayaran/, /Nama penanda tangan/]],
 ];
 
-let gagalTotal = 0;
-
-for (const { jalur, periksa } of halaman) {
-  const resp = await fetch(`${BASIS}${jalur}`, { headers: { cookie }, redirect: "manual" });
-  const html = await resp.text();
-  const rusak = /This page couldn.t load|A server error occurred/.test(html);
-
-  console.log(`\n${jalur}  ->  ${resp.status}${rusak ? "  HALAMAN ERROR" : ""}`);
-  if (rusak) gagalTotal++;
-
-  for (const [label, pola] of periksa) {
-    const ok = pola.test(html);
-    if (!ok) gagalTotal++;
-    console.log(`   ${ok ? "OK  " : "GAGAL"}  ${label}`);
-  }
+if (penawaran) {
+  halaman.push([`/penawaran/${penawaran.id}`, [/Total penawaran/]]);
+  halaman.push([`/penawaran/${penawaran.id}/cetak`, [/QUOTATION|Quotation/]]);
+}
+if (tagihan) {
+  halaman.push([`/tagihan/${tagihan.id}`, [/Total tagihan/, /Riwayat pembayaran/]]);
+  halaman.push([`/tagihan/${tagihan.id}/cetak`, [/INVOICE|Invoice/]]);
+  halaman.push([`/tagihan/${tagihan.id}/margin`, [/Biaya &amp; margin|Biaya & margin/, /Penjualan bersih/]]);
+}
+if (pembayaran) {
+  halaman.push([`/pembayaran/${pembayaran.id}`, [/Alokasi ke tagihan/]]);
 }
 
-console.log(gagalTotal === 0 ? "\nSEMUA HALAMAN BEKERJA." : `\n${gagalTotal} pemeriksaan gagal.`);
-process.exit(gagalTotal === 0 ? 0 : 1);
+let gagal = 0;
+
+for (const [jalur, pola] of halaman) {
+  let baris = `${jalur.padEnd(34)}`;
+
+  try {
+    const resp = await fetch(`${BASIS}${jalur}`, { headers: { cookie }, redirect: "manual" });
+    const html = await resp.text();
+    const rusak = /This page couldn.t load|A server error occurred/.test(html);
+    const tidakCocok = pola.filter((p) => !p.test(html));
+
+    if (resp.status !== 200 || rusak || tidakCocok.length > 0) {
+      gagal++;
+      baris += `GAGAL  status=${resp.status}`;
+      if (rusak) baris += " HALAMAN ERROR";
+      if (tidakCocok.length) baris += `  tidak ditemukan: ${tidakCocok.join(", ")}`;
+    } else {
+      baris += `OK     ${String(html.length).padStart(6)} karakter`;
+    }
+  } catch (galat) {
+    gagal++;
+    baris += `GAGAL  ${galat.message}`;
+  }
+
+  console.log(baris);
+}
+
+// Ekspor Excel diuji terpisah, karena yang diperiksa jenis berkasnya.
+try {
+  const resp = await fetch(`${BASIS}/laporan/penjualan/excel`, { headers: { cookie } });
+  const jenis = resp.headers.get("content-type") ?? "";
+  const ok = resp.status === 200 && jenis.includes("spreadsheetml");
+  if (!ok) gagal++;
+  console.log(`${"/laporan/penjualan/excel".padEnd(34)}${ok ? "OK     berkas xlsx" : `GAGAL  ${resp.status} ${jenis}`}`);
+} catch (galat) {
+  gagal++;
+  console.log(`${"/laporan/penjualan/excel".padEnd(34)}GAGAL  ${galat.message}`);
+}
+
+console.log(
+  gagal === 0
+    ? `\nSEMUA ${halaman.length + 1} HALAMAN BEKERJA.`
+    : `\n${gagal} pemeriksaan gagal.`,
+);
+process.exit(gagal === 0 ? 0 : 1);

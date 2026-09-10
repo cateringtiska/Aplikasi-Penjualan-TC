@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, PencilLine, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Calculator, PencilLine, Printer, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -101,6 +101,16 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
             <Button variant="outline" size="sm" render={<Link href={`/tagihan/${t.id}/ubah`} />}>
               <PencilLine className="size-4" />
               Ubah
+            </Button>
+          ) : null}
+          {bolehKelolaUang ? (
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href={`/tagihan/${t.id}/margin`} />}
+            >
+              <Calculator className="size-4" />
+              Biaya &amp; margin
             </Button>
           ) : null}
           {bolehKelolaUang && belumLunas ? (
