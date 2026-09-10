@@ -1,6 +1,7 @@
 import type { Decimal } from "decimal.js";
 import { z } from "zod";
 
+import { BATAS_CATATAN, BATAS_SYARAT } from "./batas";
 import { d, hitungTotalDokumen, uraikanRupiah } from "./uang";
 
 /* ==========================================================================
@@ -49,12 +50,12 @@ export const skemaDokumen = z.object({
   guest_count: z.string().nullable().optional(),
   fnb_planner: z.string().trim().max(255).nullable().optional(),
   venue: z.string().trim().max(255).nullable().optional(),
-  notes: z.string().trim().max(5000).nullable().optional(),
+  notes: z.string().trim().max(BATAS_CATATAN).nullable().optional(),
   service_charge_percent: z.string().nullable().optional(),
   pb1_enabled: z.boolean().default(false),
   pb1_percent: z.string().nullable().optional(),
   show_payment_terms: z.boolean().default(false),
-  payment_terms: z.string().trim().max(5000).nullable().optional(),
+  payment_terms: z.string().trim().max(BATAS_SYARAT).nullable().optional(),
   items: z.array(barisItem).min(1, "Tambahkan minimal satu item."),
 });
 

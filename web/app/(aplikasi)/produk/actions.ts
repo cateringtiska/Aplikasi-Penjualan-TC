@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { BATAS_KETERANGAN } from "@/lib/batas";
 import { kodeProdukBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -15,7 +16,7 @@ const skema = z.object({
   name: z.string().trim().min(3, "Nama minimal 3 huruf.").max(255),
   type: z.enum(["barang", "jasa"], { message: "Pilih barang atau jasa." }),
   unit: z.string().trim().min(1, "Satuan belum diisi.").max(20, "Maksimal 20 karakter."),
-  description: z.preprocess(kosongJadiNull, z.string().trim().max(2000).nullable()),
+  description: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_KETERANGAN).nullable()),
 });
 
 export type KeadaanProduk = {

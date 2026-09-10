@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { BATAS_SYARAT } from "@/lib/batas";
 import { hapusGambar, unggahGambar } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -15,8 +16,8 @@ const skema = z.object({
   bank_name: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_number: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_holder: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
-  payment_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(5000).nullable()),
-  quotation_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(5000).nullable()),
+  payment_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_SYARAT).nullable()),
+  quotation_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_SYARAT).nullable()),
 });
 
 export type KeadaanPerusahaan = {

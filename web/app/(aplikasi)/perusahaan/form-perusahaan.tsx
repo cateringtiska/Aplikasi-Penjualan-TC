@@ -1,13 +1,14 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BATAS_SYARAT } from "@/lib/batas";
 
 import { type KeadaanPerusahaan, simpanPerusahaan } from "./actions";
 
@@ -121,25 +122,21 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
         judul="Teks standar"
         keterangan="Terisi otomatis saat membuat dokumen baru, dan masih bisa diubah per dokumen."
       >
-        <Bidang label="Syarat pada penawaran" nama="quotation_terms_default">
-          <Textarea
-            id="quotation_terms_default"
-            name="quotation_terms_default"
-            rows={4}
-            defaultValue={isi.quotation_terms_default}
-            placeholder="Harga berlaku 14 hari. Uang muka 50% saat pemesanan."
-          />
-        </Bidang>
+        <BidangSyarat
+          label="Syarat pada penawaran"
+          nama="quotation_terms_default"
+          galat={keadaan.galat?.quotation_terms_default}
+          nilaiAwal={isi.quotation_terms_default}
+          placeholder="Syarat dan ketentuan pemesanan — boleh berhalaman-halaman."
+        />
 
-        <Bidang label="Syarat pada tagihan" nama="payment_terms_default">
-          <Textarea
-            id="payment_terms_default"
-            name="payment_terms_default"
-            rows={4}
-            defaultValue={isi.payment_terms_default}
-            placeholder="Pelunasan paling lambat H-3 sebelum acara."
-          />
-        </Bidang>
+        <BidangSyarat
+          label="Syarat pada tagihan"
+          nama="payment_terms_default"
+          galat={keadaan.galat?.payment_terms_default}
+          nilaiAwal={isi.payment_terms_default}
+          placeholder="Termin pembayaran, nomor rekening, ketentuan pembatalan."
+        />
       </Bagian>
 
       <div>
@@ -155,6 +152,54 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Kotak untuk syarat & ketentuan.
+ *
+ * Dibuat tinggi dan berpenghitung karakter karena isinya memang panjang —
+ * dokumen syarat katering bisa belasan ribu karakter, dengan sepuluh bagian
+ * bernomor. Penghitungnya ada supaya batas penyimpanan terlihat sebelum
+ * tombol Simpan ditekan, bukan sesudahnya.
+ */
+function BidangSyarat({
+  label,
+  nama,
+  galat,
+  nilaiAwal,
+  placeholder,
+}: {
+  label: string;
+  nama: string;
+  galat?: string;
+  nilaiAwal: string;
+  placeholder: string;
+}) {
+  const [nilai, setNilai] = useState(nilaiAwal);
+  const hampirPenuh = nilai.length > BATAS_SYARAT * 0.9;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-4">
+        <Label htmlFor={nama}>{label}</Label>
+        <span
+          className={`angka text-xs tabular-nums ${hampirPenuh ? "text-tempo" : "text-muted-foreground"}`}
+        >
+          {nilai.length.toLocaleString("id-ID")} / {BATAS_SYARAT.toLocaleString("id-ID")}
+        </span>
+      </div>
+      <Textarea
+        id={nama}
+        name={nama}
+        rows={14}
+        value={nilai}
+        onChange={(e) => setNilai(e.target.value)}
+        placeholder={placeholder}
+        className="font-mono text-xs leading-relaxed"
+      />
+      {galat ? <p className="text-xs text-destructive">{galat}</p> : null}
+    </div>
   );
 }
 

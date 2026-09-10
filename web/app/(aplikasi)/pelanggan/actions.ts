@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { BATAS_KETERANGAN } from "@/lib/batas";
 import { kodePelangganBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -12,7 +13,7 @@ const kosongJadiNull = (v: unknown) => (typeof v === "string" && v.trim() === ""
 const skema = z.object({
   id: z.string().trim().optional(),
   name: z.string().trim().min(3, "Nama minimal 3 huruf.").max(255),
-  address: z.preprocess(kosongJadiNull, z.string().trim().max(2000).nullable()),
+  address: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_KETERANGAN).nullable()),
   phone: z.preprocess(kosongJadiNull, z.string().trim().max(20, "Maksimal 20 karakter.").nullable()),
   email: z.preprocess(kosongJadiNull, z.email("Format email belum benar.").nullable()),
   npwp: z.preprocess(kosongJadiNull, z.string().trim().max(30).nullable()),
