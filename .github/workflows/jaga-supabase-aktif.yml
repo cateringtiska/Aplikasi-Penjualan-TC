@@ -1,0 +1,47 @@
+# Menjaga proyek Supabase tetap aktif.
+#
+# Supabase paket gratis MENJEDA proyek setelah 7 hari tanpa aktivitas.
+# Proyek yang dijeda tidak bisa diakses sampai dinyalakan manual lewat dashboard.
+# Alur kerja ini menyambung ke database setiap hari supaya itu tidak terjadi.
+#
+# SEBELUM BISA JALAN, tambahkan satu secret di GitHub:
+#   Settings -> Secrets and variables -> Actions -> New repository secret
+#   Nama  : SUPABASE_DB_URL
+#   Nilai : lihat berkas .env.production bagian 2, atau minta ke Claude
+#
+# Untuk menguji tanpa menunggu besok:
+#   tab Actions -> "Jaga Supabase Tetap Aktif" -> Run workflow
+
+name: Jaga Supabase Tetap Aktif
+
+on:
+  schedule:
+    # 02:00 UTC = 09:00 WIB, setiap hari.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Sapa database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Sambung ke Supabase dan jalankan satu query
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Secret SUPABASE_DB_URL belum diisi. Buka Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          psql "$SUPABASE_DB_URL" --no-psqlrc --quiet --tuples-only --command "
+            select 'Supabase aktif pada ' || to_char(now() at time zone 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') || ' WIB'
+                || ' | invoice: ' || (select count(*) from public.invoices)
+                || ' | quotation: ' || (select count(*) from public.quotations)
+                || ' | customer: ' || (select count(*) from public.customers);
+          "
+
+      - name: Catat keberhasilan
+        run: echo "Ping berhasil. Hitungan mundur 7 hari Supabase kembali ke nol."
