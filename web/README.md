@@ -27,7 +27,7 @@ Buka http://localhost:3000.
 | `npm run build` | Membangun versi produksi (dipakai Vercel) |
 | `npm run db:tarik` | Membaca ulang struktur tabel dari Supabase |
 
-## Tiga hal yang mudah bikin bingung
+## Empat hal yang mudah bikin bingung
 
 **1. Password database mengandung tanda `+`.**
 Di dalam URL koneksi, tanda `+` berarti spasi. Harus ditulis `%2B`. Kalau
@@ -44,7 +44,21 @@ verifikasi penerbitnya — sama seperti perilaku `psql` dan Laravel.
 Perhatikan: parameter ini **hanya** untuk Prisma/Node. `psql` tidak
 mengenalnya dan akan menolak URL yang memuatnya.
 
-**3. Sandi lama Laravel berawalan `$2y$`.**
+**3. Jangan mengisi environment variable Vercel lewat pipe PowerShell.**
+Perintah `$nilai | vercel env add NAMA production` memotong nilainya diam-diam.
+`DATABASE_URL` sepanjang 151 karakter pernah tersimpan hanya 11 karakter
+(`postgresql:`), dan gejalanya sama sekali tidak menunjuk ke sana:
+`P1001 Can't reach database server at base`.
+
+Cara yang benar: REST API `POST /v10/projects/{id}/env?upsert=true` dengan
+body JSON, lalu **selalu** diperiksa ulang:
+
+```bash
+vercel env pull cek.txt --environment=production
+# DATABASE_URL harus 151 karakter, AUTH_SECRET harus 44
+```
+
+**4. Sandi lama Laravel berawalan `$2y$`.**
 Pustaka bcrypt JavaScript hanya mengenali `$2a$` dan `$2b$`. Algoritmanya
 sama persis, hanya penanda versinya berbeda. `lib/auth.ts` menyetarakan
 keduanya, sehingga akun lama tetap bisa login dengan sandi yang sama.
