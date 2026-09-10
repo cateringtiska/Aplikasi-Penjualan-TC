@@ -1,0 +1,252 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   PENJUALAN TC — SISTEM VISUAL
+
+   Prinsip: warna ditahan.
+
+   Seluruh kerangka antarmuka — tombol, panel, tabel, navigasi — dibiarkan
+   monokrom. Warna hanya muncul untuk satu hal: STATUS UANG. Kalau ada warna
+   di layar, artinya ada yang perlu diperhatikan. Ini membuat halaman penuh
+   angka tetap tenang, dan membuat satu baris "Jatuh Tempo" langsung terlihat
+   tanpa perlu dibaca.
+
+   Netralnya bukan abu-abu bawaan: ada pergeseran halus ke biru (hue 250,
+   chroma 0.004-0.01). Cukup untuk terasa dipilih, tidak cukup untuk terbaca
+   sebagai warna.
+   ========================================================================== */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Warna status uang — satu-satunya tempat warna diizinkan. */
+  --color-lunas: var(--lunas);
+  --color-lunas-halus: var(--lunas-halus);
+  --color-sebagian: var(--sebagian);
+  --color-sebagian-halus: var(--sebagian-halus);
+  --color-tempo: var(--tempo);
+  --color-tempo-halus: var(--tempo-halus);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Radius kecil dan tegas. Sudut yang terlalu bulat membuat tabel angka
+     terasa seperti kartu promosi, bukan dokumen kerja. */
+  --radius: 0.375rem;
+
+  --background: oklch(0.993 0.002 250);
+  --foreground: oklch(0.185 0.008 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.185 0.008 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.185 0.008 250);
+
+  --primary: oklch(0.215 0.01 250);
+  --primary-foreground: oklch(0.99 0.002 250);
+
+  --secondary: oklch(0.966 0.003 250);
+  --secondary-foreground: oklch(0.255 0.01 250);
+
+  --muted: oklch(0.966 0.003 250);
+  --muted-foreground: oklch(0.535 0.012 250);
+
+  --accent: oklch(0.955 0.004 250);
+  --accent-foreground: oklch(0.215 0.01 250);
+
+  --destructive: oklch(0.545 0.192 25);
+
+  --border: oklch(0.918 0.004 250);
+  --border-strong: oklch(0.855 0.006 250);
+  --input: oklch(0.905 0.005 250);
+  --ring: oklch(0.62 0.02 250);
+
+  --lunas: oklch(0.5 0.115 158);
+  --lunas-halus: oklch(0.955 0.028 158);
+  --sebagian: oklch(0.545 0.105 72);
+  --sebagian-halus: oklch(0.958 0.038 82);
+  --tempo: oklch(0.525 0.175 25);
+  --tempo-halus: oklch(0.958 0.028 25);
+
+  --chart-1: oklch(0.215 0.01 250);
+  --chart-2: oklch(0.42 0.012 250);
+  --chart-3: oklch(0.585 0.012 250);
+  --chart-4: oklch(0.735 0.008 250);
+  --chart-5: oklch(0.875 0.005 250);
+
+  --sidebar: oklch(0.978 0.003 250);
+  --sidebar-foreground: oklch(0.325 0.01 250);
+  --sidebar-primary: oklch(0.215 0.01 250);
+  --sidebar-primary-foreground: oklch(0.99 0.002 250);
+  --sidebar-accent: oklch(0.938 0.005 250);
+  --sidebar-accent-foreground: oklch(0.185 0.01 250);
+  --sidebar-border: oklch(0.915 0.004 250);
+  --sidebar-ring: oklch(0.62 0.02 250);
+}
+
+.dark {
+  --background: oklch(0.155 0.008 250);
+  --foreground: oklch(0.945 0.003 250);
+
+  --card: oklch(0.192 0.009 250);
+  --card-foreground: oklch(0.945 0.003 250);
+  --popover: oklch(0.205 0.009 250);
+  --popover-foreground: oklch(0.945 0.003 250);
+
+  --primary: oklch(0.93 0.004 250);
+  --primary-foreground: oklch(0.185 0.01 250);
+
+  --secondary: oklch(0.255 0.01 250);
+  --secondary-foreground: oklch(0.945 0.003 250);
+
+  --muted: oklch(0.248 0.01 250);
+  --muted-foreground: oklch(0.685 0.012 250);
+
+  --accent: oklch(0.272 0.011 250);
+  --accent-foreground: oklch(0.955 0.003 250);
+
+  --destructive: oklch(0.665 0.175 25);
+
+  --border: oklch(0.302 0.01 250);
+  --border-strong: oklch(0.375 0.012 250);
+  --input: oklch(0.325 0.011 250);
+  --ring: oklch(0.548 0.018 250);
+
+  --lunas: oklch(0.735 0.125 158);
+  --lunas-halus: oklch(0.268 0.045 158);
+  --sebagian: oklch(0.775 0.115 78);
+  --sebagian-halus: oklch(0.272 0.045 78);
+  --tempo: oklch(0.712 0.155 25);
+  --tempo-halus: oklch(0.282 0.055 25);
+
+  --chart-1: oklch(0.93 0.004 250);
+  --chart-2: oklch(0.775 0.008 250);
+  --chart-3: oklch(0.628 0.01 250);
+  --chart-4: oklch(0.478 0.012 250);
+  --chart-5: oklch(0.348 0.011 250);
+
+  --sidebar: oklch(0.178 0.009 250);
+  --sidebar-foreground: oklch(0.792 0.008 250);
+  --sidebar-primary: oklch(0.93 0.004 250);
+  --sidebar-primary-foreground: oklch(0.185 0.01 250);
+  --sidebar-accent: oklch(0.262 0.011 250);
+  --sidebar-accent-foreground: oklch(0.965 0.003 250);
+  --sidebar-border: oklch(0.288 0.01 250);
+  --sidebar-ring: oklch(0.548 0.018 250);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv05" 1, "ss03" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Angka uang harus berbaris lurus antar baris tabel. Tanpa ini, kolom
+     rupiah terlihat bergoyang dan nilai besar sulit dibandingkan sekilas. */
+  table,
+  .angka {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Hilangkan panah naik-turun pada input angka — di form invoice, panah itu
+     hanya mengundang salah klik pada kolom harga. */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  ::selection {
+    background: oklch(0.215 0.01 250);
+    color: oklch(0.99 0.002 250);
+  }
+  .dark ::selection {
+    background: oklch(0.93 0.004 250);
+    color: oklch(0.185 0.01 250);
+  }
+}
+
+@layer components {
+  /* Label kecil huruf besar untuk kepala kolom dan penanda bagian. */
+  .eyebrow {
+    @apply text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  /* Nomor dokumen: QUO-2026-0001, INV-2026-0014, PAY-2026-0003. */
+  .nomor-dokumen {
+    @apply font-mono text-[0.8125rem] tracking-tight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
