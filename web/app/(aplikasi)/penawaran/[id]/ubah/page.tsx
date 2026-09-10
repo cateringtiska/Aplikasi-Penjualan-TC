@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
+import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 
-import { pilihanForm, tanggalUntukInput } from "../../data";
-import { FormPenawaran } from "../../form-penawaran";
+import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
+import { simpanPenawaran } from "../../simpan";
 
 export const metadata: Metadata = { title: "Ubah penawaran" };
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export default async function HalamanUbahPenawaran({
   if (!penawaran) notFound();
 
   // Penawaran yang sudah disetujui adalah kesepakatan dengan pelanggan.
-  // Mengubahnya diam-diam akan membuat dokumen cetak dan tagihan tidak cocok.
+  // Mengubahnya diam-diam membuat dokumen yang sudah dikirim tidak cocok lagi.
   if (penawaran.status === "approved") {
     redirect(`/penawaran/${id}?terkunci=1`);
   }
@@ -49,7 +50,9 @@ export default async function HalamanUbahPenawaran({
         keterangan="Nomor penawaran tidak berubah setelah disimpan ulang."
       />
 
-      <FormPenawaran
+      <FormDokumen
+        aksi={simpanPenawaran}
+        istilah={ISTILAH_PENAWARAN}
         pelanggan={pelanggan}
         produk={produk}
         isiAwal={{
@@ -57,8 +60,8 @@ export default async function HalamanUbahPenawaran({
           customer_id: penawaran.customer_id.toString(),
           contact_person: penawaran.contact_person ?? "",
           contact_phone: penawaran.contact_phone ?? "",
-          quotation_date: tanggalUntukInput(penawaran.quotation_date),
-          valid_until: tanggalUntukInput(penawaran.valid_until),
+          tanggal: tanggalUntukInput(penawaran.quotation_date),
+          tanggal_akhir: tanggalUntukInput(penawaran.valid_until),
           event_date: tanggalUntukInput(penawaran.event_date),
           event_days: penawaran.event_days?.toString() ?? "",
           event_type: penawaran.event_type ?? "",

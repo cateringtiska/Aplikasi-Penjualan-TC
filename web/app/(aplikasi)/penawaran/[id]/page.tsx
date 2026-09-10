@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, PencilLine, Printer } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, PencilLine, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -87,9 +87,15 @@ export default async function HalamanDetailPenawaran({
             Cetak
           </Button>
           {p.status !== "approved" ? (
-            <Button size="sm" render={<Link href={`/penawaran/${p.id}/ubah`} />}>
+            <Button variant="outline" size="sm" render={<Link href={`/penawaran/${p.id}/ubah`} />}>
               <PencilLine className="size-4" />
               Ubah
+            </Button>
+          ) : null}
+          {p.status === "approved" && !tagihan ? (
+            <Button size="sm" render={<Link href={`/tagihan/baru?dari=${p.id}`} />}>
+              <FileSpreadsheet className="size-4" />
+              Buat tagihan
             </Button>
           ) : null}
         </div>

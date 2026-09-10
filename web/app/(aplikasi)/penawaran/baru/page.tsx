@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
+import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 
-import { hariIni, pilihanForm } from "../data";
-import { FormPenawaran } from "../form-penawaran";
+import { hariIni, ISTILAH_PENAWARAN, pilihanForm } from "../data";
+import { simpanPenawaran } from "../simpan";
 
 export const metadata: Metadata = { title: "Penawaran baru" };
 export const dynamic = "force-dynamic";
@@ -28,15 +29,17 @@ export default async function HalamanPenawaranBaru() {
         keterangan="Nomor penawaran dibuat otomatis setelah disimpan."
       />
 
-      <FormPenawaran
+      <FormDokumen
+        aksi={simpanPenawaran}
+        istilah={ISTILAH_PENAWARAN}
         pelanggan={pelanggan}
         produk={produk}
         isiAwal={{
           customer_id: "",
           contact_person: "",
           contact_phone: "",
-          quotation_date: hariIni(),
-          valid_until: hariIni(14),
+          tanggal: hariIni(),
+          tanggal_akhir: hariIni(14),
           event_date: "",
           event_days: "",
           event_type: "",

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
 
-import { type KeadaanPenawaran, simpanPenawaran } from "./simpan";
+import type { KeadaanDokumen } from "@/lib/dokumen";
 
 export type PilihanPelanggan = {
   id: string;
@@ -33,8 +33,8 @@ export type IsiAwal = {
   customer_id: string;
   contact_person: string;
   contact_phone: string;
-  quotation_date: string;
-  valid_until: string;
+  tanggal: string;
+  tanggal_akhir: string;
   event_date: string;
   event_days: string;
   event_type: string;
@@ -77,18 +77,42 @@ export function barisKosong(): BarisForm {
   };
 }
 
-const keadaanAwal: KeadaanPenawaran = {};
+const keadaanAwal: KeadaanDokumen = {};
 
-export function FormPenawaran({
+/**
+ * Kata-kata yang berbeda antara penawaran dan tagihan. Selain ini, kedua
+ * formulir memang benar-benar sama — struktur item, service charge, PB1,
+ * dan syarat pembayarannya identik.
+ */
+export type IstilahDokumen = {
+  /** "penawaran" atau "tagihan" — dipakai di dalam kalimat. */
+  kata: string;
+  labelTanggal: string;
+  labelTanggalAkhir: string;
+  tombolSimpan: string;
+  batalHref: string;
+};
+
+export function FormDokumen({
   isiAwal,
   pelanggan,
   produk,
+  aksi,
+  istilah,
+  medanTambahan,
 }: {
   isiAwal: IsiAwal;
   pelanggan: PilihanPelanggan[];
   produk: PilihanProduk[];
+  aksi: (
+    sebelumnya: KeadaanDokumen,
+    data: FormData,
+  ) => Promise<KeadaanDokumen>;
+  istilah: IstilahDokumen;
+  /** Nilai tersembunyi yang ikut terkirim, misalnya asal penawaran. */
+  medanTambahan?: Record<string, string>;
 }) {
-  const [keadaan, kirim, sedangKirim] = useActionState(simpanPenawaran, keadaanAwal);
+  const [keadaan, kirim, sedangKirim] = useActionState(aksi, keadaanAwal);
 
   // Formulir tidak pernah dibuka dalam keadaan tanpa baris sama sekali —
   // baris kosong pertama disiapkan di sini supaya halaman baru langsung
@@ -147,8 +171,8 @@ export function FormPenawaran({
     customer_id: f.customer_id,
     contact_person: f.contact_person,
     contact_phone: f.contact_phone,
-    quotation_date: f.quotation_date,
-    valid_until: f.valid_until,
+    tanggal: f.tanggal,
+    tanggal_akhir: f.tanggal_akhir,
     event_date: f.event_date || null,
     event_days: f.event_days || null,
     event_type: f.event_type,
@@ -177,6 +201,9 @@ export function FormPenawaran({
   return (
     <form action={kirim} className="flex flex-col gap-8 pb-28">
       <input type="hidden" name="muatan" value={muatan} />
+      {Object.entries(medanTambahan ?? {}).map(([nama, nilai]) => (
+        <input key={nama} type="hidden" name={nama} value={nilai} />
+      ))}
 
       {keadaan.pesan ? (
         <p
@@ -188,7 +215,7 @@ export function FormPenawaran({
       ) : null}
 
       {/* ---------- Pelanggan & tanggal ---------- */}
-      <Bagian judul="Pelanggan" keterangan="Kepada siapa penawaran ini ditujukan.">
+      <Bagian judul="Pelanggan" keterangan={`Kepada siapa ${istilah.kata} ini ditujukan.`}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Bidang label="Pelanggan" nama="customer_id" galat={keadaan.galat?.customer_id} wajib>
             <select
@@ -235,26 +262,26 @@ export function FormPenawaran({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Bidang label="Tanggal penawaran" nama="quotation_date" wajib>
+          <Bidang label={istilah.labelTanggal} nama="tanggal" wajib>
             <Input
-              id="quotation_date"
+              id="tanggal"
               type="date"
-              value={f.quotation_date}
-              onChange={(e) => ubah("quotation_date", e.target.value)}
+              value={f.tanggal}
+              onChange={(e) => ubah("tanggal", e.target.value)}
             />
           </Bidang>
           <Bidang
-            label="Berlaku sampai"
-            nama="valid_until"
-            galat={keadaan.galat?.valid_until}
+            label={istilah.labelTanggalAkhir}
+            nama="tanggal_akhir"
+            galat={keadaan.galat?.tanggal_akhir}
             wajib
           >
             <Input
-              id="valid_until"
+              id="tanggal_akhir"
               type="date"
-              value={f.valid_until}
-              onChange={(e) => ubah("valid_until", e.target.value)}
-              aria-invalid={Boolean(keadaan.galat?.valid_until)}
+              value={f.tanggal_akhir}
+              onChange={(e) => ubah("tanggal_akhir", e.target.value)}
+              aria-invalid={Boolean(keadaan.galat?.tanggal_akhir)}
             />
           </Bidang>
         </div>
@@ -263,7 +290,7 @@ export function FormPenawaran({
       {/* ---------- Detail acara ---------- */}
       <Bagian
         judul="Detail acara"
-        keterangan="Dicetak di kepala dokumen penawaran. Boleh dikosongkan."
+        keterangan="Dicetak di kepala dokumen. Boleh dikosongkan."
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <Bidang label="Tanggal acara" nama="event_date">
@@ -334,7 +361,7 @@ export function FormPenawaran({
 
       {/* ---------- Item ---------- */}
       <Bagian
-        judul="Rincian penawaran"
+        judul={`Rincian ${istilah.kata}`}
         keterangan="Paket induk boleh punya sub-item yang tidak berharga — dipakai untuk merinci isi menu."
       >
         {keadaan.galat?.items ? (
@@ -465,7 +492,7 @@ export function FormPenawaran({
           </dl>
 
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" render={<Link href="/penawaran" />}>
+            <Button type="button" variant="ghost" render={<Link href={istilah.batalHref} />}>
               Batal
             </Button>
             <Button type="submit" disabled={sedangKirim}>
@@ -475,7 +502,7 @@ export function FormPenawaran({
                   Menyimpan…
                 </>
               ) : (
-                "Simpan penawaran"
+                istilah.tombolSimpan
               )}
             </Button>
           </div>

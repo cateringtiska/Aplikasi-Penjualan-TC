@@ -1,0 +1,135 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { FormDokumen, type IsiAwal } from "@/components/form-dokumen";
+import { Halaman, KepalaHalaman } from "@/components/halaman";
+import { prisma } from "@/lib/prisma";
+import { wajibPeran } from "@/lib/rbac";
+
+import { hariIni, ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../data";
+import { simpanTagihan } from "../simpan";
+
+export const metadata: Metadata = { title: "Tagihan baru" };
+export const dynamic = "force-dynamic";
+
+export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/tagihan/baru">) {
+  await wajibPeran("sales", "finance");
+
+  const { dari } = await searchParams;
+  const idPenawaran = typeof dari === "string" ? dari : "";
+
+  const [{ pelanggan, produk }, pengaturan] = await Promise.all([
+    pilihanForm(),
+    prisma.company_settings.findUnique({
+      where: { id: BigInt(1) },
+      select: { payment_terms_default: true },
+    }),
+  ]);
+
+  const kosong: IsiAwal = {
+    customer_id: "",
+    contact_person: "",
+    contact_phone: "",
+    tanggal: hariIni(),
+    tanggal_akhir: hariIni(14),
+    event_date: "",
+    event_days: "",
+    event_type: "",
+    event_time: "",
+    guest_count: "",
+    fnb_planner: "",
+    venue: "",
+    notes: "",
+    service_charge_percent: "",
+    pb1_enabled: false,
+    pb1_percent: "10",
+    show_payment_terms: Boolean(pengaturan?.payment_terms_default),
+    payment_terms: pengaturan?.payment_terms_default ?? "",
+    items: [],
+  };
+
+  let isiAwal = kosong;
+  let asal: { nomor: string } | null = null;
+
+  if (idPenawaran) {
+    const p = await prisma.quotations.findUnique({
+      where: { id: BigInt(idPenawaran) },
+      include: {
+        invoices: { take: 1, select: { id: true } },
+        quotation_items: {
+          where: { parent_id: null },
+          orderBy: { id: "asc" },
+          include: {
+            other_quotation_items: { orderBy: { id: "asc" }, select: { item_name: true } },
+          },
+        },
+      },
+    });
+
+    if (!p) redirect("/tagihan/baru");
+
+    // Satu penawaran hanya boleh menurunkan satu tagihan. Tanpa penjagaan ini,
+    // menekan tombol dua kali menghasilkan tagihan ganda ke pelanggan yang sama.
+    if (p.invoices[0]) redirect(`/tagihan/${p.invoices[0].id}?sudah_ada=1`);
+
+    asal = { nomor: p.quotation_number };
+
+    isiAwal = {
+      ...kosong,
+      customer_id: p.customer_id.toString(),
+      contact_person: p.contact_person ?? "",
+      contact_phone: p.contact_phone ?? "",
+      event_date: tanggalUntukInput(p.event_date),
+      event_days: p.event_days?.toString() ?? "",
+      event_type: p.event_type ?? "",
+      event_time: p.event_time ?? "",
+      guest_count: p.guest_count?.toString() ?? "",
+      fnb_planner: p.fnb_planner ?? "",
+      venue: p.venue ?? "",
+      notes: `Dikonversi dari Penawaran ${p.quotation_number}`,
+      service_charge_percent: p.service_charge_percent
+        ? Number(p.service_charge_percent).toString()
+        : "",
+      pb1_enabled: p.pb1_enabled,
+      pb1_percent: p.pb1_percent ? Number(p.pb1_percent).toString() : "10",
+      show_payment_terms: p.show_payment_terms,
+      payment_terms: pengaturan?.payment_terms_default ?? p.payment_terms ?? "",
+      items: p.quotation_items.map((b) => ({
+        kunci: `q${b.id}`,
+        product_id: b.product_id?.toString() ?? "",
+        item_name: b.item_name,
+        unit: b.unit ?? "",
+        qty: Number(b.qty).toLocaleString("id-ID"),
+        price: Number(b.price).toLocaleString("id-ID"),
+        is_compliment: b.is_compliment,
+        charge_service: b.charge_service,
+        children: b.other_quotation_items.map((a, i) => ({
+          kunci: `q${b.id}-${i}`,
+          item_name: a.item_name,
+        })),
+      })),
+    };
+  }
+
+  return (
+    <Halaman>
+      <KepalaHalaman
+        judul="Tagihan baru"
+        keterangan={
+          asal
+            ? `Seluruh rincian disalin dari penawaran ${asal.nomor}. Periksa tanggal jatuh temponya sebelum menyimpan.`
+            : "Nomor tagihan dibuat otomatis setelah disimpan."
+        }
+      />
+
+      <FormDokumen
+        aksi={simpanTagihan}
+        istilah={ISTILAH_TAGIHAN}
+        pelanggan={pelanggan}
+        produk={produk}
+        isiAwal={isiAwal}
+        medanTambahan={idPenawaran ? { dari_penawaran: idPenawaran } : undefined}
+      />
+    </Halaman>
+  );
+}
