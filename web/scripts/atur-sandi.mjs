@@ -1,8 +1,8 @@
 /**
  * Mengatur ulang kata sandi seorang pengguna.
  *
- *   node scripts/atur-sandi.mjs email@perusahaan.com
- *   node scripts/atur-sandi.mjs email@perusahaan.com "sandi-pilihan-sendiri"
+ *   node scripts/atur-sandi.mjs budi
+ *   node scripts/atur-sandi.mjs budi "sandi-pilihan-sendiri"
  *
  * Tanpa argumen kedua, sandinya dibuat acak dan ditampilkan satu kali.
  *
@@ -21,10 +21,10 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 
-const [email, sandiPilihan] = process.argv.slice(2);
+const [username, sandiPilihan] = process.argv.slice(2);
 
-if (!email) {
-  console.error("Cara pakai: node scripts/atur-sandi.mjs <email> [sandi]");
+if (!username) {
+  console.error("Cara pakai: node scripts/atur-sandi.mjs <nama-pengguna> [sandi]");
   process.exit(1);
 }
 
@@ -58,15 +58,15 @@ const prisma = new PrismaClient({
 });
 
 const pengguna = await prisma.users.findUnique({
-  where: { email: email.trim().toLowerCase() },
-  select: { id: true, name: true, email: true, role: true, is_active: true },
+  where: { username: username.trim().toLowerCase() },
+  select: { id: true, name: true, username: true, role: true, is_active: true },
 });
 
 if (!pengguna) {
-  console.error(`Tidak ada pengguna dengan email ${email}.`);
+  console.error(`Tidak ada pengguna dengan nama ${username}.`);
   console.error("\nYang terdaftar:");
-  for (const u of await prisma.users.findMany({ select: { email: true, role: true } })) {
-    console.error(`  ${u.email} (${u.role})`);
+  for (const u of await prisma.users.findMany({ select: { username: true, role: true } })) {
+    console.error(`  ${u.username} (${u.role})`);
   }
   await prisma.$disconnect();
   process.exit(1);
@@ -81,6 +81,9 @@ await prisma.users.update({
     // Sekalian diaktifkan: percuma mengganti sandi kalau akunnya masih
     // dinonaktifkan, karena penjaga akses menolaknya di setiap permintaan.
     is_active: true,
+    // Kunci akibat salah sandi berulang ikut dibuka.
+    gagal_masuk: 0,
+    terkunci_sampai: null,
     updated_at: new Date(),
   },
 });
@@ -93,11 +96,12 @@ const sesudah = await prisma.users.findUniqueOrThrow({
 });
 const cocok = await bcrypt.compare(sandi, `$2b$${sesudah.password.slice(4)}`);
 
-console.log(`\nKata sandi ${pengguna.email} berhasil diatur ulang.\n`);
-console.log(`  Nama   : ${pengguna.name}`);
-console.log(`  Peran  : ${pengguna.role}`);
-console.log(`  Aktif  : ${sesudah.is_active ? "ya" : "TIDAK"}`);
-console.log(`  Sandi  : ${sandi}`);
+console.log(`\nKata sandi ${pengguna.username} berhasil diatur ulang.\n`);
+console.log(`  Nama     : ${pengguna.name}`);
+console.log(`  Pengguna : ${pengguna.username}`);
+console.log(`  Peran    : ${pengguna.role}`);
+console.log(`  Aktif    : ${sesudah.is_active ? "ya" : "TIDAK"}`);
+console.log(`  Sandi    : ${sandi}`);
 console.log(`\n  Diverifikasi: ${cocok ? "sandi cocok saat dibaca ulang" : "GAGAL — sandi tidak cocok"}`);
 console.log("\nGanti lewat menu Pengguna setelah berhasil masuk.\n");
 

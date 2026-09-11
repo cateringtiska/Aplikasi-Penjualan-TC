@@ -22,14 +22,28 @@ import { type KeadaanPengguna, simpanPengguna } from "./actions";
 export type Pengguna = {
   id: string;
   name: string;
-  email: string;
+  username: string;
+  email: string | null;
   role: string;
 };
 
+/** Apa yang boleh dibuka tiap peran. Disalin dari lib/navigasi.ts. */
 const PERAN = [
-  { nilai: "admin", label: "Admin", jelas: "Semua halaman, termasuk pengaturan dan pengguna." },
-  { nilai: "sales", label: "Sales", jelas: "Penawaran, tagihan, pelanggan, produk, laporan." },
-  { nilai: "finance", label: "Finance", jelas: "Semua milik Sales, plus pembayaran dan margin." },
+  {
+    nilai: "admin",
+    label: "Admin",
+    jelas: "Semua halaman, plus Pengguna dan Pengaturan perusahaan.",
+  },
+  {
+    nilai: "sales",
+    label: "Sales",
+    jelas: "Penawaran, tagihan, pelanggan, produk, laporan penjualan dan piutang.",
+  },
+  {
+    nilai: "finance",
+    label: "Finance",
+    jelas: "Semua milik Sales, ditambah pembayaran dan laporan margin.",
+  },
 ];
 
 const keadaanAwal: KeadaanPengguna = {};
@@ -94,39 +108,65 @@ export function DialogPengguna({
             </p>
           ) : null}
 
-          <Bidang label="Nama" nama="name" galat={keadaan.galat?.name} wajib>
+          <Bidang label="Nama lengkap" nama="name" galat={keadaan.galat?.name} wajib>
             <Input
               id="name"
               name="name"
               defaultValue={pengguna?.name ?? ""}
               autoFocus
-              placeholder="Nama lengkap"
+              placeholder="Budi Santoso"
             />
           </Bidang>
 
-          <Bidang label="Email" nama="email" galat={keadaan.galat?.email} wajib>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Bidang
+              label="Nama pengguna"
+              nama="username"
+              galat={keadaan.galat?.username}
+              keterangan="Dipakai untuk masuk."
+              wajib
+            >
+              <Input
+                id="username"
+                name="username"
+                defaultValue={pengguna?.username ?? ""}
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="budi"
+                className="font-mono"
+              />
+            </Bidang>
+
+            <Bidang
+              label={sedangUbah ? "Sandi baru" : "Kata sandi atau PIN"}
+              nama="password"
+              galat={keadaan.galat?.password}
+              keterangan="Minimal 6 karakter. Boleh berupa PIN angka."
+              wajib={!sedangUbah}
+            >
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                placeholder={sedangUbah ? "Biarkan kosong untuk tetap" : "mis. 246810"}
+              />
+            </Bidang>
+          </div>
+
+          <Bidang
+            label="Email"
+            nama="email"
+            galat={keadaan.galat?.email}
+            keterangan="Boleh dikosongkan — tidak dipakai untuk masuk."
+          >
             <Input
               id="email"
               name="email"
               type="email"
               autoComplete="off"
               defaultValue={pengguna?.email ?? ""}
-              placeholder="nama@perusahaan.com"
-            />
-          </Bidang>
-
-          <Bidang
-            label={sedangUbah ? "Kata sandi baru" : "Kata sandi"}
-            nama="password"
-            galat={keadaan.galat?.password}
-            wajib={!sedangUbah}
-          >
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder={sedangUbah ? "Biarkan kosong untuk tetap" : "Minimal 8 karakter"}
+              placeholder="opsional"
             />
           </Bidang>
 
@@ -185,12 +225,14 @@ function Bidang({
   nama,
   galat,
   wajib,
+  keterangan,
   children,
 }: {
   label: string;
   nama: string;
   galat?: string;
   wajib?: boolean;
+  keterangan?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -200,7 +242,11 @@ function Bidang({
         {wajib ? <span className="text-muted-foreground"> *</span> : null}
       </Label>
       {children}
-      {galat ? <p className="text-xs text-destructive">{galat}</p> : null}
+      {galat ? (
+        <p className="text-xs text-destructive">{galat}</p>
+      ) : keterangan ? (
+        <p className="text-xs text-muted-foreground">{keterangan}</p>
+      ) : null}
     </div>
   );
 }

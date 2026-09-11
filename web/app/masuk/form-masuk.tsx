@@ -27,26 +27,27 @@ export function FormMasuk() {
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="username">Nama pengguna</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
+          id="username"
+          name="username"
           autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           autoFocus
-          placeholder="nama@perusahaan.com"
-          aria-invalid={Boolean(keadaan.galat?.email)}
-          aria-describedby={keadaan.galat?.email ? "galat-email" : undefined}
+          placeholder="mis. budi"
+          aria-invalid={Boolean(keadaan.galat?.username)}
+          aria-describedby={keadaan.galat?.username ? "galat-username" : undefined}
         />
-        {keadaan.galat?.email ? (
-          <p id="galat-email" className="text-xs text-destructive">
-            {keadaan.galat.email}
+        {keadaan.galat?.username ? (
+          <p id="galat-username" className="text-xs text-destructive">
+            {keadaan.galat.username}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="sandi">Kata sandi</Label>
+        <Label htmlFor="sandi">Kata sandi atau PIN</Label>
         <Input
           id="sandi"
           name="sandi"

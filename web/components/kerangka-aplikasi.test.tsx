@@ -29,6 +29,7 @@ vi.mock("next/navigation", () => ({
 const sesi = {
   id: "1",
   nama: "Reza Devyan",
+  username: "reza.devyan",
   email: "reza@contoh.com",
   peran: "admin" as const,
 };
@@ -68,7 +69,7 @@ describe("Kerangka aplikasi", () => {
     });
 
     // Identitas ikut tampil di dalam menu.
-    expect(screen.getAllByText("reza@contoh.com").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("reza.devyan").length).toBeGreaterThan(0);
   });
 
   it("memanggil aksi keluar ketika Keluar ditekan", async () => {

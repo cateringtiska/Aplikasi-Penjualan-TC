@@ -57,6 +57,22 @@ const bool = (v) => v === 1 || v === true || v === "1";
 const angka = (v) => (v === null || v === undefined ? null : Number(v));
 const teks = (v) => (v === null || v === undefined ? null : String(v));
 
+/**
+ * Nama pengguna diturunkan dari bagian depan email.
+ *
+ * Bentroknya ditangani setelahnya, saat baris disiapkan — bukan di sini,
+ * supaya fungsinya tetap murni dan bisa dipakai berulang.
+ */
+function usernameDari(email, nama) {
+  const dasar = (String(email ?? "").split("@")[0] || String(nama ?? "") || "pengguna")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 40);
+
+  return dasar.length >= 3 ? dasar : `pengguna${String(Date.now()).slice(-4)}`;
+}
+
 /** "2026-09-10" atau "2026-09-10 08:15:00" menjadi Date, tanpa pergeseran zona. */
 function tanggal(v) {
   if (!v) return null;
@@ -74,7 +90,11 @@ const RENCANA = [
     ubah: (r) => ({
       id: bigint(r.id),
       name: r.name,
-      email: String(r.email).toLowerCase(),
+      // Tabel MySQL lama belum punya kolom nama pengguna — aplikasi Laravel
+      // masuk lewat email. Nama penggunanya diturunkan dari bagian depan
+      // email, sama seperti yang dilakukan scripts/tambah-username.mjs.
+      username: usernameDari(r.email, r.name),
+      email: teks(r.email)?.toLowerCase() ?? null,
       email_verified_at: tanggal(r.email_verified_at),
       password: r.password, // hash $2y$ Laravel; lib/auth.ts sudah menanganinya
       remember_token: teks(r.remember_token),
@@ -358,6 +378,20 @@ await prisma.$executeRawUnsafe(`
 let dipindah = 0;
 for (const r of RENCANA) {
   const baris = (await baca(`SELECT * FROM ${r.tabel} ORDER BY id`)).map(r.ubah);
+
+  // Dua email berbeda bisa menghasilkan nama pengguna yang sama — misalnya
+  // budi@toko.com dan budi@rumah.com. Kolomnya unik, jadi yang kedua diberi
+  // angka di belakang alih-alih menggagalkan seluruh pemindahan.
+  if (r.tabel === "users") {
+    const dipakai = new Set();
+    for (const b of baris) {
+      let nama = b.username;
+      let n = 2;
+      while (dipakai.has(nama)) nama = `${b.username}${n++}`;
+      dipakai.add(nama);
+      b.username = nama;
+    }
+  }
 
   if (r.bertingkat) {
     // Baris induk lebih dulu, baru anaknya: parent_id merujuk ke tabel yang

@@ -6,17 +6,13 @@ import { z } from "zod";
 import { masuk } from "@/lib/auth";
 
 const skema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email belum diisi.")
-    .email("Format email belum benar."),
+  username: z.string().trim().min(1, "Nama pengguna belum diisi."),
   sandi: z.string().min(1, "Kata sandi belum diisi."),
 });
 
 export type KeadaanForm = {
   pesan?: string;
-  galat?: { email?: string; sandi?: string };
+  galat?: { username?: string; sandi?: string };
 };
 
 export async function aksiMasuk(
@@ -24,7 +20,7 @@ export async function aksiMasuk(
   data: FormData,
 ): Promise<KeadaanForm> {
   const hasil = skema.safeParse({
-    email: data.get("email"),
+    username: data.get("username"),
     sandi: data.get("sandi"),
   });
 
@@ -32,13 +28,13 @@ export async function aksiMasuk(
     const bidang = z.flattenError(hasil.error).fieldErrors;
     return {
       galat: {
-        email: bidang.email?.[0],
+        username: bidang.username?.[0],
         sandi: bidang.sandi?.[0],
       },
     };
   }
 
-  const percobaan = await masuk(hasil.data.email, hasil.data.sandi);
+  const percobaan = await masuk(hasil.data.username, hasil.data.sandi);
 
   if (!percobaan.berhasil) {
     return { pesan: percobaan.pesan };

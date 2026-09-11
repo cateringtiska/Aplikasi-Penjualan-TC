@@ -157,7 +157,7 @@ function KartuPengguna({ sesi, onKeluar }: { sesi: Sesi; onKeluar: () => Promise
               kelompok item. */}
           <div className="px-2 py-1.5">
             <span className="block truncate text-sm font-medium">{sesi.nama}</span>
-            <span className="block truncate text-xs text-muted-foreground">{sesi.email}</span>
+            <span className="nomor-dokumen block truncate text-muted-foreground">{sesi.username}</span>
           </div>
           <DropdownMenuSeparator />
           {/* Server action WAJIB dipanggil di dalam transition. Dipanggil
