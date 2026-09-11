@@ -12,7 +12,7 @@ export default defineConfig({
     // lib/nomor.ts memasang penjaga "server-only" supaya tidak pernah
     // terbawa ke browser. Di luar Next.js penjaga itu selalu melempar galat,
     // jadi di sini diganti modul kosong.
-    alias: { "server-only": new URL("scripts/kosong.ts", import.meta.url).pathname },
+    alias: { "server-only": new URL("vitest.server-only.ts", import.meta.url).pathname },
   },
   test: {
     include: ["scripts/alur.test.ts", "scripts/nomor-dalam-transaksi.test.ts"],

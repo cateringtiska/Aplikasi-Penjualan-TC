@@ -29,7 +29,11 @@ export default defineConfig({
     //
     // Tes alur ujung ke ujung ada di scripts/ dan dijalankan terpisah lewat
     // `npm run uji:alur`, karena ia benar-benar menulis ke database.
-    include: ["lib/**/*.test.ts", "components/**/*.test.tsx"],
+    include: [
+      "lib/**/*.test.ts",
+      "components/**/*.test.tsx",
+      "app/**/*.test.ts",
+    ],
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],

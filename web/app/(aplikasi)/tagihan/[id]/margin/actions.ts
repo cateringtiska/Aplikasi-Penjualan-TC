@@ -134,6 +134,23 @@ export async function hapusBiaya(idBiaya: string, idTagihan: string): Promise<vo
 export async function finalisasiMargin(idTagihan: string): Promise<void> {
   const sesi = await pastikanPeran("finance");
 
+  // Tagihan tanpa satu pun catatan biaya selalu terbaca 100% untung. Mengunci
+  // angka itu berarti mengunci angka yang sudah pasti keliru — dan justru
+  // setelah terkunci, biayanya tidak bisa lagi dimasukkan, karena simpanBiaya
+  // menolak semua perubahan pada margin yang sudah final.
+  //
+  // Tombolnya pun duduk tepat di atas formulir biaya, jadi mudah tertekan
+  // ketika yang dimaksud sebenarnya "Tambah biaya".
+  const jumlahBiaya = await prisma.invoice_costs.count({
+    where: { invoice_id: BigInt(idTagihan) },
+  });
+
+  if (jumlahBiaya === 0) {
+    throw new Error(
+      "Belum ada biaya yang dicatat, jadi margin ini masih terbaca 100% untung. Catat biayanya dulu lewat \"Tambah biaya\", baru difinalisasi.",
+    );
+  }
+
   await hitungUlangMargin(idTagihan);
 
   await prisma.invoice_margins.update({
