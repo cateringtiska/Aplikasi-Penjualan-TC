@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Penjualan TC",
   },
   description:
-    "Penawaran, tagihan, pembayaran, dan margin untuk katering Tiska.",
+    "Quotation, tagihan, pembayaran, dan margin untuk katering Tiska.",
   robots: { index: false, follow: false },
 };
 

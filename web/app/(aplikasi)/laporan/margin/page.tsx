@@ -132,11 +132,11 @@ export default async function HalamanLaporanMargin({
     <Halaman>
       <KepalaHalaman
         judul="Laporan margin"
-        keterangan="Untung-rugi per acara. Angka nyata dari tagihan dan angka perkiraan dari penawaran dipisah, tidak pernah dijumlahkan."
+        keterangan="Margin per acara. Angka nyata dari tagihan dan angka perkiraan dari quotation dipisah, tidak pernah dijumlahkan."
       />
 
       <div className="pb-6">
-        <Pencarian placeholder="Cari nomor dokumen atau pelanggan…" />
+        <Pencarian placeholder="Cari nomor dokumen atau customer…" />
       </div>
 
       <h2 className="text-sm font-semibold tracking-[-0.01em]">Nyata · dari tagihan</h2>
@@ -148,7 +148,7 @@ export default async function HalamanLaporanMargin({
         <Angka label="Penjualan bersih" nilai={rupiah(totalPenjualan)} />
         <Angka label="Total biaya" nilai={rupiah(totalBiaya)} />
         <Angka
-          label={totalUntung.isNegative() ? "Rugi" : "Untung"}
+          label={totalUntung.isNegative() ? "Rugi" : "Margin"}
           nilai={rupiah(totalUntung.abs())}
           menonjol
           rugi={totalUntung.isNegative()}
@@ -163,7 +163,7 @@ export default async function HalamanLaporanMargin({
       {belumDihitung > 0 ? (
         <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
           {belumDihitung} tagihan belum punya catatan biaya sama sekali, jadi seluruh nilainya
-          terhitung sebagai untung. Angka di atas baru bisa dipercaya setelah biayanya dicatat.
+          terhitung sebagai margin. Angka di atas baru bisa dipercaya setelah biayanya dicatat.
         </p>
       ) : null}
 
@@ -178,11 +178,11 @@ export default async function HalamanLaporanMargin({
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th className="w-36">Tagihan</Th>
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="hidden w-36 text-right lg:table-cell">Penjualan</Th>
                 <Th className="w-36 text-right">Biaya</Th>
-                <Th className="w-36 text-right">Untung / rugi</Th>
-                <Th className="w-24 text-right">Margin</Th>
+                <Th className="w-36 text-right">Margin</Th>
+                <Th className="w-24 text-right">Margin %</Th>
               </tr>
             </thead>
             <tbody>
@@ -256,10 +256,10 @@ export default async function HalamanLaporanMargin({
       {perkiraan.length > 0 ? (
         <section className="pt-8">
           <h2 className="pb-1 text-sm font-semibold tracking-[-0.01em]">
-            Perkiraan · dari penawaran
+            Perkiraan · dari quotation
           </h2>
           <p className="pb-2.5 text-xs text-muted-foreground">
-            Penawaran yang belum jadi tagihan, memakai perkiraan biaya yang dicatat di
+            Quotation yang belum jadi tagihan, memakai perkiraan biaya yang dicatat di
             penawarannya. Dipakai menimbang harga sebelum dikirim ke klien.
           </p>
 
@@ -267,7 +267,7 @@ export default async function HalamanLaporanMargin({
             <Angka label="Penjualan bersih" nilai={rupiah(perkiraanPenjualan)} />
             <Angka label="Perkiraan biaya" nilai={rupiah(perkiraanBiaya)} />
             <Angka
-              label={perkiraanUntung.isNegative() ? "Perkiraan rugi" : "Perkiraan untung"}
+              label={perkiraanUntung.isNegative() ? "Perkiraan rugi" : "Perkiraan margin"}
               nilai={rupiah(perkiraanUntung.abs())}
               menonjol
               rugi={perkiraanUntung.isNegative()}
@@ -282,7 +282,7 @@ export default async function HalamanLaporanMargin({
           {perkiraanBelumDihitung > 0 ? (
             <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
               {perkiraanBelumDihitung} penawaran belum punya perkiraan biaya, jadi seluruh
-              nilainya terhitung sebagai untung.
+              nilainya terhitung sebagai margin.
             </p>
           ) : null}
 
@@ -290,12 +290,12 @@ export default async function HalamanLaporanMargin({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <Th className="w-36">Penawaran</Th>
-                  <Th>Pelanggan</Th>
+                  <Th className="w-36">Quotation</Th>
+                  <Th>Customer</Th>
                   <Th className="hidden w-36 text-right lg:table-cell">Penjualan</Th>
                   <Th className="w-36 text-right">Perkiraan biaya</Th>
-                  <Th className="w-36 text-right">Perkiraan untung</Th>
-                  <Th className="w-24 text-right">Margin</Th>
+                  <Th className="w-36 text-right">Perkiraan margin</Th>
+                  <Th className="w-24 text-right">Margin %</Th>
                 </tr>
               </thead>
               <tbody>

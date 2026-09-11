@@ -72,7 +72,7 @@ export async function simpanPelanggan(
   revalidatePath("/pelanggan");
   return {
     sukses: true,
-    pesan: id ? "Data pelanggan diperbarui." : "Pelanggan baru ditambahkan.",
+    pesan: id ? "Data customer diperbarui." : "Customer baru ditambahkan.",
   };
 }
 

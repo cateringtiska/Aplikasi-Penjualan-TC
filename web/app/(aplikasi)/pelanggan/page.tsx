@@ -14,7 +14,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { AksiBaris } from "./aksi-baris";
 import { DialogPelanggan } from "./dialog-pelanggan";
 
-export const metadata: Metadata = { title: "Pelanggan" };
+export const metadata: Metadata = { title: "Customer" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanPelanggan({
@@ -58,8 +58,8 @@ export default async function HalamanPelanggan({
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Pelanggan"
-        keterangan="Data pelanggan yang dipakai di penawaran dan tagihan."
+        judul="Customer"
+        keterangan="Data customer yang dipakai di quotation dan tagihan."
         aksi={<DialogPelanggan />}
       />
 
@@ -70,11 +70,11 @@ export default async function HalamanPelanggan({
       <BingkaiTabel>
         {daftar.length === 0 ? (
           <KeadaanKosong
-            judul={kunci ? "Tidak ada yang cocok" : "Belum ada pelanggan"}
+            judul={kunci ? "Tidak ada yang cocok" : "Belum ada customer"}
             keterangan={
               kunci
                 ? `Tidak ditemukan pelanggan untuk "${kunci}".`
-                : "Tambahkan pelanggan pertama supaya bisa dipilih saat membuat penawaran."
+                : "Tambahkan customer pertama supaya bisa dipilih saat membuat quotation."
             }
             aksi={kunci ? undefined : <DialogPelanggan />}
           />

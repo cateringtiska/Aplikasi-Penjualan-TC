@@ -67,7 +67,7 @@ export function DialogPelanggan({
           render={
             <Button size="sm">
               <Plus className="size-4" />
-              Tambah pelanggan
+              Tambah customer
             </Button>
           }
         />
@@ -75,11 +75,11 @@ export function DialogPelanggan({
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{sedangUbah ? "Ubah pelanggan" : "Pelanggan baru"}</DialogTitle>
+          <DialogTitle>{sedangUbah ? "Ubah customer" : "Customer baru"}</DialogTitle>
           <DialogDescription>
             {sedangUbah
               ? `Kode ${pelanggan!.customer_code} tidak bisa diubah.`
-              : "Kode pelanggan dibuat otomatis setelah disimpan."}
+              : "Kode customer dibuat otomatis setelah disimpan."}
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export function DialogPelanggan({
             </p>
           ) : null}
 
-          <Bidang label="Nama pelanggan" nama="name" galat={keadaan.galat?.name} wajib>
+          <Bidang label="Nama customer" nama="name" galat={keadaan.galat?.name} wajib>
             <Input
               id="name"
               name="name"
@@ -154,7 +154,7 @@ export function DialogPelanggan({
               name="address"
               rows={3}
               defaultValue={pelanggan?.address ?? ""}
-              placeholder="Alamat lengkap untuk dicetak di penawaran dan tagihan"
+              placeholder="Alamat lengkap untuk dicetak di quotation dan tagihan"
             />
           </Bidang>
 

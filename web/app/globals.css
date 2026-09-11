@@ -191,6 +191,17 @@
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+
+    /* Seluruh ukuran di Tailwind memakai rem, jadi satu angka ini menaikkan
+       teks, jarak, dan lebar halaman sekaligus — tetap seimbang, bukan huruf
+       besar yang berdesakan di kotak lama.
+
+       Aplikasi ini dipakai berjam-jam untuk membaca angka uang; 16px bawaan
+       peramban terlalu kecil untuk itu, dan layarnya justru banyak ruang
+       kosong. Dokumen CETAK dikembalikan ke 16px di bagian @media print,
+       supaya penawaran dan tagihan yang sudah dicocokkan dengan dokumen
+       Laravel tidak berubah sedikit pun. */
+    font-size: 18px;
   }
 
   body {
@@ -252,6 +263,12 @@
   html,
   body {
     background: #fff !important;
+  }
+
+  /* Dokumen cetak memakai ukuran aslinya. Yang dibesarkan hanya tampilan di
+     layar; surat yang sampai ke klien harus tetap sama persis. */
+  html {
+    font-size: 16px;
   }
 
   * {

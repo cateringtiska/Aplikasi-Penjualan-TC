@@ -111,7 +111,7 @@ export async function masuk(username: string, sandi: string): Promise<HasilMasuk
 
   // Pesan yang sama untuk nama pengguna tidak ada maupun sandi salah, supaya
   // halaman masuk tidak bisa dipakai menebak-nebak siapa saja yang terdaftar.
-  const pesanUmum = "Nama pengguna atau kata sandi salah.";
+  const pesanUmum = "Nama user atau kata sandi salah.";
 
   if (!pengguna) {
     // Tetap jalankan satu perbandingan terhadap hash yang mustahil cocok,

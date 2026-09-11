@@ -22,7 +22,7 @@ import { rupiah } from "@/lib/uang";
 import { tandaiKadaluarsa } from "./actions";
 import { AksiBaris } from "./aksi-baris";
 
-export const metadata: Metadata = { title: "Penawaran" };
+export const metadata: Metadata = { title: "Quotation" };
 export const dynamic = "force-dynamic";
 
 const STATUS = [
@@ -77,35 +77,35 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Penawaran"
-        keterangan="Penawaran harga yang dikirim ke pelanggan sebelum menjadi tagihan."
+        judul="Quotation"
+        keterangan="Quotation harga yang dikirim ke customer sebelum menjadi tagihan."
         aksi={
           <Button size="sm" render={<Link href="/penawaran/baru" />}>
             <Plus className="size-4" />
-            Buat penawaran
+            Buat quotation
           </Button>
         }
       />
 
       <div className="flex flex-col gap-3 pb-4">
-        <Pencarian placeholder="Cari nomor, pelanggan, atau jenis acara…" />
+        <Pencarian placeholder="Cari nomor, customer, atau jenis acara…" />
         <SaringStatus pilihan={STATUS} />
       </div>
 
       <BingkaiTabel>
         {daftar.length === 0 ? (
           <KeadaanKosong
-            judul={kunci || saring ? "Tidak ada yang cocok" : "Belum ada penawaran"}
+            judul={kunci || saring ? "Tidak ada yang cocok" : "Belum ada quotation"}
             keterangan={
               kunci || saring
                 ? "Coba ubah kata kunci atau penyaring statusnya."
-                : "Buat penawaran pertama untuk mulai mencatat penjualan."
+                : "Buat quotation pertama untuk mulai mencatat penjualan."
             }
             aksi={
               kunci || saring ? undefined : (
                 <Button size="sm" render={<Link href="/penawaran/baru" />}>
                   <Plus className="size-4" />
-                  Buat penawaran
+                  Buat quotation
                 </Button>
               )
             }
@@ -115,7 +115,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th className="w-36">Nomor</Th>
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="hidden w-32 md:table-cell">Tanggal</Th>
                 <Th className="hidden w-32 lg:table-cell">Berlaku sampai</Th>
                 <Th className="w-36 text-right">Nilai</Th>

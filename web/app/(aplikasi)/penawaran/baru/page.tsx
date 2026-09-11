@@ -8,7 +8,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { hariIni, ISTILAH_PENAWARAN, pilihanForm } from "../data";
 import { simpanPenawaran } from "../simpan";
 
-export const metadata: Metadata = { title: "Penawaran baru" };
+export const metadata: Metadata = { title: "Quotation baru" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanPenawaranBaru() {
@@ -25,8 +25,8 @@ export default async function HalamanPenawaranBaru() {
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Penawaran baru"
-        keterangan="Nomor penawaran dibuat otomatis setelah disimpan."
+        judul="Quotation baru"
+        keterangan="Nomor quotation dibuat otomatis setelah disimpan."
       />
 
       <FormDokumen

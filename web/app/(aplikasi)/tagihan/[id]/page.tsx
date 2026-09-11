@@ -239,7 +239,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
         </section>
 
         <aside className="flex flex-col gap-6">
-          <Kotak judul="Pelanggan">
+          <Kotak judul="Customer">
             <p className="text-sm font-medium">{t.customers.name}</p>
             <p className="nomor-dokumen text-muted-foreground">{t.customers.customer_code}</p>
             {t.customers.address ? (

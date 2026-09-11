@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 import { romawi, rupiah } from "@/lib/uang";
 
-export const metadata: Metadata = { title: "Detail penawaran" };
+export const metadata: Metadata = { title: "Detail quotation" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanDetailPenawaran({
@@ -65,7 +65,7 @@ export default async function HalamanDetailPenawaran({
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-3.5" />
-          Semua penawaran
+          Semua quotation
         </Link>
       </div>
 
@@ -198,7 +198,7 @@ export default async function HalamanDetailPenawaran({
                 />
               ) : null}
               <div className="mt-1.5 flex items-baseline justify-between border-t pt-2.5">
-                <dt className="font-medium">Total penawaran</dt>
+                <dt className="font-medium">Total quotation</dt>
                 <dd className="angka text-base font-semibold tabular-nums">
                   {rupiah(p.grand_total)}
                 </dd>
@@ -222,7 +222,7 @@ export default async function HalamanDetailPenawaran({
         </section>
 
         <aside className="flex flex-col gap-6">
-          <Kotak judul="Pelanggan">
+          <Kotak judul="Customer">
             <p className="text-sm font-medium">{p.customers.name}</p>
             <p className="nomor-dokumen text-muted-foreground">{p.customers.customer_code}</p>
             {p.customers.address ? (

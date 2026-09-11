@@ -24,7 +24,7 @@ export default async function HalamanMasuk() {
           Masuk ke Penjualan TC
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Penawaran, tagihan, dan piutang katering Tiska.
+          Quotation, tagihan, dan piutang katering Tiska.
         </p>
 
         <div className="mt-8">
@@ -32,7 +32,7 @@ export default async function HalamanMasuk() {
         </div>
 
         <p className="mt-8 border-t pt-5 text-xs leading-relaxed text-muted-foreground">
-          Akun hanya dibuat oleh admin lewat menu Pengguna. Kalau Anda lupa
+          Akun hanya dibuat oleh admin lewat menu User. Kalau Anda lupa
           kata sandi atau belum punya akses, hubungi admin.
         </p>
       </div>

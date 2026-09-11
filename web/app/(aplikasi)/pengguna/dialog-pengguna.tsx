@@ -32,12 +32,12 @@ const PERAN = [
   {
     nilai: "admin",
     label: "Admin",
-    jelas: "Semua halaman, plus Pengguna dan Pengaturan perusahaan.",
+    jelas: "Semua halaman, plus User dan Pengaturan perusahaan.",
   },
   {
     nilai: "sales",
     label: "Sales",
-    jelas: "Penawaran, tagihan, pelanggan, produk, laporan penjualan dan piutang.",
+    jelas: "Quotation, tagihan, customer, produk, laporan penjualan dan piutang.",
   },
   {
     nilai: "finance",
@@ -80,7 +80,7 @@ export function DialogPengguna({
           render={
             <Button size="sm">
               <Plus className="size-4" />
-              Tambah pengguna
+              Tambah user
             </Button>
           }
         />
@@ -88,7 +88,7 @@ export function DialogPengguna({
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{sedangUbah ? "Ubah pengguna" : "Pengguna baru"}</DialogTitle>
+          <DialogTitle>{sedangUbah ? "Ubah user" : "User baru"}</DialogTitle>
           <DialogDescription>
             {sedangUbah
               ? "Kosongkan kata sandi kalau tidak ingin menggantinya."
@@ -120,7 +120,7 @@ export function DialogPengguna({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Bidang
-              label="Nama pengguna"
+              label="Nama user"
               nama="username"
               galat={keadaan.galat?.username}
               keterangan="Dipakai untuk masuk."

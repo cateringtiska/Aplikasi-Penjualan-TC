@@ -121,7 +121,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
     <Halaman>
       <KepalaHalaman
         judul="Kartu piutang"
-        keterangan="Sisa tagihan per pelanggan, dikelompokkan menurut umur keterlambatannya."
+        keterangan="Sisa tagihan per customer, dikelompokkan menurut umur keterlambatannya."
       />
 
       <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
@@ -140,7 +140,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
       </section>
 
       <div className="pb-4">
-        <Pencarian placeholder="Cari nama pelanggan…" />
+        <Pencarian placeholder="Cari nama customer…" />
       </div>
 
       <BingkaiTabel>
@@ -157,7 +157,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="hidden w-28 sm:table-cell">Tagihan</Th>
                 <Th className="hidden w-40 md:table-cell">Jatuh tempo tertua</Th>
                 <Th className="w-32 text-right">Terlambat</Th>

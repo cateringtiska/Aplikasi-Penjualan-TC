@@ -76,7 +76,7 @@ export default async function HalamanDetailPembayaran({
 
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
         <Angka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol />
-        <Angka label="Dari pelanggan" nilai={p.customers.name} teks />
+        <Angka label="Dari customer" nilai={p.customers.name} teks />
         <Angka
           label="Menutup"
           nilai={`${p.payment_details.length} tagihan`}

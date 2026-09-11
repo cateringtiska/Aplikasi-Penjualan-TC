@@ -39,7 +39,7 @@ export default async function HalamanLaporanPenjualan({
     <Halaman>
       <KepalaHalaman
         judul="Laporan penjualan"
-        keterangan="Rekap penawaran dan tagihan pada rentang tanggal yang dipilih."
+        keterangan="Rekap quotation dan tagihan pada rentang tanggal yang dipilih."
         aksi={
           <>
             <Button
@@ -87,7 +87,7 @@ export default async function HalamanLaporanPenjualan({
           peringatan={ringkasan.jumlahJatuhTempo > 0}
         />
         <Angka
-          label="Penawaran"
+          label="Quotation"
           nilai={rupiah(ringkasan.nilaiPenawaran)}
           keterangan={`${ringkasan.jumlahPenawaran} dibuat · ${ringkasan.penawaranDisetujui} disetujui`}
         />
@@ -97,7 +97,7 @@ export default async function HalamanLaporanPenjualan({
         {baris.length === 0 ? (
           <KeadaanKosong
             judul="Tidak ada tagihan pada rentang ini"
-            keterangan="Ubah rentang tanggal atau pilih pelanggan yang lain."
+            keterangan="Ubah rentang tanggal atau pilih customer yang lain."
           />
         ) : (
           <table className="w-full text-sm">
@@ -105,7 +105,7 @@ export default async function HalamanLaporanPenjualan({
               <tr className="border-b bg-muted/40">
                 <Th className="w-36">Nomor</Th>
                 <Th className="hidden w-28 md:table-cell">Tanggal</Th>
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="w-36 text-right">Nilai</Th>
                 <Th className="hidden w-36 text-right lg:table-cell">Terbayar</Th>
                 <Th className="w-36 text-right">Sisa</Th>

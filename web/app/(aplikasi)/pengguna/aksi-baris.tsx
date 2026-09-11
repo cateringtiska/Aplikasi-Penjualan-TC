@@ -129,7 +129,7 @@ export function AksiBaris({
               <p className="text-muted-foreground">Menghitung dokumennya…</p>
             ) : jumlahDokumen === 0 ? (
               <p className="text-muted-foreground">
-                Pengguna ini belum pernah membuat dokumen apa pun.
+                User ini belum pernah membuat dokumen apa pun.
               </p>
             ) : (
               <p className="text-muted-foreground">

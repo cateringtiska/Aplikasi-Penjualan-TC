@@ -6,7 +6,7 @@ import { z } from "zod";
 import { masuk } from "@/lib/auth";
 
 const skema = z.object({
-  username: z.string().trim().min(1, "Nama pengguna belum diisi."),
+  username: z.string().trim().min(1, "Nama user belum diisi."),
   sandi: z.string().min(1, "Kata sandi belum diisi."),
 });
 

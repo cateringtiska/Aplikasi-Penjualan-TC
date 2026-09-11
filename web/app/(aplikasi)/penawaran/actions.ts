@@ -31,7 +31,7 @@ export async function ubahStatusPenawaran(id: string, tujuan: string): Promise<v
     where: { id: BigInt(id) },
     select: { status: true },
   });
-  if (!penawaran) throw new Error("Penawaran tidak ditemukan.");
+  if (!penawaran) throw new Error("Quotation tidak ditemukan.");
 
   if (!BOLEH_DIUBAH[penawaran.status]?.includes(tujuan)) {
     throw new Error("Perubahan status itu tidak diizinkan dari keadaan sekarang.");
@@ -56,10 +56,10 @@ export async function hapusPenawaran(id: string): Promise<void> {
   if (!penawaran) return;
 
   if (penawaran.status !== "draft") {
-    throw new Error("Hanya penawaran berstatus draft yang bisa dihapus.");
+    throw new Error("Hanya quotation berstatus draft yang bisa dihapus.");
   }
   if (penawaran.invoices.length > 0) {
-    throw new Error("Penawaran ini sudah dijadikan tagihan, jadi tidak bisa dihapus.");
+    throw new Error("Quotation ini sudah dijadikan tagihan, jadi tidak bisa dihapus.");
   }
 
   // Baris item ikut terhapus otomatis lewat aturan cascade di database.

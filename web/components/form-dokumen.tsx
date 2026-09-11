@@ -215,9 +215,9 @@ export function FormDokumen({
       ) : null}
 
       {/* ---------- Pelanggan & tanggal ---------- */}
-      <Bagian judul="Pelanggan" keterangan={`Kepada siapa ${istilah.kata} ini ditujukan.`}>
+      <Bagian judul="Customer" keterangan={`Kepada siapa ${istilah.kata} ini ditujukan.`}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Bidang label="Pelanggan" nama="customer_id" galat={keadaan.galat?.customer_id} wajib>
+          <Bidang label="Customer" nama="customer_id" galat={keadaan.galat?.customer_id} wajib>
             <select
               id="customer_id"
               value={f.customer_id}
@@ -232,7 +232,7 @@ export function FormDokumen({
               }}
               className="h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
-              <option value="">— Pilih pelanggan —</option>
+              <option value="">— Pilih customer —</option>
               {pelanggan.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nama} ({p.kode})
@@ -472,7 +472,7 @@ export function FormDokumen({
             rows={3}
             value={f.notes}
             onChange={(e) => ubah("notes", e.target.value)}
-            placeholder="Catatan tambahan untuk pelanggan"
+            placeholder="Catatan tambahan untuk customer"
           />
         </Bidang>
       </Bagian>

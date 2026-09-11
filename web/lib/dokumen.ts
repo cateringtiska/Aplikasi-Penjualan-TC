@@ -38,7 +38,7 @@ const barisItem = z.object({
 
 export const skemaDokumen = z.object({
   id: z.string().trim().optional().nullable(),
-  customer_id: z.string().trim().min(1, "Pelanggan belum dipilih."),
+  customer_id: z.string().trim().min(1, "Customer belum dipilih."),
   contact_person: z.string().trim().max(255).nullable().optional(),
   contact_phone: z.string().trim().max(255).nullable().optional(),
   tanggal: z.string().min(1, "Tanggal belum diisi."),

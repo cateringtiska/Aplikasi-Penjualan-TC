@@ -74,7 +74,7 @@ describe("Dasar service charge", () => {
 });
 
 describe("Total dokumen", () => {
-  it("menghitung satu penawaran pernikahan lengkap", () => {
+  it("menghitung satu quotation pernikahan lengkap", () => {
     const hasil = hitungTotalDokumen({
       items: acaraPernikahan,
       service_charge_percent: 5,

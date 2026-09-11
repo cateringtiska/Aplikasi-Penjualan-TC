@@ -23,12 +23,12 @@ export type KelompokMenu = {
 export const MENU: KelompokMenu[] = [
   {
     judul: "Ringkasan",
-    butir: [{ label: "Dasbor", href: "/dasbor", peran: ["sales", "finance"] }],
+    butir: [{ label: "Dashboard", href: "/dasbor", peran: ["sales", "finance"] }],
   },
   {
     judul: "Transaksi",
     butir: [
-      { label: "Penawaran", href: "/penawaran", peran: ["sales", "finance"] },
+      { label: "Quotation", href: "/penawaran", peran: ["sales", "finance"] },
       { label: "Tagihan", href: "/tagihan", peran: ["sales", "finance"] },
       { label: "Pembayaran", href: "/pembayaran", peran: ["finance"] },
     ],
@@ -44,14 +44,14 @@ export const MENU: KelompokMenu[] = [
   {
     judul: "Data Induk",
     butir: [
-      { label: "Pelanggan", href: "/pelanggan", peran: ["sales", "finance"] },
+      { label: "Customer", href: "/pelanggan", peran: ["sales", "finance"] },
       { label: "Produk", href: "/produk", peran: ["sales", "finance"] },
     ],
   },
   {
     judul: "Pengaturan",
     butir: [
-      { label: "Pengguna", href: "/pengguna", peran: [] },
+      { label: "User", href: "/pengguna", peran: [] },
       { label: "Perusahaan", href: "/perusahaan", peran: [] },
     ],
   },

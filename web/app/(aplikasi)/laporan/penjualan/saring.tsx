@@ -32,7 +32,7 @@ export function SaringLaporan({
     mulai(() => router.replace(`${jalur}?${baru.toString()}`, { scroll: false }));
   }
 
-  const adaSaring = ["dari", "sampai", "pelanggan"].some((k) => params.get(k));
+  const adaSaring = ["dari", "sampai", "customer"].some((k) => params.get(k));
 
   return (
     <div className="flex flex-wrap items-end gap-3">
@@ -63,16 +63,16 @@ export function SaringLaporan({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="pelanggan" className="text-xs">
-          Pelanggan
+        <Label htmlFor="customer" className="text-xs">
+          Customer
         </Label>
         <select
-          id="pelanggan"
-          value={params.get("pelanggan") ?? ""}
-          onChange={(e) => ubah("pelanggan", e.target.value)}
+          id="customer"
+          value={params.get("customer") ?? ""}
+          onChange={(e) => ubah("customer", e.target.value)}
           className="h-9 w-56 rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
         >
-          <option value="">Semua pelanggan</option>
+          <option value="">Semua customer</option>
           {pelanggan.map((p) => (
             <option key={p.id} value={p.id}>
               {p.nama}

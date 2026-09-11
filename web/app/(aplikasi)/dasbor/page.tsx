@@ -7,7 +7,7 @@ import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
 import { d, rupiah } from "@/lib/uang";
 
-export const metadata: Metadata = { title: "Dasbor" };
+export const metadata: Metadata = { title: "Dashboard" };
 
 // Angka piutang harus selalu menunjukkan keadaan sekarang, bukan hasil
 // simpanan beberapa menit lalu.
@@ -70,7 +70,7 @@ export default async function HalamanDasbor() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
       <header>
-        <h1 className="text-xl font-semibold tracking-[-0.02em]">Dasbor</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.02em]">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {format(sekarang, "EEEE, d MMMM yyyy", { locale: localeId })}
         </p>
@@ -91,7 +91,7 @@ export default async function HalamanDasbor() {
           keterangan={`${bulanIni._count} tagihan terbit`}
         />
         <Angka
-          label="Penawaran menunggu"
+          label="Quotation menunggu"
           nilai={String(penawaranMenunggu)}
           keterangan="draft atau terkirim"
         />
@@ -104,9 +104,9 @@ export default async function HalamanDasbor() {
       </section>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <Panel judul="Penawaran terbaru" href="/penawaran">
+        <Panel judul="Quotation terbaru" href="/penawaran">
           {penawaranTerbaru.length === 0 ? (
-            <Kosong pesan="Belum ada penawaran." />
+            <Kosong pesan="Belum ada quotation." />
           ) : (
             <ul className="divide-y">
               {penawaranTerbaru.map((p) => (

@@ -90,7 +90,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
       />
 
       <div className="flex flex-col gap-3 pb-4">
-        <Pencarian placeholder="Cari nomor, pelanggan, atau jenis acara…" />
+        <Pencarian placeholder="Cari nomor, customer, atau jenis acara…" />
         <SaringStatus pilihan={STATUS} />
       </div>
 
@@ -101,7 +101,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
             keterangan={
               kunci || saring
                 ? "Coba ubah kata kunci atau penyaring statusnya."
-                : "Tagihan biasanya dibuat dari penawaran yang sudah disetujui."
+                : "Tagihan biasanya dibuat dari quotation yang sudah disetujui."
             }
             aksi={
               kunci || saring ? undefined : (
@@ -117,7 +117,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th className="w-36">Nomor</Th>
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="hidden w-32 lg:table-cell">Jatuh tempo</Th>
                 <Th className="w-36 text-right">Nilai</Th>
                 <Th className="w-36 text-right">Sisa</Th>

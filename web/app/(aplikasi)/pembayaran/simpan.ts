@@ -26,7 +26,7 @@ import { d, hitungStatusInvoice, type StatusInvoice, uraikanRupiah } from "@/lib
    ========================================================================== */
 
 const skema = z.object({
-  customer_id: z.string().trim().min(1, "Pelanggan belum dipilih."),
+  customer_id: z.string().trim().min(1, "Customer belum dipilih."),
   payment_date: z.string().min(1, "Tanggal belum diisi."),
   payment_method: z.enum(["cash", "transfer", "giro", "lainnya"]),
   bank_cash: z.string().trim().max(255).nullable().optional(),

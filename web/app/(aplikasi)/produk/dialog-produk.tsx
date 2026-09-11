@@ -76,7 +76,7 @@ export function DialogProduk({
           <DialogDescription>
             {sedangUbah
               ? `Kode ${produk!.product_code} tidak bisa diubah.`
-              : "Harga di sini hanya harga standar — masih bisa diubah per penawaran."}
+              : "Harga di sini hanya harga standar — masih bisa diubah per quotation."}
           </DialogDescription>
         </DialogHeader>
 

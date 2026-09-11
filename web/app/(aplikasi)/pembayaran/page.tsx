@@ -64,7 +64,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
     <Halaman>
       <KepalaHalaman
         judul="Pembayaran"
-        keterangan="Setoran yang masuk dari pelanggan beserta alokasinya ke tagihan."
+        keterangan="Setoran yang masuk dari customer beserta alokasinya ke tagihan."
         aksi={
           <Button size="sm" render={<Link href="/pembayaran/baru" />}>
             <Plus className="size-4" />
@@ -74,7 +74,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
       />
 
       <div className="pb-4">
-        <Pencarian placeholder="Cari nomor, pelanggan, atau bank…" />
+        <Pencarian placeholder="Cari nomor, customer, atau bank…" />
       </div>
 
       <BingkaiTabel>
@@ -100,7 +100,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th className="w-36">Nomor</Th>
-                <Th>Pelanggan</Th>
+                <Th>Customer</Th>
                 <Th className="hidden w-32 md:table-cell">Tanggal</Th>
                 <Th className="hidden w-40 lg:table-cell">Cara bayar</Th>
                 <Th className="w-36 text-right">Jumlah</Th>

@@ -27,8 +27,8 @@ const dasar = {
     .string()
     .trim()
     .toLowerCase()
-    .min(3, "Nama pengguna minimal 3 karakter.")
-    .max(50, "Nama pengguna maksimal 50 karakter.")
+    .min(3, "Nama user minimal 3 karakter.")
+    .max(50, "Nama user maksimal 50 karakter.")
     .regex(
       /^[a-z0-9][a-z0-9._-]*$/,
       "Hanya huruf kecil, angka, titik, garis bawah, dan strip. Diawali huruf atau angka.",
@@ -93,7 +93,7 @@ export async function simpanPengguna(
     select: { id: true },
   });
   if (bentrokNama) {
-    return { galat: { username: "Nama pengguna ini sudah dipakai akun lain." } };
+    return { galat: { username: "Nama user ini sudah dipakai akun lain." } };
   }
 
   if (f.email) {
@@ -145,11 +145,11 @@ export async function simpanPengguna(
       });
     }
   } catch {
-    return { pesan: "Pengguna gagal disimpan." };
+    return { pesan: "User gagal disimpan." };
   }
 
   revalidatePath("/pengguna");
-  return { sukses: true, pesan: id ? "Data pengguna diperbarui." : "Pengguna baru ditambahkan." };
+  return { sukses: true, pesan: id ? "Data user diperbarui." : "User baru ditambahkan." };
 }
 
 export async function ubahStatusPengguna(id: string): Promise<void> {

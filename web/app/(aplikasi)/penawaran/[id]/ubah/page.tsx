@@ -9,7 +9,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { simpanPenawaran } from "../../simpan";
 
-export const metadata: Metadata = { title: "Ubah penawaran" };
+export const metadata: Metadata = { title: "Ubah quotation" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanUbahPenawaran({
@@ -47,7 +47,7 @@ export default async function HalamanUbahPenawaran({
     <Halaman>
       <KepalaHalaman
         judul={`Ubah ${penawaran.quotation_number}`}
-        keterangan="Nomor penawaran tidak berubah setelah disimpan ulang."
+        keterangan="Nomor quotation tidak berubah setelah disimpan ulang."
       />
 
       <FormDokumen

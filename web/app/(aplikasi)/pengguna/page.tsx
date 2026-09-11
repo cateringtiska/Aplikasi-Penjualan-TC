@@ -15,7 +15,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { AksiBaris } from "./aksi-baris";
 import { DialogPengguna } from "./dialog-pengguna";
 
-export const metadata: Metadata = { title: "Pengguna" };
+export const metadata: Metadata = { title: "User" };
 export const dynamic = "force-dynamic";
 
 const URUTAN_PERAN: Peran[] = ["admin", "sales", "finance"];
@@ -49,25 +49,25 @@ export default async function HalamanPengguna() {
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Pengguna"
+        judul="User"
         keterangan="Akun yang boleh masuk ke aplikasi ini, beserta peran masing-masing."
         aksi={<DialogPengguna />}
       />
 
       <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-        Masuk memakai <strong className="text-foreground">nama pengguna</strong>, bukan email.
+        Masuk memakai <strong className="text-foreground">nama user</strong>, bukan email.
         Tidak ada pendaftaran mandiri — akun hanya dibuat dari halaman ini, dan hanya oleh admin.
       </p>
 
       <BingkaiTabel>
         {daftar.length === 0 ? (
-          <KeadaanKosong judul="Belum ada pengguna" aksi={<DialogPengguna />} />
+          <KeadaanKosong judul="Belum ada user" aksi={<DialogPengguna />} />
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th>Nama</Th>
-                <Th className="w-40">Nama pengguna</Th>
+                <Th className="w-40">Nama user</Th>
                 <Th className="hidden lg:table-cell">Email</Th>
                 <Th className="w-28">Peran</Th>
                 <Th className="w-32">Status</Th>

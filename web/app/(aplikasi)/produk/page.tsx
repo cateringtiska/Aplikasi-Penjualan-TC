@@ -68,7 +68,7 @@ export default async function HalamanProduk({ searchParams }: PageProps<"/produk
             keterangan={
               kunci
                 ? `Tidak ditemukan produk untuk "${kunci}".`
-                : "Tambahkan produk supaya harganya terisi otomatis saat membuat penawaran."
+                : "Tambahkan produk supaya harganya terisi otomatis saat membuat quotation."
             }
             aksi={kunci ? undefined : <DialogProduk />}
           />

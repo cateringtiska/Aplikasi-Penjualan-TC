@@ -93,13 +93,13 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
         <Angka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
         <Angka label="Total biaya" nilai={rupiah(hasil.total_cost)} />
         <Angka
-          label={hasil.profit_status === "untung" ? "Untung" : "Rugi"}
+          label={hasil.profit_status === "untung" ? "Margin" : "Rugi"}
           nilai={rupiah(hasil.profit.abs())}
           menonjol
           rugi={hasil.profit_status === "rugi"}
         />
         <Angka
-          label="Margin"
+          label="Margin %"
           nilai={`${hasil.margin_percent.toString().replace(".", ",")}%`}
           rugi={hasil.profit_status === "rugi"}
         />

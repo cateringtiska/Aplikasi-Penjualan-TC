@@ -22,7 +22,7 @@ export function bacaSaring(params: Record<string, string | string[] | undefined>
     const nilai = params[kunci];
     return typeof nilai === "string" ? nilai.trim() : "";
   };
-  return { dari: ambil("dari"), sampai: ambil("sampai"), pelanggan: ambil("pelanggan") };
+  return { dari: ambil("dari"), sampai: ambil("sampai"), pelanggan: ambil("customer") };
 }
 
 function kondisiTanggal(saring: SaringLaporan) {

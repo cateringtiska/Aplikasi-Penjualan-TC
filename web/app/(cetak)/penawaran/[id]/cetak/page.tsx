@@ -16,7 +16,7 @@ export async function generateMetadata({
     select: { quotation_number: true },
   });
   // Nama berkas PDF hasil "Save as PDF" diambil dari judul halaman ini.
-  return { title: p ? `Quotation ${p.quotation_number}` : "Penawaran" };
+  return { title: p ? `Quotation ${p.quotation_number}` : "Quotation" };
 }
 
 export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[id]/cetak">) {

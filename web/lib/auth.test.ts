@@ -103,7 +103,7 @@ describe("masuk", () => {
     expect(pasangCookieKe).toHaveBeenCalled();
   });
 
-  it("mencari nama pengguna tanpa peduli huruf besar-kecil", async () => {
+  it("mencari nama user tanpa peduli huruf besar-kecil", async () => {
     cariPengguna.mockResolvedValue(await baris());
 
     const { masuk } = await muat();
@@ -125,7 +125,7 @@ describe("masuk", () => {
 
     // Keduanya harus diawali kalimat yang sama, supaya halaman masuk tidak
     // bisa dipakai menebak siapa saja yang terdaftar.
-    const awalan = "Nama pengguna atau kata sandi salah.";
+    const awalan = "Nama user atau kata sandi salah.";
     expect(tidakAda.berhasil).toBe(false);
     expect(sandiSalah.berhasil).toBe(false);
     if (!tidakAda.berhasil) expect(tidakAda.pesan.startsWith(awalan)).toBe(true);
@@ -230,7 +230,7 @@ describe("penggunaAktif", () => {
     });
   });
 
-  it("menolak pengguna yang sudah dinonaktifkan walau cookienya masih sah", async () => {
+  it("menolak user yang sudah dinonaktifkan walau cookienya masih sah", async () => {
     await pasangCookie({ id: "2", nama: "Budi", username: "budi", peran: "sales" });
     cariPengguna.mockResolvedValue({
       id: BigInt(2),
@@ -245,7 +245,7 @@ describe("penggunaAktif", () => {
     expect(await penggunaAktif()).toBeNull();
   });
 
-  it("menolak pengguna yang akunnya sudah dihapus", async () => {
+  it("menolak user yang akunnya sudah dihapus", async () => {
     await pasangCookie({ id: "9", nama: "Hilang", username: "hilang", peran: "admin" });
     cariPengguna.mockResolvedValue(null);
 

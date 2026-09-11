@@ -44,9 +44,9 @@ export async function simpanPenawaran(
           where: { id: BigInt(f.id) },
           select: { status: true },
         });
-        if (!ada) throw new Error("Penawaran tidak ditemukan.");
+        if (!ada) throw new Error("Quotation tidak ditemukan.");
         if (ada.status === "approved") {
-          throw new Error("Penawaran yang sudah disetujui tidak bisa diubah lagi.");
+          throw new Error("Quotation yang sudah disetujui tidak bisa diubah lagi.");
         }
 
         await tx.quotations.update({
@@ -105,7 +105,7 @@ export async function simpanPenawaran(
       return idPenawaran.toString();
     });
   } catch (galat) {
-    return pesanGagal(galat, "Penawaran gagal disimpan. Tidak ada data yang berubah.");
+    return pesanGagal(galat, "Quotation gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/penawaran");

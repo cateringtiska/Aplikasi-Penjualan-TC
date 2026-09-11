@@ -83,13 +83,13 @@ export default async function HalamanMarginPenawaran({
         <Angka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
         <Angka label="Perkiraan biaya" nilai={rupiah(hasil.total_cost)} />
         <Angka
-          label={hasil.profit_status === "untung" ? "Perkiraan untung" : "Perkiraan rugi"}
+          label={hasil.profit_status === "untung" ? "Perkiraan margin" : "Perkiraan rugi"}
           nilai={rupiah(hasil.profit.abs())}
           menonjol
           rugi={hasil.profit_status === "rugi"}
         />
         <Angka
-          label="Margin"
+          label="Margin %"
           nilai={`${hasil.margin_percent.toString().replace(".", ",")}%`}
           rugi={hasil.profit_status === "rugi"}
         />

@@ -27,7 +27,7 @@ export function FormMasuk() {
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="username">Nama pengguna</Label>
+        <Label htmlFor="username">Nama user</Label>
         <Input
           id="username"
           name="username"

@@ -48,12 +48,12 @@ describe("Kerangka aplikasi", () => {
     gambar();
 
     // Admin melihat semuanya, termasuk yang khusus finance dan admin.
-    for (const label of ["Dasbor", "Penawaran", "Tagihan", "Pembayaran", "Pengguna"]) {
+    for (const label of ["Dashboard", "Quotation", "Tagihan", "Pembayaran", "User"]) {
       expect(screen.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     }
   });
 
-  it("membuka menu kartu pengguna tanpa menjatuhkan halaman", async () => {
+  it("membuka menu kartu user tanpa menjatuhkan halaman", async () => {
     const pengguna = userEvent.setup();
     gambar();
 
