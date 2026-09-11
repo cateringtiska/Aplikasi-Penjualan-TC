@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 
-import { salinPerkiraanBiaya } from "../lib/margin";
+import { PENAWARAN_JADI_PERKIRAAN, salinPerkiraanBiaya } from "../lib/margin";
 import { prisma } from "../lib/prisma";
 import { d } from "../lib/uang";
 
@@ -187,5 +187,55 @@ describe("salinPerkiraanBiaya", () => {
 
     expect(jumlah).toBe(0);
     await prisma.quotations.delete({ where: { id: kosong.id } });
+  });
+});
+
+describe("PENAWARAN_JADI_PERKIRAAN", () => {
+  it("meninggalkan penawaran yang sudah jadi tagihan", async () => {
+    // jejak.penawaran sudah punya tagihan turunannya dari uji sebelumnya.
+    const muncul = await prisma.quotations.findMany({
+      where: { ...PENAWARAN_JADI_PERKIRAAN, id: jejak.penawaran! },
+      select: { id: true },
+    });
+
+    // Kalau ini lolos masuk, satu acara terhitung DUA KALI di laporan:
+    // sekali sebagai perkiraan, sekali lagi sebagai angka nyata.
+    expect(muncul).toHaveLength(0);
+  });
+
+  it("tetap memuat penawaran yang belum jadi tagihan", async () => {
+    const cap = `${Date.now().toString().slice(-5)}y`;
+    const belum = await prisma.quotations.create({
+      data: {
+        quotation_number: `UJB-QUO-${cap}`,
+        customer_id: jejak.pelanggan!,
+        quotation_date: new Date(),
+        valid_until: new Date(),
+        subtotal: "1000000",
+        grand_total: "1000000",
+        status: "sent",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const muncul = await prisma.quotations.findMany({
+      where: { ...PENAWARAN_JADI_PERKIRAAN, id: belum.id },
+      select: { id: true },
+    });
+    expect(muncul).toHaveLength(1);
+
+    // Ditolak berarti acaranya tidak akan terjadi.
+    await prisma.quotations.update({
+      where: { id: belum.id },
+      data: { status: "rejected" },
+    });
+    const sesudahDitolak = await prisma.quotations.findMany({
+      where: { ...PENAWARAN_JADI_PERKIRAAN, id: belum.id },
+      select: { id: true },
+    });
+    expect(sesudahDitolak).toHaveLength(0);
+
+    await prisma.quotations.delete({ where: { id: belum.id } });
   });
 });

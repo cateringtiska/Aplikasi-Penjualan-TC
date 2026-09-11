@@ -133,3 +133,24 @@ export async function salinPerkiraanBiaya(
 
   return perkiraan.length;
 }
+
+/**
+ * Penawaran yang boleh muncul sebagai PERKIRAAN di laporan margin.
+ *
+ * Dua penyaringan, keduanya menjaga laporan dari angka yang menyesatkan:
+ *
+ * 1. Yang sudah jadi tagihan ditinggalkan. Acaranya sudah punya angka nyata
+ *    di bagian tagihan; memunculkannya lagi berarti satu acara dihitung dua
+ *    kali, dan totalnya menggelembung tanpa ada yang menyadari.
+ *
+ * 2. Yang ditolak dan kadaluarsa ditinggalkan. Acaranya tidak akan terjadi,
+ *    jadi perkiraan untungnya bukan uang yang sedang ditunggu siapa pun.
+ *
+ * Ditaruh di sini, bukan di dalam halaman, supaya aturannya bisa diuji —
+ * kesalahannya berupa angka yang terlalu besar, dan angka yang terlalu besar
+ * tidak pernah terlihat salah.
+ */
+export const PENAWARAN_JADI_PERKIRAAN = {
+  status: { notIn: ["rejected", "expired"] },
+  invoices: { none: {} },
+} satisfies Prisma.quotationsWhereInput;

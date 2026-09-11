@@ -12,6 +12,7 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
+import { PENAWARAN_JADI_PERKIRAAN } from "@/lib/margin";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 import { d, hitungMargin, rupiah } from "@/lib/uang";
@@ -61,16 +62,10 @@ export default async function HalamanLaporanMargin({
     },
   });
 
-  // Penawaran yang BELUM jadi tagihan. Yang sudah jadi tagihan sengaja
-  // ditinggalkan: acaranya sudah punya angka nyata di bagian bawah, dan
-  // memunculkannya dua kali membuat totalnya terhitung ganda.
-  //
-  // Yang ditolak dan yang kadaluarsa juga ditinggalkan — acaranya tidak akan
-  // terjadi, jadi perkiraan untungnya tidak berarti apa-apa.
+  // Penyaringannya di lib/margin.ts, beserta alasannya.
   const penawaran = await prisma.quotations.findMany({
     where: {
-      status: { notIn: ["rejected", "expired"] },
-      invoices: { none: {} },
+      ...PENAWARAN_JADI_PERKIRAAN,
       ...(kunci
         ? {
             OR: [
@@ -119,12 +114,35 @@ export default async function HalamanLaporanMargin({
 
   const belumDihitung = daftar.filter((t) => t._count.invoice_costs === 0).length;
 
+  // Total penawaran dihitung terpisah, dan SENGAJA tidak pernah dijumlahkan
+  // dengan total tagihan. Untung perkiraan adalah uang yang belum tentu
+  // datang: penawarannya masih bisa ditolak, harganya masih bisa berubah.
+  // Menjumlahkan keduanya menghasilkan angka yang tidak berarti apa-apa,
+  // tetapi terlihat meyakinkan — dan itu jenis angka yang paling berbahaya
+  // dalam sebuah laporan keuangan.
+  const perkiraanPenjualan = perkiraan.reduce((j, x) => j.plus(x.hasil.net_sales), d(0));
+  const perkiraanBiaya = perkiraan.reduce((j, x) => j.plus(x.hasil.total_cost), d(0));
+  const perkiraanUntung = perkiraanPenjualan.minus(perkiraanBiaya);
+  const perkiraanMargin = perkiraanPenjualan.gt(0)
+    ? perkiraanUntung.dividedBy(perkiraanPenjualan).times(100).toDecimalPlaces(2)
+    : d(0);
+  const perkiraanBelumDihitung = perkiraan.filter((x) => !x.adaBiaya).length;
+
   return (
     <Halaman>
       <KepalaHalaman
         judul="Laporan margin"
-        keterangan="Untung-rugi per acara, dihitung dari subtotal tagihan dikurangi biayanya."
+        keterangan="Untung-rugi per acara. Angka nyata dari tagihan dan angka perkiraan dari penawaran dipisah, tidak pernah dijumlahkan."
       />
+
+      <div className="pb-6">
+        <Pencarian placeholder="Cari nomor dokumen atau pelanggan…" />
+      </div>
+
+      <h2 className="text-sm font-semibold tracking-[-0.01em]">Nyata · dari tagihan</h2>
+      <p className="pb-2.5 text-xs text-muted-foreground">
+        Uang yang sudah benar-benar ditagihkan, dikurangi biaya yang sudah dicatat.
+      </p>
 
       <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
         <Angka label="Penjualan bersih" nilai={rupiah(totalPenjualan)} />
@@ -148,14 +166,6 @@ export default async function HalamanLaporanMargin({
           terhitung sebagai untung. Angka di atas baru bisa dipercaya setelah biayanya dicatat.
         </p>
       ) : null}
-
-      <div className="pb-4">
-        <Pencarian placeholder="Cari nomor tagihan atau pelanggan…" />
-      </div>
-
-      <h2 className="pb-2.5 text-sm font-semibold tracking-[-0.01em]">
-        Nyata · dari tagihan
-      </h2>
 
       <BingkaiTabel>
         {daftar.length === 0 ? (
@@ -252,6 +262,29 @@ export default async function HalamanLaporanMargin({
             Penawaran yang belum jadi tagihan, memakai perkiraan biaya yang dicatat di
             penawarannya. Dipakai menimbang harga sebelum dikirim ke klien.
           </p>
+
+          <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
+            <Angka label="Penjualan bersih" nilai={rupiah(perkiraanPenjualan)} />
+            <Angka label="Perkiraan biaya" nilai={rupiah(perkiraanBiaya)} />
+            <Angka
+              label={perkiraanUntung.isNegative() ? "Perkiraan rugi" : "Perkiraan untung"}
+              nilai={rupiah(perkiraanUntung.abs())}
+              menonjol
+              rugi={perkiraanUntung.isNegative()}
+            />
+            <Angka
+              label="Margin rata-rata"
+              nilai={`${perkiraanMargin.toString().replace(".", ",")}%`}
+              rugi={perkiraanMargin.isNegative()}
+            />
+          </section>
+
+          {perkiraanBelumDihitung > 0 ? (
+            <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
+              {perkiraanBelumDihitung} penawaran belum punya perkiraan biaya, jadi seluruh
+              nilainya terhitung sebagai untung.
+            </p>
+          ) : null}
 
           <BingkaiTabel>
             <table className="w-full text-sm">
