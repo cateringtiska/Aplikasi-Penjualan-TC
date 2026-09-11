@@ -354,7 +354,17 @@ const akunSetup = penggunaSupabase.filter(
 
 if (akunSetup.length > 0) {
   console.log("\nAkun berikut akan DIKEMBALIKAN setelah pemindahan, dengan id baru:");
-  for (const p of akunSetup) console.log(`  ${p.email} (${p.role})`);
+  for (const p of akunSetup) console.log(`  ${p.username} — ${p.email ?? "tanpa email"} (${p.role})`);
+}
+
+const bersama = penggunaSupabase.filter((p) =>
+  emailMysql.includes((p.email ?? "").toLowerCase()),
+);
+
+if (bersama.length > 0) {
+  console.log("\nAkun berikut ada di kedua database. Nama pengguna dan sandi yang");
+  console.log("sedang dipakai akan DIPERTAHANKAN, bukan dikembalikan ke sandi Laravel:");
+  for (const p of bersama) console.log(`  ${p.username} — ${p.email}`);
 }
 
 if (!JALANKAN) {
@@ -438,6 +448,50 @@ if (akunSetup.length > 0) {
       select: { id: true, email: true },
     });
     console.log(`  ${dibuat.email} -> id baru ${dibuat.id}`);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   KREDENSIAL YANG SEDANG DIPAKAI TIDAK BOLEH TERTIMPA
+
+   Akun yang emailnya ada di KEDUA database bukan kasus sederhana. Baris dari
+   MySQL membawa sandi Laravel lama dan nama pengguna turunan email, sedangkan
+   baris di Supabase membawa nama pengguna dan sandi yang BARU SAJA diatur
+   pemiliknya lewat aplikasi ini.
+
+   Tanpa penjagaan ini, pemindahan diam-diam mengembalikan sandi lama — dan
+   pemiliknya terkunci di luar aplikasinya sendiri tepat setelah datanya
+   pindah. Yang dipertahankan adalah versi Supabase, karena itulah yang
+   sedang dipakai untuk masuk hari ini.
+   -------------------------------------------------------------------------- */
+
+const akunBersama = penggunaSupabase.filter((p) =>
+  emailMysql.includes((p.email ?? "").toLowerCase()),
+);
+
+if (akunBersama.length > 0) {
+  console.log("\nMempertahankan kredensial yang sedang dipakai…");
+  for (const p of akunBersama) {
+    const baris = await prisma.users.findFirst({
+      where: { email: p.email },
+      select: { id: true },
+    });
+    if (!baris) continue;
+
+    await prisma.users.update({
+      where: { id: baris.id },
+      data: {
+        name: p.name,
+        username: p.username,
+        password: p.password,
+        role: p.role,
+        is_active: p.is_active,
+        gagal_masuk: 0,
+        terkunci_sampai: null,
+        updated_at: new Date(),
+      },
+    });
+    console.log(`  ${p.email} -> nama pengguna "${p.username}" dan sandinya dipertahankan`);
   }
 }
 
