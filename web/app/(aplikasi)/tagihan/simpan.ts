@@ -10,6 +10,7 @@ import {
   pesanGagal,
   siapkanDokumen,
 } from "@/lib/dokumen";
+import { salinPerkiraanBiaya } from "@/lib/margin";
 import {
   nomorDokumenBerikutnya,
   type PenjalanKueri,
@@ -91,6 +92,13 @@ export async function simpanTagihan(
           }),
         );
         idTagihan = baru.id;
+
+        // Perkiraan biaya yang sudah disusun di penawaran ikut pindah,
+        // supaya tidak perlu diketik ulang. Di dalam transaksi yang sama:
+        // tagihan yang terbit tanpa biayanya akan terbaca untung 100%.
+        if (dariPenawaran) {
+          await salinPerkiraanBiaya(dariPenawaran, idTagihan, sesi.id, tx);
+        }
       }
 
       for (const { induk, anak } of barisUntukDisimpan(items)) {

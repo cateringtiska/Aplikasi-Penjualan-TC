@@ -318,6 +318,7 @@ model quotations {
   pb1_percent            Decimal?          @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal           @default(0) @db.Decimal(15, 2)
   invoices               invoices[]
+  quotation_costs        quotation_costs[]
   quotation_items        quotation_items[]
   users                  users?            @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
   customers              customers         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
@@ -358,5 +359,25 @@ model users {
   invoices          invoices[]
   payments          payments[]
   products          products[]
+  quotation_costs   quotation_costs[]
   quotations        quotations[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model quotation_costs {
+  id               BigInt     @id @default(autoincrement())
+  quotation_id     BigInt
+  category         String     @db.VarChar(255)
+  description      String     @db.VarChar(255)
+  estimated_amount Decimal?   @db.Decimal(15, 2)
+  actual_amount    Decimal?   @db.Decimal(15, 2)
+  status           String     @default("estimasi") @db.VarChar(255)
+  notes            String?
+  created_by       BigInt?
+  created_at       DateTime?  @db.Timestamp(0)
+  updated_at       DateTime?  @db.Timestamp(0)
+  users            users?     @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotation_costs_created_by_foreign")
+  quotations       quotations @relation(fields: [quotation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "quotation_costs_quotation_id_foreign")
+
+  @@index([quotation_id], map: "quotation_costs_quotation_id_index")
 }

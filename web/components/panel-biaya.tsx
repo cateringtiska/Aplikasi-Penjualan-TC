@@ -8,42 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { KATEGORI_BIAYA, labelKategori } from "@/lib/biaya";
-import { rupiah } from "@/lib/uang";
-
 import {
-  bukaKembaliMargin,
-  finalisasiMargin,
-  hapusBiaya,
+  type BarisBiaya,
+  KATEGORI_BIAYA,
   type KeadaanBiaya,
-  simpanBiaya,
-} from "./actions";
-
-export type BarisBiaya = {
-  id: string;
-  category: string;
-  description: string;
-  estimated_amount: string | null;
-  actual_amount: string | null;
-  status: string;
-  notes: string | null;
-  nilaiDipakai: string;
-};
+  labelKategori,
+  type Penguncian,
+} from "@/lib/biaya";
+import { rupiah } from "@/lib/uang";
 
 const keadaanAwal: KeadaanBiaya = {};
 
+/**
+ * Panel pencatatan biaya, dipakai penawaran maupun tagihan.
+ *
+ * Tindakan penyimpanannya diterima sebagai prop, bukan diimpor langsung,
+ * karena keduanya menulis ke tabel yang berbeda. `penguncian` diisi hanya
+ * oleh tagihan: perkiraan biaya di penawaran memang tidak untuk difinalisasi.
+ */
 export function PanelBiaya({
-  idTagihan,
+  idDokumen,
   biaya,
-  terkunci,
   bolehUbah,
+  simpan,
+  hapus,
+  penguncian = null,
 }: {
-  idTagihan: string;
+  idDokumen: string;
   biaya: BarisBiaya[];
-  terkunci: boolean;
   bolehUbah: boolean;
+  simpan: (sebelumnya: KeadaanBiaya, data: FormData) => Promise<KeadaanBiaya>;
+  hapus: (idBiaya: string, idDokumen: string) => Promise<void>;
+  penguncian?: Penguncian | null;
 }) {
-  const [keadaan, kirim, sedangKirim] = useActionState(simpanBiaya, keadaanAwal);
+  const terkunci = penguncian?.terkunci ?? false;
+  const [keadaan, kirim, sedangKirim] = useActionState(simpan, keadaanAwal);
   const [sedangUbah, setSedangUbah] = useState<BarisBiaya | null>(null);
   const [menunggu, mulai] = useTransition();
 
@@ -80,7 +79,7 @@ export function PanelBiaya({
       <section>
         <div className="flex items-baseline justify-between pb-2.5">
           <h2 className="text-sm font-semibold tracking-[-0.01em]">Rincian biaya</h2>
-          {bolehUbah ? (
+          {bolehUbah && penguncian ? (
             <Button
               type="button"
               variant="ghost"
@@ -89,8 +88,8 @@ export function PanelBiaya({
               onClick={() =>
                 jalankan(
                   terkunci
-                    ? () => bukaKembaliMargin(idTagihan)
-                    : () => finalisasiMargin(idTagihan),
+                    ? () => penguncian.buka(idDokumen)
+                    : () => penguncian.kunci(idDokumen),
                   terkunci ? "Margin dibuka kembali." : "Margin difinalisasi.",
                 )
               }
@@ -159,7 +158,7 @@ export function PanelBiaya({
                             disabled={terkunci || menunggu}
                             onClick={() =>
                               jalankan(
-                                () => hapusBiaya(b.id, idTagihan),
+                                () => hapus(b.id, idDokumen),
                                 "Baris biaya dihapus.",
                               )
                             }
@@ -213,7 +212,7 @@ export function PanelBiaya({
             className="flex flex-col gap-4"
             noValidate
           >
-            <input type="hidden" name="invoice_id" value={idTagihan} />
+            <input type="hidden" name="id_dokumen" value={idDokumen} />
             {sedangUbah ? <input type="hidden" name="id" value={sedangUbah.id} /> : null}
 
             {keadaan.pesan && !keadaan.sukses ? (

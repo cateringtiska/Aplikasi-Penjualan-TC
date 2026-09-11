@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, FileSpreadsheet, PencilLine, Printer } from "lucide-react";
+import { ArrowLeft, Calculator, FileSpreadsheet, PencilLine, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,7 +18,11 @@ export const dynamic = "force-dynamic";
 export default async function HalamanDetailPenawaran({
   params,
 }: PageProps<"/penawaran/[id]">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
+
+  // Margin memperlihatkan biaya dan untung-rugi, jadi hanya untuk yang memang
+  // mengurus uang. Sales melihat penawarannya, bukan marginnya.
+  const bolehLihatMargin = sesi.peran === "admin" || sesi.peran === "finance";
 
   const { id } = await params;
 
@@ -90,6 +94,16 @@ export default async function HalamanDetailPenawaran({
             <Button variant="outline" size="sm" render={<Link href={`/penawaran/${p.id}/ubah`} />}>
               <PencilLine className="size-4" />
               Ubah
+            </Button>
+          ) : null}
+          {bolehLihatMargin ? (
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href={`/penawaran/${p.id}/margin`} />}
+            >
+              <Calculator className="size-4" />
+              Perkiraan biaya
             </Button>
           ) : null}
           {p.status === "approved" && !tagihan ? (

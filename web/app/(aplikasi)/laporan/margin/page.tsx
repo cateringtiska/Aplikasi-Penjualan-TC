@@ -14,7 +14,7 @@ import {
 import { Pencarian } from "@/components/pencarian";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
-import { d, rupiah } from "@/lib/uang";
+import { d, hitungMargin, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Laporan margin" };
 export const dynamic = "force-dynamic";
@@ -59,6 +59,49 @@ export default async function HalamanLaporanMargin({
       },
       _count: { select: { invoice_costs: true } },
     },
+  });
+
+  // Penawaran yang BELUM jadi tagihan. Yang sudah jadi tagihan sengaja
+  // ditinggalkan: acaranya sudah punya angka nyata di bagian bawah, dan
+  // memunculkannya dua kali membuat totalnya terhitung ganda.
+  //
+  // Yang ditolak dan yang kadaluarsa juga ditinggalkan — acaranya tidak akan
+  // terjadi, jadi perkiraan untungnya tidak berarti apa-apa.
+  const penawaran = await prisma.quotations.findMany({
+    where: {
+      status: { notIn: ["rejected", "expired"] },
+      invoices: { none: {} },
+      ...(kunci
+        ? {
+            OR: [
+              { quotation_number: { contains: kunci, mode: "insensitive" } },
+              { customers: { name: { contains: kunci, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { quotation_date: "desc" },
+    select: {
+      id: true,
+      quotation_number: true,
+      quotation_date: true,
+      subtotal: true,
+      event_type: true,
+      status: true,
+      customers: { select: { name: true } },
+      quotation_costs: { select: { estimated_amount: true, actual_amount: true } },
+    },
+  });
+
+  const perkiraan = penawaran.map((p) => {
+    const hasil = hitungMargin({
+      subtotalInvoice: p.subtotal.toString(),
+      biaya: p.quotation_costs.map((b) => ({
+        estimated_amount: b.estimated_amount?.toString() ?? null,
+        actual_amount: b.actual_amount?.toString() ?? null,
+      })),
+    });
+    return { p, hasil, adaBiaya: p.quotation_costs.length > 0 };
   });
 
   const totalPenjualan = daftar.reduce(
@@ -109,6 +152,10 @@ export default async function HalamanLaporanMargin({
       <div className="pb-4">
         <Pencarian placeholder="Cari nomor tagihan atau pelanggan…" />
       </div>
+
+      <h2 className="pb-2.5 text-sm font-semibold tracking-[-0.01em]">
+        Nyata · dari tagihan
+      </h2>
 
       <BingkaiTabel>
         {daftar.length === 0 ? (
@@ -194,6 +241,84 @@ export default async function HalamanLaporanMargin({
         <RingkasanTabel>
           {daftar.length} tagihan · tagihan yang dibatalkan tidak dihitung
         </RingkasanTabel>
+      ) : null}
+
+      {perkiraan.length > 0 ? (
+        <section className="pt-8">
+          <h2 className="pb-1 text-sm font-semibold tracking-[-0.01em]">
+            Perkiraan · dari penawaran
+          </h2>
+          <p className="pb-2.5 text-xs text-muted-foreground">
+            Penawaran yang belum jadi tagihan, memakai perkiraan biaya yang dicatat di
+            penawarannya. Dipakai menimbang harga sebelum dikirim ke klien.
+          </p>
+
+          <BingkaiTabel>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40">
+                  <Th className="w-36">Penawaran</Th>
+                  <Th>Pelanggan</Th>
+                  <Th className="hidden w-36 text-right lg:table-cell">Penjualan</Th>
+                  <Th className="w-36 text-right">Perkiraan biaya</Th>
+                  <Th className="w-36 text-right">Perkiraan untung</Th>
+                  <Th className="w-24 text-right">Margin</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {perkiraan.map(({ p, hasil, adaBiaya }) => {
+                  const rugi = hasil.profit_status === "rugi";
+
+                  return (
+                    <tr key={p.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
+                      <Td>
+                        <Link
+                          href={`/penawaran/${p.id}/margin`}
+                          className="nomor-dokumen underline-offset-4 hover:underline"
+                        >
+                          {p.quotation_number}
+                        </Link>
+                        <span className="block text-xs text-muted-foreground">
+                          {format(p.quotation_date, "d MMM yy", { locale: localeId })}
+                        </span>
+                      </Td>
+                      <Td>
+                        <span className="font-medium">{p.customers.name}</span>
+                        {p.event_type ? (
+                          <span className="block text-xs text-muted-foreground">
+                            {p.event_type}
+                          </span>
+                        ) : null}
+                      </Td>
+                      <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
+                        {rupiah(hasil.net_sales)}
+                      </Td>
+                      <Td className="angka text-right tabular-nums text-muted-foreground">
+                        {adaBiaya ? (
+                          rupiah(hasil.total_cost)
+                        ) : (
+                          <span className="text-xs">belum dicatat</span>
+                        )}
+                      </Td>
+                      <Td
+                        className={`angka text-right font-medium tabular-nums ${rugi ? "text-tempo" : ""}`}
+                      >
+                        {rupiah(hasil.profit.abs())}
+                      </Td>
+                      <Td className={`angka text-right tabular-nums ${rugi ? "text-tempo" : ""}`}>
+                        {hasil.margin_percent.toString().replace(".", ",")}%
+                      </Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </BingkaiTabel>
+
+          <RingkasanTabel>
+            {perkiraan.length} penawaran · yang sudah jadi tagihan tidak dihitung dua kali
+          </RingkasanTabel>
+        </section>
       ) : null}
     </Halaman>
   );

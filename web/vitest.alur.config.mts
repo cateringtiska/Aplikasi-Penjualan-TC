@@ -15,7 +15,11 @@ export default defineConfig({
     alias: { "server-only": new URL("vitest.server-only.ts", import.meta.url).pathname },
   },
   test: {
-    include: ["scripts/alur.test.ts", "scripts/nomor-dalam-transaksi.test.ts"],
+    include: [
+      "scripts/alur.test.ts",
+      "scripts/nomor-dalam-transaksi.test.ts",
+      "scripts/biaya-penawaran.test.ts",
+    ],
     // Vitest tidak memuat .env sendiri; tanpa ini DATABASE_URL kosong.
     setupFiles: ["dotenv/config"],
     testTimeout: 60_000,

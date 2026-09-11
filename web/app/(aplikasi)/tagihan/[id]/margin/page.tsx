@@ -6,11 +6,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
+import { PanelBiaya } from "@/components/panel-biaya";
+import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 import { hitungMargin, rupiah } from "@/lib/uang";
 
-import { PanelBiaya } from "./panel-biaya";
+import { bukaKembaliMargin, finalisasiMargin, hapusBiaya, simpanBiaya } from "./actions";
 
 export const metadata: Metadata = { title: "Biaya & margin" };
 export const dynamic = "force-dynamic";
@@ -119,22 +121,12 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
       </p>
 
       <PanelBiaya
-        idTagihan={tagihan.id.toString()}
-        terkunci={terkunci}
+        idDokumen={tagihan.id.toString()}
         bolehUbah={bolehUbah}
-        biaya={biaya.map((b) => ({
-          id: b.id.toString(),
-          category: b.category,
-          description: b.description,
-          estimated_amount: b.estimated_amount?.toString() ?? null,
-          actual_amount: b.actual_amount?.toString() ?? null,
-          status: b.status,
-          notes: b.notes,
-          nilaiDipakai:
-            b.actual_amount && Number(b.actual_amount) > 0
-              ? b.actual_amount.toString()
-              : (b.estimated_amount?.toString() ?? "0"),
-        }))}
+        biaya={biaya.map(keBarisTampil)}
+        simpan={simpanBiaya}
+        hapus={hapusBiaya}
+        penguncian={{ terkunci, kunci: finalisasiMargin, buka: bukaKembaliMargin }}
       />
     </Halaman>
   );
