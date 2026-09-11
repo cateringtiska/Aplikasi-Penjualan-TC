@@ -21,18 +21,42 @@ import { prisma } from "./prisma";
 
    2. Kalau tabrakan tetap terjadi, penyimpanan diulang otomatis dengan nomor
       berikutnya. Pengguna tidak melihat kegagalan apa pun.
+
+   ---------------------------------------------------------------------------
+   SATU HAL YANG WAJIB DIPATUHI PEMANGGIL
+
+   Kalau penomoran dipakai DI DALAM sebuah transaksi, `klien` HARUS diisi
+   dengan klien transaksi itu (`tx`), bukan dibiarkan memakai klien global.
+
+   Kolam koneksi aplikasi ini sengaja dibatasi satu koneksi per salinan fungsi
+   (lihat prisma.ts). Transaksi yang sedang berjalan memegang koneksi itu,
+   sehingga kueri lewat klien global harus MENGANTRE sampai transaksinya
+   selesai. Antre itu memakan waktu lebih dari lima detik — melewati batas
+   waktu transaksi Prisma — dan transaksinya mati sebelum sempat commit:
+
+       A commit cannot be executed on an expired transaction.
+
+   Akibatnya seluruh penawaran, tagihan, dan pembayaran baru gagal disimpan.
+   Memakai `tx` membuat kueri nomor ikut menumpang koneksi yang sudah
+   dipegang transaksi, jadi tidak ada yang perlu diantre.
    ========================================================================== */
 
 const BATAS_PERCOBAAN = 5;
 
+/**
+ * Klien mana pun yang bisa menjalankan kueri mentah — klien global maupun
+ * klien transaksi. Dibuat sesempit ini supaya keduanya sama-sama diterima.
+ */
+export type PenjalanKueri = Pick<Prisma.TransactionClient, "$queryRawUnsafe">;
+
 /** Kode pelanggan: CUST-0001 */
-export async function kodePelangganBerikutnya(): Promise<string> {
-  return `CUST-${await urutanBerikutnya("customers", "customer_code")}`;
+export async function kodePelangganBerikutnya(klien: PenjalanKueri = prisma): Promise<string> {
+  return `CUST-${await urutanBerikutnya("customers", "customer_code", klien)}`;
 }
 
 /** Kode produk: PRD-0001 */
-export async function kodeProdukBerikutnya(): Promise<string> {
-  return `PRD-${await urutanBerikutnya("products", "product_code")}`;
+export async function kodeProdukBerikutnya(klien: PenjalanKueri = prisma): Promise<string> {
+  return `PRD-${await urutanBerikutnya("products", "product_code", klien)}`;
 }
 
 /**
@@ -45,11 +69,12 @@ export async function nomorDokumenBerikutnya(
   tabel: "quotations" | "invoices" | "payments",
   kolom: string,
   awalan: string,
+  klien: PenjalanKueri = prisma,
 ): Promise<string> {
   const tahun = new Date().getFullYear();
   const pola = `${awalan}-${tahun}-`;
 
-  const hasil = await prisma.$queryRawUnsafe<{ maks: number | null }[]>(
+  const hasil = await klien.$queryRawUnsafe<{ maks: number | null }[]>(
     `SELECT MAX(CAST(RIGHT("${kolom}", 4) AS INTEGER)) AS maks
        FROM "${tabel}"
       WHERE "${kolom}" LIKE $1
@@ -61,14 +86,18 @@ export async function nomorDokumenBerikutnya(
   return `${pola}${String(berikutnya).padStart(4, "0")}`;
 }
 
-export function nomorPenawaranBerikutnya(): Promise<string> {
-  return nomorDokumenBerikutnya("quotations", "quotation_number", "QUO");
+export function nomorPenawaranBerikutnya(klien: PenjalanKueri = prisma): Promise<string> {
+  return nomorDokumenBerikutnya("quotations", "quotation_number", "QUO", klien);
 }
 
-async function urutanBerikutnya(tabel: string, kolom: string): Promise<string> {
+async function urutanBerikutnya(
+  tabel: string,
+  kolom: string,
+  klien: PenjalanKueri,
+): Promise<string> {
   // Mengambil empat karakter terakhir kode, membuang yang bukan angka,
   // lalu mencari nilai terbesarnya.
-  const hasil = await prisma.$queryRawUnsafe<{ maks: number | null }[]>(
+  const hasil = await klien.$queryRawUnsafe<{ maks: number | null }[]>(
     `SELECT MAX(CAST(RIGHT("${kolom}", 4) AS INTEGER)) AS maks
        FROM "${tabel}"
       WHERE RIGHT("${kolom}", 4) ~ '^[0-9]{4}$'`,

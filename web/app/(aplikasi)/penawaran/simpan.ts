@@ -7,6 +7,7 @@ import {
   bacaMuatan,
   barisUntukDisimpan,
   type KeadaanDokumen,
+  pesanGagal,
   siapkanDokumen,
 } from "@/lib/dokumen";
 import { nomorPenawaranBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
@@ -59,7 +60,7 @@ export async function simpanPenawaran(
         await tx.quotation_items.deleteMany({ where: { quotation_id: BigInt(f.id) } });
         idPenawaran = BigInt(f.id);
       } else {
-        const baru = await simpanDenganKodeUnik(nomorPenawaranBerikutnya, (nomor) =>
+        const baru = await simpanDenganKodeUnik(() => nomorPenawaranBerikutnya(tx), (nomor) =>
           tx.quotations.create({
             data: {
               ...kolom,
@@ -104,12 +105,7 @@ export async function simpanPenawaran(
       return idPenawaran.toString();
     });
   } catch (galat) {
-    return {
-      pesan:
-        galat instanceof Error && galat.message.length < 200
-          ? galat.message
-          : "Penawaran gagal disimpan. Tidak ada data yang berubah.",
-    };
+    return pesanGagal(galat, "Penawaran gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/penawaran");

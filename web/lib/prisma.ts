@@ -53,6 +53,11 @@ function buatKlien(): PrismaClient {
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    // Bawaan Prisma hanya 5 detik untuk satu transaksi. Menyimpan satu
+    // tagihan berisi belasan item berarti belasan perjalanan bolak-balik ke
+    // Singapura, dan 5 detik terlalu mepet untuk itu. Transaksi yang mati di
+    // tengah jalan menolak commit-nya, jadi seluruh pekerjaan hilang.
+    transactionOptions: { timeout: 20_000, maxWait: 10_000 },
   });
 }
 

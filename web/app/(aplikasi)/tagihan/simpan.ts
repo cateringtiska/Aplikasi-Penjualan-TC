@@ -7,15 +7,21 @@ import {
   bacaMuatan,
   barisUntukDisimpan,
   type KeadaanDokumen,
+  pesanGagal,
   siapkanDokumen,
 } from "@/lib/dokumen";
-import { nomorDokumenBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
+import {
+  nomorDokumenBerikutnya,
+  type PenjalanKueri,
+  simpanDenganKodeUnik,
+} from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
 import { hitungStatusInvoice, type StatusInvoice } from "@/lib/uang";
 
-const nomorTagihanBerikutnya = () =>
-  nomorDokumenBerikutnya("invoices", "invoice_number", "INV");
+// `klien` wajib diisi klien transaksi: lihat catatan di lib/nomor.ts.
+const nomorTagihanBerikutnya = (klien: PenjalanKueri) =>
+  nomorDokumenBerikutnya("invoices", "invoice_number", "INV", klien);
 
 export async function simpanTagihan(
   _sebelumnya: KeadaanDokumen,
@@ -68,7 +74,7 @@ export async function simpanTagihan(
         await tx.invoice_items.deleteMany({ where: { invoice_id: BigInt(f.id) } });
         idTagihan = BigInt(f.id);
       } else {
-        const baru = await simpanDenganKodeUnik(nomorTagihanBerikutnya, (nomor) =>
+        const baru = await simpanDenganKodeUnik(() => nomorTagihanBerikutnya(tx), (nomor) =>
           tx.invoices.create({
             data: {
               ...kolom,
@@ -134,12 +140,7 @@ export async function simpanTagihan(
       return idTagihan.toString();
     });
   } catch (galat) {
-    return {
-      pesan:
-        galat instanceof Error && galat.message.length < 250
-          ? galat.message
-          : "Tagihan gagal disimpan. Tidak ada data yang berubah.",
-    };
+    return pesanGagal(galat, "Tagihan gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/tagihan");

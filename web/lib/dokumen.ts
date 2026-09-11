@@ -225,3 +225,24 @@ export function bacaMuatan(data: FormData): unknown | null {
     return null;
   }
 }
+
+/**
+ * Mengubah galat menjadi satu kalimat yang layak dibaca pengguna.
+ *
+ * Galat yang dilempar sendiri oleh aturan bisnis sudah berupa kalimat utuh —
+ * itu yang ditampilkan. Galat dari Prisma atau jaringan panjang dan penuh
+ * istilah, jadi diganti kalimat umum.
+ *
+ * Yang panjang itu WAJIB tetap dicatat ke log server. Pernah terjadi seluruh
+ * tagihan baru gagal disimpan di produksi, dan satu-satunya petunjuk yang
+ * sampai ke layar hanyalah "Tagihan gagal disimpan" — sebabnya, kalimat
+ * Prisma yang menjelaskan persoalannya dibuang tanpa dicatat di mana pun.
+ */
+export function pesanGagal(galat: unknown, cadangan: string): { pesan: string } {
+  if (galat instanceof Error && galat.message.length < 250) {
+    return { pesan: galat.message };
+  }
+
+  console.error(cadangan, galat);
+  return { pesan: cadangan };
+}

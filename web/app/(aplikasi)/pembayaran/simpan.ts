@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { pesanGagal } from "@/lib/dokumen";
 import { nomorDokumenBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -128,7 +129,7 @@ export async function simpanPembayaran(
       }
 
       const pembayaran = await simpanDenganKodeUnik(
-        () => nomorDokumenBerikutnya("payments", "payment_number", "PAY"),
+        () => nomorDokumenBerikutnya("payments", "payment_number", "PAY", tx),
         (nomor) =>
           tx.payments.create({
             data: {
@@ -164,12 +165,7 @@ export async function simpanPembayaran(
       return pembayaran.id.toString();
     });
   } catch (galat) {
-    return {
-      pesan:
-        galat instanceof Error && galat.message.length < 250
-          ? galat.message
-          : "Pembayaran gagal disimpan. Tidak ada data yang berubah.",
-    };
+    return pesanGagal(galat, "Pembayaran gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/pembayaran");
