@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Lock } from "lucide-react";
+import { FileSpreadsheet, Lock } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -12,10 +12,10 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
-import { PENAWARAN_JADI_PERKIRAAN } from "@/lib/margin";
-import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
+import { ambilLaporanMargin } from "@/lib/laporan-margin";
 import { wajibPeran } from "@/lib/rbac";
-import { d, hitungMargin, rupiah } from "@/lib/uang";
+import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Laporan margin" };
 export const dynamic = "force-dynamic";
@@ -28,111 +28,20 @@ export default async function HalamanLaporanMargin({
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
-  const daftar = await prisma.invoices.findMany({
-    where: {
-      status: { not: "cancelled" },
-      ...(kunci
-        ? {
-            OR: [
-              { invoice_number: { contains: kunci, mode: "insensitive" } },
-              { customers: { name: { contains: kunci, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { invoice_date: "desc" },
-    select: {
-      id: true,
-      invoice_number: true,
-      invoice_date: true,
-      subtotal: true,
-      event_type: true,
-      customers: { select: { name: true } },
-      invoice_margins: {
-        select: {
-          net_sales: true,
-          total_cost: true,
-          profit: true,
-          margin_percent: true,
-          profit_status: true,
-          status: true,
-        },
-      },
-      _count: { select: { invoice_costs: true } },
-    },
-  });
-
-  // Penyaringannya di lib/margin.ts, beserta alasannya.
-  const penawaran = await prisma.quotations.findMany({
-    where: {
-      ...PENAWARAN_JADI_PERKIRAAN,
-      ...(kunci
-        ? {
-            OR: [
-              { quotation_number: { contains: kunci, mode: "insensitive" } },
-              { customers: { name: { contains: kunci, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { quotation_date: "desc" },
-    select: {
-      id: true,
-      quotation_number: true,
-      quotation_date: true,
-      subtotal: true,
-      event_type: true,
-      status: true,
-      customers: { select: { name: true } },
-      quotation_costs: { select: { estimated_amount: true, actual_amount: true } },
-    },
-  });
-
-  const perkiraan = penawaran.map((p) => {
-    const hasil = hitungMargin({
-      subtotalInvoice: p.subtotal.toString(),
-      biaya: p.quotation_costs.map((b) => ({
-        estimated_amount: b.estimated_amount?.toString() ?? null,
-        actual_amount: b.actual_amount?.toString() ?? null,
-      })),
-    });
-    return { p, hasil, adaBiaya: p.quotation_costs.length > 0 };
-  });
-
-  const totalPenjualan = daftar.reduce(
-    (j, t) => j.plus(d(t.invoice_margins?.net_sales ?? 0)),
-    d(0),
-  );
-  const totalBiaya = daftar.reduce(
-    (j, t) => j.plus(d(t.invoice_margins?.total_cost ?? 0)),
-    d(0),
-  );
-  const totalUntung = totalPenjualan.minus(totalBiaya);
-  const marginRata = totalPenjualan.gt(0)
-    ? totalUntung.dividedBy(totalPenjualan).times(100).toDecimalPlaces(2)
-    : d(0);
-
-  const belumDihitung = daftar.filter((t) => t._count.invoice_costs === 0).length;
-
-  // Total penawaran dihitung terpisah, dan SENGAJA tidak pernah dijumlahkan
-  // dengan total tagihan. Untung perkiraan adalah uang yang belum tentu
-  // datang: penawarannya masih bisa ditolak, harganya masih bisa berubah.
-  // Menjumlahkan keduanya menghasilkan angka yang tidak berarti apa-apa,
-  // tetapi terlihat meyakinkan — dan itu jenis angka yang paling berbahaya
-  // dalam sebuah laporan keuangan.
-  const perkiraanPenjualan = perkiraan.reduce((j, x) => j.plus(x.hasil.net_sales), d(0));
-  const perkiraanBiaya = perkiraan.reduce((j, x) => j.plus(x.hasil.total_cost), d(0));
-  const perkiraanUntung = perkiraanPenjualan.minus(perkiraanBiaya);
-  const perkiraanMargin = perkiraanPenjualan.gt(0)
-    ? perkiraanUntung.dividedBy(perkiraanPenjualan).times(100).toDecimalPlaces(2)
-    : d(0);
-  const perkiraanBelumDihitung = perkiraan.filter((x) => !x.adaBiaya).length;
+  const { nyata, perkiraan, ringkasanNyata, ringkasanPerkiraan } =
+    await ambilLaporanMargin(kunci);
 
   return (
     <Halaman>
       <KepalaHalaman
         judul="Laporan margin"
         keterangan="Margin per acara. Angka nyata dari tagihan dan angka perkiraan dari quotation dipisah, tidak pernah dijumlahkan."
+        aksi={
+          <Button variant="outline" size="sm" render={<a href={`/laporan/margin/excel${kunci ? `?cari=${encodeURIComponent(kunci)}` : ""}`} />}>
+            <FileSpreadsheet className="size-4" />
+            Excel
+          </Button>
+        }
       />
 
       <div className="pb-6">
@@ -145,30 +54,30 @@ export default async function HalamanLaporanMargin({
       </p>
 
       <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka label="Penjualan bersih" nilai={rupiah(totalPenjualan)} />
-        <Angka label="Total biaya" nilai={rupiah(totalBiaya)} />
+        <Angka label="Penjualan bersih" nilai={rupiah(ringkasanNyata.penjualan)} />
+        <Angka label="Total biaya" nilai={rupiah(ringkasanNyata.biaya)} />
         <Angka
-          label={totalUntung.isNegative() ? "Rugi" : "Margin"}
-          nilai={rupiah(totalUntung.abs())}
+          label={ringkasanNyata.untung.isNegative() ? "Rugi" : "Margin"}
+          nilai={rupiah(ringkasanNyata.untung.abs())}
           menonjol
-          rugi={totalUntung.isNegative()}
+          rugi={ringkasanNyata.untung.isNegative()}
         />
         <Angka
           label="Margin rata-rata"
-          nilai={`${marginRata.toString().replace(".", ",")}%`}
-          rugi={marginRata.isNegative()}
+          nilai={`${ringkasanNyata.marginPersen.toString().replace(".", ",")}%`}
+          rugi={ringkasanNyata.marginPersen.isNegative()}
         />
       </section>
 
-      {belumDihitung > 0 ? (
+      {ringkasanNyata.belumDicatat > 0 ? (
         <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-          {belumDihitung} tagihan belum punya catatan biaya sama sekali, jadi seluruh nilainya
+          {ringkasanNyata.belumDicatat} tagihan belum punya catatan biaya sama sekali, jadi seluruh nilainya
           terhitung sebagai margin. Angka di atas baru bisa dipercaya setelah biayanya dicatat.
         </p>
       ) : null}
 
       <BingkaiTabel>
-        {daftar.length === 0 ? (
+        {nyata.length === 0 ? (
           <KeadaanKosong
             judul={kunci ? "Tidak ada yang cocok" : "Belum ada tagihan"}
             keterangan="Margin dihitung per tagihan, jadi buat tagihan lebih dulu."
@@ -186,70 +95,55 @@ export default async function HalamanLaporanMargin({
               </tr>
             </thead>
             <tbody>
-              {daftar.map((t) => {
-                const m = t.invoice_margins;
-                const rugi = m?.profit_status === "rugi";
-                const belumAda = t._count.invoice_costs === 0;
-
-                return (
-                  <tr key={t.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
-                    <Td>
-                      <Link
-                        href={`/tagihan/${t.id}/margin`}
-                        className="nomor-dokumen underline-offset-4 hover:underline"
-                      >
-                        {t.invoice_number}
-                      </Link>
-                      <span className="block text-xs text-muted-foreground">
-                        {format(t.invoice_date, "d MMM yy", { locale: localeId })}
-                        {m?.status === "final" ? " · final" : ""}
-                      </span>
-                    </Td>
-                    <Td>
-                      <span className="font-medium">{t.customers.name}</span>
-                      {t.event_type ? (
-                        <span className="block text-xs text-muted-foreground">
-                          {t.event_type}
-                        </span>
-                      ) : null}
-                    </Td>
-                    <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
-                      {rupiah(m?.net_sales ?? t.subtotal)}
-                    </Td>
-                    <Td className="angka text-right tabular-nums text-muted-foreground">
-                      {belumAda ? (
-                        <span className="text-xs">belum dicatat</span>
-                      ) : (
-                        rupiah(m?.total_cost ?? 0)
-                      )}
-                    </Td>
-                    <Td
-                      className={`angka text-right font-medium tabular-nums ${rugi ? "text-tempo" : ""}`}
+              {nyata.map((b) => (
+                <tr key={b.id} className="border-b last:border-0 hover:bg-muted/25">
+                  <Td>
+                    <Link
+                      href={`/tagihan/${b.id}/margin`}
+                      className="nomor-dokumen underline-offset-4 hover:underline"
                     >
-                      {rupiah(m?.profit ?? t.subtotal)}
-                    </Td>
-                    <Td className={`angka text-right tabular-nums ${rugi ? "text-tempo" : ""}`}>
-                      <span className="inline-flex items-center gap-1">
-                        {m?.status === "final" ? (
-                          <Lock className="size-3 text-muted-foreground" aria-label="final" />
-                        ) : null}
-                        {Number(m?.margin_percent ?? 100)
-                          .toString()
-                          .replace(".", ",")}
-                        %
-                      </span>
-                    </Td>
-                  </tr>
-                );
-              })}
+                      {b.nomor}
+                    </Link>
+                    <span className="block text-xs text-muted-foreground">
+                      {format(b.tanggal, "d MMM yy", { locale: localeId })}
+                      {b.final ? " · final" : ""}
+                    </span>
+                  </Td>
+                  <Td>
+                    <span className="font-medium">{b.pelanggan}</span>
+                    {b.jenisAcara ? (
+                      <span className="block text-xs text-muted-foreground">{b.jenisAcara}</span>
+                    ) : null}
+                  </Td>
+                  <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
+                    {rupiah(b.penjualan)}
+                  </Td>
+                  <Td className="angka text-right tabular-nums text-muted-foreground">
+                    {b.adaBiaya ? rupiah(b.biaya) : <span className="text-xs">belum dicatat</span>}
+                  </Td>
+                  <Td
+                    className={`angka text-right font-medium tabular-nums ${b.rugi ? "text-tempo" : ""}`}
+                  >
+                    {rupiah(b.untung)}
+                  </Td>
+                  <Td className={`angka text-right tabular-nums ${b.rugi ? "text-tempo" : ""}`}>
+                    <span className="inline-flex items-center gap-1">
+                      {b.final ? (
+                        <Lock className="size-3 text-muted-foreground" aria-label="final" />
+                      ) : null}
+                      {b.marginPersen.toString().replace(".", ",")}%
+                    </span>
+                  </Td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
       </BingkaiTabel>
 
-      {daftar.length > 0 ? (
+      {nyata.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} tagihan · tagihan yang dibatalkan tidak dihitung
+          {nyata.length} tagihan · tagihan yang dibatalkan tidak dihitung
         </RingkasanTabel>
       ) : null}
 
@@ -264,24 +158,24 @@ export default async function HalamanLaporanMargin({
           </p>
 
           <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-            <Angka label="Penjualan bersih" nilai={rupiah(perkiraanPenjualan)} />
-            <Angka label="Perkiraan biaya" nilai={rupiah(perkiraanBiaya)} />
+            <Angka label="Penjualan bersih" nilai={rupiah(ringkasanPerkiraan.penjualan)} />
+            <Angka label="Perkiraan biaya" nilai={rupiah(ringkasanPerkiraan.biaya)} />
             <Angka
-              label={perkiraanUntung.isNegative() ? "Perkiraan rugi" : "Perkiraan margin"}
-              nilai={rupiah(perkiraanUntung.abs())}
+              label={ringkasanPerkiraan.untung.isNegative() ? "Perkiraan rugi" : "Perkiraan margin"}
+              nilai={rupiah(ringkasanPerkiraan.untung.abs())}
               menonjol
-              rugi={perkiraanUntung.isNegative()}
+              rugi={ringkasanPerkiraan.untung.isNegative()}
             />
             <Angka
               label="Margin rata-rata"
-              nilai={`${perkiraanMargin.toString().replace(".", ",")}%`}
-              rugi={perkiraanMargin.isNegative()}
+              nilai={`${ringkasanPerkiraan.marginPersen.toString().replace(".", ",")}%`}
+              rugi={ringkasanPerkiraan.marginPersen.isNegative()}
             />
           </section>
 
-          {perkiraanBelumDihitung > 0 ? (
+          {ringkasanPerkiraan.belumDicatat > 0 ? (
             <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-              {perkiraanBelumDihitung} penawaran belum punya perkiraan biaya, jadi seluruh
+              {ringkasanPerkiraan.belumDicatat} quotation belum punya perkiraan biaya, jadi seluruh
               nilainya terhitung sebagai margin.
             </p>
           ) : null}
@@ -299,51 +193,47 @@ export default async function HalamanLaporanMargin({
                 </tr>
               </thead>
               <tbody>
-                {perkiraan.map(({ p, hasil, adaBiaya }) => {
-                  const rugi = hasil.profit_status === "rugi";
-
-                  return (
-                    <tr key={p.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
-                      <Td>
-                        <Link
-                          href={`/penawaran/${p.id}/margin`}
-                          className="nomor-dokumen underline-offset-4 hover:underline"
-                        >
-                          {p.quotation_number}
-                        </Link>
-                        <span className="block text-xs text-muted-foreground">
-                          {format(p.quotation_date, "d MMM yy", { locale: localeId })}
-                        </span>
-                      </Td>
-                      <Td>
-                        <span className="font-medium">{p.customers.name}</span>
-                        {p.event_type ? (
-                          <span className="block text-xs text-muted-foreground">
-                            {p.event_type}
-                          </span>
-                        ) : null}
-                      </Td>
-                      <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
-                        {rupiah(hasil.net_sales)}
-                      </Td>
-                      <Td className="angka text-right tabular-nums text-muted-foreground">
-                        {adaBiaya ? (
-                          rupiah(hasil.total_cost)
-                        ) : (
-                          <span className="text-xs">belum dicatat</span>
-                        )}
-                      </Td>
-                      <Td
-                        className={`angka text-right font-medium tabular-nums ${rugi ? "text-tempo" : ""}`}
+                {perkiraan.map((b) => (
+                  <tr key={b.id} className="border-b last:border-0 hover:bg-muted/25">
+                    <Td>
+                      <Link
+                        href={`/penawaran/${b.id}/margin`}
+                        className="nomor-dokumen underline-offset-4 hover:underline"
                       >
-                        {rupiah(hasil.profit.abs())}
-                      </Td>
-                      <Td className={`angka text-right tabular-nums ${rugi ? "text-tempo" : ""}`}>
-                        {hasil.margin_percent.toString().replace(".", ",")}%
-                      </Td>
-                    </tr>
-                  );
-                })}
+                        {b.nomor}
+                      </Link>
+                      <span className="block text-xs text-muted-foreground">
+                        {format(b.tanggal, "d MMM yy", { locale: localeId })}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="font-medium">{b.pelanggan}</span>
+                      {b.jenisAcara ? (
+                        <span className="block text-xs text-muted-foreground">{b.jenisAcara}</span>
+                      ) : null}
+                    </Td>
+                    <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
+                      {rupiah(b.hasil.net_sales)}
+                    </Td>
+                    <Td className="angka text-right tabular-nums text-muted-foreground">
+                      {b.adaBiaya ? (
+                        rupiah(b.hasil.total_cost)
+                      ) : (
+                        <span className="text-xs">belum dicatat</span>
+                      )}
+                    </Td>
+                    <Td
+                      className={`angka text-right font-medium tabular-nums ${b.hasil.profit_status === "rugi" ? "text-tempo" : ""}`}
+                    >
+                      {rupiah(b.hasil.profit.abs())}
+                    </Td>
+                    <Td
+                      className={`angka text-right tabular-nums ${b.hasil.profit_status === "rugi" ? "text-tempo" : ""}`}
+                    >
+                      {b.hasil.margin_percent.toString().replace(".", ",")}%
+                    </Td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </BingkaiTabel>

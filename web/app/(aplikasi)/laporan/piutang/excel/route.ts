@@ -1,0 +1,125 @@
+import { format } from "date-fns";
+import ExcelJS from "exceljs";
+import { type NextRequest, NextResponse } from "next/server";
+
+import { penggunaAktif } from "@/lib/auth";
+import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * Mengunduh kartu piutang sebagai berkas Excel.
+ *
+ * Angkanya dihitung lewat ambilPiutang yang sama dengan yang dipakai layar,
+ * jadi berkas unduhan tidak mungkin menyimpang dari yang barusan dilihat.
+ *
+ * Nilai uang ditulis sebagai ANGKA, bukan teks — supaya bisa langsung
+ * dijumlah di Excel oleh siapa pun yang menerimanya.
+ */
+export async function GET(request: NextRequest) {
+  // Dibaca ulang dari database, bukan dari cookie: pengguna yang sudah
+  // dinonaktifkan tidak boleh masih bisa mengunduh daftar piutang.
+  const sesi = await penggunaAktif();
+  if (!sesi) {
+    return NextResponse.json({ pesan: "Silakan masuk lebih dulu." }, { status: 401 });
+  }
+  if (!["admin", "sales", "finance"].includes(sesi.peran)) {
+    return NextResponse.json({ pesan: "Anda tidak punya akses." }, { status: 403 });
+  }
+
+  const cari = request.nextUrl.searchParams.get("cari")?.trim() ?? "";
+  const { daftar, umur, totalSemua } = await ambilPiutang(cari);
+
+  const buku = new ExcelJS.Workbook();
+  buku.creator = "Penjualan TC";
+  buku.created = new Date();
+
+  const lembar = buku.addWorksheet("Kartu Piutang", {
+    views: [{ state: "frozen", ySplit: 8 }],
+  });
+
+  lembar.mergeCells("A1:F1");
+  lembar.getCell("A1").value = "Kartu Piutang";
+  lembar.getCell("A1").font = { bold: true, size: 14 };
+
+  lembar.mergeCells("A2:F2");
+  lembar.getCell("A2").value = `Per ${format(new Date(), "dd/MM/yyyy HH:mm")}${
+    cari ? ` · pencarian: "${cari}"` : ""
+  }`;
+  lembar.getCell("A2").font = { color: { argb: "FF666666" } };
+
+  // Ringkasan umur piutang ditaruh di atas, sama seperti di layar — inilah
+  // angka yang pertama dicari orang saat membuka laporan ini.
+  const barisUmur = lembar.getRow(4);
+  barisUmur.values = KELOMPOK.map((k) => k.label);
+  barisUmur.font = { bold: true };
+
+  const barisNilai = lembar.getRow(5);
+  barisNilai.values = KELOMPOK.map((k) => Number(umur[k.kunci].toFixed(2)));
+
+  const KEPALA = [
+    "Kode Customer",
+    "Customer",
+    "Jumlah Tagihan",
+    "Jatuh Tempo Tertua",
+    "Hari Terlambat",
+    "Sisa Piutang",
+  ];
+
+  const barisKepala = lembar.getRow(8);
+  barisKepala.values = KEPALA;
+  barisKepala.font = { bold: true };
+  barisKepala.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFF0F0F0" },
+  };
+  barisKepala.border = { bottom: { style: "thin", color: { argb: "FF999999" } } };
+
+  for (const p of daftar) {
+    lembar.addRow([
+      p.kode,
+      p.nama,
+      p.jumlahTagihan,
+      format(p.tempoTertua, "dd/MM/yyyy"),
+      p.hariTerlambat,
+      Number(p.total.toFixed(2)),
+    ]);
+  }
+
+  const barisTotal = lembar.addRow([
+    "TOTAL",
+    `${daftar.length} customer`,
+    daftar.reduce((j, p) => j + p.jumlahTagihan, 0),
+    "",
+    "",
+    Number(totalSemua.toFixed(2)),
+  ]);
+  barisTotal.font = { bold: true };
+  barisTotal.border = { top: { style: "thin", color: { argb: "FF999999" } } };
+
+  const lebar = [16, 34, 16, 20, 16, 18];
+  lebar.forEach((w, i) => {
+    lembar.getColumn(i + 1).width = w;
+  });
+
+  for (const kolom of [3, 5, 6]) {
+    lembar.getColumn(kolom).numFmt = "#,##0";
+    lembar.getColumn(kolom).alignment = { horizontal: "right" };
+  }
+  for (let i = 1; i <= KELOMPOK.length; i++) {
+    lembar.getRow(5).getCell(i).numFmt = "#,##0";
+  }
+
+  const isi = await buku.xlsx.writeBuffer();
+  const namaBerkas = `kartu-piutang-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;
+
+  return new NextResponse(isi as ArrayBuffer, {
+    headers: {
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${namaBerkas}"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}

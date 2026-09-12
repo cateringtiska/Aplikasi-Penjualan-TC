@@ -1,5 +1,6 @@
-import { differenceInCalendarDays, format } from "date-fns";
+import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { FileSpreadsheet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -11,28 +12,13 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
-import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
+import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
 import { wajibPeran } from "@/lib/rbac";
-import { d, rupiah } from "@/lib/uang";
+import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Kartu piutang" };
 export const dynamic = "force-dynamic";
-
-/**
- * Umur piutang.
- *
- * Pengelompokannya mengikuti kebiasaan penagihan: yang belum jatuh tempo,
- * lalu tiga kelompok keterlambatan. Kelompok 60+ hari adalah yang biasanya
- * perlu ditindaklanjuti secara khusus.
- */
-const KELOMPOK = [
-  { kunci: "belum", label: "Belum jatuh tempo" },
-  { kunci: "h1", label: "1–30 hari" },
-  { kunci: "h31", label: "31–60 hari" },
-  { kunci: "h60", label: "Lebih dari 60 hari" },
-] as const;
-
-type KunciKelompok = (typeof KELOMPOK)[number]["kunci"];
 
 export default async function HalamanPiutang({ searchParams }: PageProps<"/laporan/piutang">) {
   await wajibPeran("sales", "finance");
@@ -40,88 +26,19 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
-  const hariIni = new Date();
-  hariIni.setHours(0, 0, 0, 0);
-
-  const tagihan = await prisma.invoices.findMany({
-    where: {
-      status: { in: ["unpaid", "partial", "overdue"] },
-      ...(kunci ? { customers: { name: { contains: kunci, mode: "insensitive" } } } : {}),
-    },
-    orderBy: { due_date: "asc" },
-    select: {
-      id: true,
-      invoice_number: true,
-      due_date: true,
-      grand_total: true,
-      paid_amount: true,
-      customer_id: true,
-      customers: { select: { id: true, name: true, customer_code: true } },
-    },
-  });
-
-  // Dikelompokkan per pelanggan, karena penagihan dilakukan per pelanggan —
-  // bukan per lembar tagihan.
-  const perPelanggan = new Map<
-    string,
-    {
-      nama: string;
-      kode: string;
-      idPelanggan: string;
-      jumlahTagihan: number;
-      total: ReturnType<typeof d>;
-      tempoTertua: Date;
-      hariTerlambat: number;
-    }
-  >();
-
-  const umur: Record<KunciKelompok, ReturnType<typeof d>> = {
-    belum: d(0),
-    h1: d(0),
-    h31: d(0),
-    h60: d(0),
-  };
-
-  for (const t of tagihan) {
-    const sisa = d(t.grand_total).minus(d(t.paid_amount));
-    if (sisa.lte(0)) continue;
-
-    const terlambat = differenceInCalendarDays(hariIni, t.due_date);
-    const kelompok: KunciKelompok =
-      terlambat <= 0 ? "belum" : terlambat <= 30 ? "h1" : terlambat <= 60 ? "h31" : "h60";
-    umur[kelompok] = umur[kelompok].plus(sisa);
-
-    const id = t.customer_id.toString();
-    const ada = perPelanggan.get(id);
-
-    if (ada) {
-      ada.jumlahTagihan += 1;
-      ada.total = ada.total.plus(sisa);
-      if (t.due_date < ada.tempoTertua) {
-        ada.tempoTertua = t.due_date;
-        ada.hariTerlambat = Math.max(0, terlambat);
-      }
-    } else {
-      perPelanggan.set(id, {
-        nama: t.customers.name,
-        kode: t.customers.customer_code,
-        idPelanggan: id,
-        jumlahTagihan: 1,
-        total: sisa,
-        tempoTertua: t.due_date,
-        hariTerlambat: Math.max(0, terlambat),
-      });
-    }
-  }
-
-  const daftar = [...perPelanggan.values()].sort((a, b) => b.total.comparedTo(a.total));
-  const totalSemua = daftar.reduce((jumlah, p) => jumlah.plus(p.total), d(0));
+  const { daftar, umur, totalSemua } = await ambilPiutang(kunci);
 
   return (
     <Halaman>
       <KepalaHalaman
         judul="Kartu piutang"
         keterangan="Sisa tagihan per customer, dikelompokkan menurut umur keterlambatannya."
+        aksi={
+          <Button variant="outline" size="sm" render={<a href={`/laporan/piutang/excel${kunci ? `?cari=${encodeURIComponent(kunci)}` : ""}`} />}>
+            <FileSpreadsheet className="size-4" />
+            Excel
+          </Button>
+        }
       />
 
       <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
