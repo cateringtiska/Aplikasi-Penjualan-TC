@@ -42,3 +42,8 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Kecuali berkasnya contoh: ia justru HARUS ikut, supaya siapa pun yang
+# menyiapkan ulang aplikasi ini tahu variabel apa saja yang dibutuhkan.
+# Isinya hanya placeholder — periksa itu setiap kali menyentuhnya.
+!.env.example
