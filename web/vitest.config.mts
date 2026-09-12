@@ -33,6 +33,7 @@ export default defineConfig({
       "lib/**/*.test.ts",
       "components/**/*.test.tsx",
       "app/**/*.test.ts",
+      "app/**/*.test.tsx",
     ],
     environment: "jsdom",
     globals: true,

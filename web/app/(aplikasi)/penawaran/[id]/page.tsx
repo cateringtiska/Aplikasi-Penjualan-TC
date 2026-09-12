@@ -10,6 +10,8 @@ import { StatusPenawaran } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
+
+import { AksiStatusPenawaran } from "./aksi-status";
 import { romawi, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Detail quotation" };
@@ -106,6 +108,11 @@ export default async function HalamanDetailPenawaran({
               Perkiraan biaya
             </Button>
           ) : null}
+          <AksiStatusPenawaran
+            id={p.id.toString()}
+            nomor={p.quotation_number}
+            status={p.status}
+          />
           {p.status === "approved" && !tagihan ? (
             <Button size="sm" render={<Link href={`/tagihan/baru?dari=${p.id}`} />}>
               <FileSpreadsheet className="size-4" />

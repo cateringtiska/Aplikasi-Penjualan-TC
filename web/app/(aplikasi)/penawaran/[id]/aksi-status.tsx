@@ -1,0 +1,101 @@
+"use client";
+
+import { Check, LoaderCircle, Send, X } from "lucide-react";
+import { useTransition } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+
+import { ubahStatusPenawaran } from "../actions";
+
+/* ==========================================================================
+   LANGKAH BERIKUTNYA UNTUK SEBUAH QUOTATION
+
+   Tombol ini sebelumnya hanya ada di menu "…" pada DAFTAR quotation. Padahal
+   keputusan menyetujui diambil justru saat dokumennya sedang dibaca — di
+   halaman detail ini. Orang yang membukanya lalu tidak menemukan jalan maju
+   menyimpulkan tombolnya belum dibuat, dan memang begitulah yang terjadi.
+
+   Yang ditampilkan hanya SATU langkah berikutnya, bukan seluruh kemungkinan
+   status. Urutannya: draft -> terkirim -> disetujui, lalu barulah tombol
+   "Buat tagihan" muncul. Urutan itu dijaga di server; di sini hanya
+   ditampilkan supaya terlihat.
+   ========================================================================== */
+
+export function AksiStatusPenawaran({
+  id,
+  nomor,
+  status,
+}: {
+  id: string;
+  nomor: string;
+  status: string;
+}) {
+  const [menunggu, mulai] = useTransition();
+
+  // Tindakan server dipanggil DI DALAM transisi. Di luar transisi, kegagalan
+  // apa pun menjatuhkan halaman tanpa meninggalkan jejak di log server.
+  function jalankan(tujuan: string, pesan: string) {
+    mulai(async () => {
+      try {
+        await ubahStatusPenawaran(id, tujuan);
+        toast.success(pesan);
+      } catch (galat) {
+        toast.error(galat instanceof Error ? galat.message : "Tindakan gagal.");
+      }
+    });
+  }
+
+  const berputar = <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />;
+
+  if (status === "draft") {
+    return (
+      <Button size="sm" disabled={menunggu} onClick={() => jalankan("sent", `${nomor} ditandai terkirim.`)}>
+        {menunggu ? berputar : <Send className="size-4" />}
+        Tandai terkirim
+      </Button>
+    );
+  }
+
+  if (status === "sent") {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={menunggu}
+          onClick={() => jalankan("rejected", `${nomor} ditandai ditolak.`)}
+        >
+          <X className="size-4" />
+          Ditolak
+        </Button>
+        <Button
+          size="sm"
+          disabled={menunggu}
+          onClick={() => jalankan("approved", `${nomor} disetujui pelanggan.`)}
+        >
+          {menunggu ? berputar : <Check className="size-4" />}
+          Tandai disetujui
+        </Button>
+      </>
+    );
+  }
+
+  if (status === "expired" || status === "rejected") {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={menunggu}
+        onClick={() => jalankan("sent", `${nomor} dikirim ulang.`)}
+      >
+        {menunggu ? berputar : <Send className="size-4" />}
+        Kirim ulang
+      </Button>
+    );
+  }
+
+  // Sudah disetujui: langkah berikutnya bukan status lagi, melainkan tombol
+  // "Buat tagihan" yang dirender halaman.
+  return null;
+}
