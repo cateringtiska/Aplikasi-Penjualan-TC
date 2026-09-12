@@ -48,7 +48,7 @@ describe("Kerangka aplikasi", () => {
     gambar();
 
     // Admin melihat semuanya, termasuk yang khusus finance dan admin.
-    for (const label of ["Dashboard", "Quotation", "Tagihan", "Pembayaran", "User"]) {
+    for (const label of ["Dashboard", "Quotation", "Invoice", "Pembayaran", "User"]) {
       expect(screen.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     }
   });

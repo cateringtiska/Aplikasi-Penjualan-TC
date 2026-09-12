@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
   const KEPALA = [
     "Kode Customer",
     "Customer",
-    "Jumlah Tagihan",
+    "Jumlah Invoice",
     "Jatuh Tempo Tertua",
     "Hari Terlambat",
     "Sisa Piutang",

@@ -199,9 +199,9 @@ export function FormPembayaran({
 
       <section className="flex flex-col gap-4">
         <div>
-          <h2 className="text-sm font-semibold tracking-[-0.01em]">Alokasi ke tagihan</h2>
+          <h2 className="text-sm font-semibold tracking-[-0.01em]">Alokasi ke invoice</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Satu setoran boleh menutup beberapa tagihan. Jumlah alokasi harus sama persis dengan
+            Satu setoran boleh menutup beberapa invoice. Jumlah alokasi harus sama persis dengan
             uang yang diterima.
           </p>
         </div>
@@ -215,15 +215,15 @@ export function FormPembayaran({
         <div className="overflow-hidden rounded-lg border bg-card">
           {memuat ? (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Memuat tagihan…
+              Memuat invoice…
             </p>
           ) : !idPelanggan ? (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Pilih customer dulu untuk melihat tagihannya.
+              Pilih customer dulu untuk melihat invoice-nya.
             </p>
           ) : tagihan.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Customer ini tidak punya tagihan yang belum lunas.
+              Customer ini tidak punya invoice yang belum lunas.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -231,7 +231,7 @@ export function FormPembayaran({
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="w-10 px-4 py-2.5" />
-                    <Th>Tagihan</Th>
+                    <Th>Invoice</Th>
                     <Th className="w-36 text-right">Sisa</Th>
                     <Th className="w-44 text-right">Dialokasikan</Th>
                   </tr>

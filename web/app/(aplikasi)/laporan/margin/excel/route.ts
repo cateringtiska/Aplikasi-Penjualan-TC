@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   /* ---------- Lembar 1: angka nyata ---------- */
 
   const l1 = siapkanLembar(
-    "Nyata - Tagihan",
+    "Nyata - Invoice",
     "Laporan Margin · Nyata",
     "Uang yang sudah benar-benar ditagihkan, dikurangi biaya yang sudah dicatat.",
   );
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
   const l2 = siapkanLembar(
     "Perkiraan - Quotation",
     "Laporan Margin · Perkiraan",
-    "Quotation yang BELUM jadi tagihan. Angka di sini perkiraan — jangan dijumlahkan dengan lembar Nyata.",
+    "Quotation yang BELUM jadi invoice. Angka di sini perkiraan — jangan dijumlahkan dengan lembar Nyata.",
   );
 
   l2.getRow(5).values = [

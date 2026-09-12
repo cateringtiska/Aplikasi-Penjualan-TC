@@ -35,7 +35,7 @@ export default async function HalamanLaporanMargin({
     <Halaman>
       <KepalaHalaman
         judul="Laporan margin"
-        keterangan="Margin per acara. Angka nyata dari tagihan dan angka perkiraan dari quotation dipisah, tidak pernah dijumlahkan."
+        keterangan="Margin per acara. Angka nyata dari invoice dan angka perkiraan dari quotation dipisah, tidak pernah dijumlahkan."
         aksi={
           <Button variant="outline" size="sm" render={<a href={`/laporan/margin/excel${kunci ? `?cari=${encodeURIComponent(kunci)}` : ""}`} />}>
             <FileSpreadsheet className="size-4" />
@@ -48,7 +48,7 @@ export default async function HalamanLaporanMargin({
         <Pencarian placeholder="Cari nomor dokumen atau customer…" />
       </div>
 
-      <h2 className="text-sm font-semibold tracking-[-0.01em]">Nyata · dari tagihan</h2>
+      <h2 className="text-sm font-semibold tracking-[-0.01em]">Nyata · dari invoice</h2>
       <p className="pb-2.5 text-xs text-muted-foreground">
         Uang yang sudah benar-benar ditagihkan, dikurangi biaya yang sudah dicatat.
       </p>
@@ -79,14 +79,14 @@ export default async function HalamanLaporanMargin({
       <BingkaiTabel>
         {nyata.length === 0 ? (
           <KeadaanKosong
-            judul={kunci ? "Tidak ada yang cocok" : "Belum ada tagihan"}
-            keterangan="Margin dihitung per tagihan, jadi buat tagihan lebih dulu."
+            judul={kunci ? "Tidak ada yang cocok" : "Belum ada invoice"}
+            keterangan="Margin dihitung per invoice, jadi buat invoice lebih dulu."
           />
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <Th className="w-36">Tagihan</Th>
+                <Th className="w-36">Invoice</Th>
                 <Th>Customer</Th>
                 <Th className="hidden w-36 text-right lg:table-cell">Penjualan</Th>
                 <Th className="w-36 text-right">Biaya</Th>
@@ -153,7 +153,7 @@ export default async function HalamanLaporanMargin({
             Perkiraan · dari quotation
           </h2>
           <p className="pb-2.5 text-xs text-muted-foreground">
-            Quotation yang belum jadi tagihan, memakai perkiraan biaya yang dicatat di
+            Quotation yang belum jadi invoice, memakai perkiraan biaya yang dicatat di
             penawarannya. Dipakai menimbang harga sebelum dikirim ke klien.
           </p>
 

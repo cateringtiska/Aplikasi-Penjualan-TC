@@ -15,7 +15,7 @@ export async function generateMetadata({
     where: { id: BigInt(id) },
     select: { invoice_number: true },
   });
-  return { title: t ? `Invoice ${t.invoice_number}` : "Tagihan" };
+  return { title: t ? `Invoice ${t.invoice_number}` : "Invoice" };
 }
 
 export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/cetak">) {

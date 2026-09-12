@@ -113,7 +113,7 @@ describe("unduhan laporan margin", () => {
     const buku = await unduh(modul, "http://localhost/laporan/margin/excel");
 
     const nama = buku.worksheets.map((w) => w.name);
-    expect(nama).toEqual(["Nyata - Tagihan", "Perkiraan - Quotation"]);
+    expect(nama).toEqual(["Nyata - Invoice", "Perkiraan - Quotation"]);
 
     // Peringatannya harus tertulis di lembar perkiraan, bukan hanya di layar:
     // berkas ini akan dibuka orang lain, di tempat lain, tanpa layar itu.
@@ -128,7 +128,7 @@ describe("unduhan laporan margin", () => {
     const modul = await import("../app/(aplikasi)/laporan/margin/excel/route");
     const buku = await unduh(modul, "http://localhost/laporan/margin/excel");
 
-    const l1 = buku.getWorksheet("Nyata - Tagihan")!;
+    const l1 = buku.getWorksheet("Nyata - Invoice")!;
     expect(Number(l1.getRow(6).getCell(1).value)).toBeCloseTo(
       Number(ringkasanNyata.penjualan.toFixed(2)),
       2,

@@ -96,7 +96,7 @@ export function AksiBaris({
               }
             >
               <Ban className="size-4" />
-              Batalkan tagihan
+              Batalkan invoice
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"

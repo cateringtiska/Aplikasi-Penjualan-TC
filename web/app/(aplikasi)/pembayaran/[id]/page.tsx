@@ -86,16 +86,16 @@ export default async function HalamanDetailPembayaran({
       </section>
 
       <section>
-        <h2 className="pb-2.5 text-sm font-semibold tracking-[-0.01em]">Alokasi ke tagihan</h2>
+        <h2 className="pb-2.5 text-sm font-semibold tracking-[-0.01em]">Alokasi ke invoice</h2>
 
         <div className="overflow-hidden rounded-lg border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <Th>Tagihan</Th>
+                  <Th>Invoice</Th>
                   <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
-                  <Th className="w-36 text-right">Nilai tagihan</Th>
+                  <Th className="w-36 text-right">Nilai invoice</Th>
                   <Th className="w-36 text-right">Dialokasikan</Th>
                   <Th className="w-32">Status kini</Th>
                 </tr>

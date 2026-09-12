@@ -64,7 +64,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
     <Halaman>
       <KepalaHalaman
         judul="Pembayaran"
-        keterangan="Setoran yang masuk dari customer beserta alokasinya ke tagihan."
+        keterangan="Setoran yang masuk dari customer beserta alokasinya ke invoice."
         aksi={
           <Button size="sm" render={<Link href="/pembayaran/baru" />}>
             <Plus className="size-4" />
@@ -84,7 +84,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
             keterangan={
               kunci
                 ? `Tidak ditemukan pembayaran untuk "${kunci}".`
-                : "Pembayaran dicatat dari halaman tagihan atau lewat tombol di atas."
+                : "Pembayaran dicatat dari halaman invoice atau lewat tombol di atas."
             }
             aksi={
               kunci ? undefined : (

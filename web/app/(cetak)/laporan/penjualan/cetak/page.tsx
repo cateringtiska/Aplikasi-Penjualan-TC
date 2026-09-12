@@ -30,7 +30,7 @@ export default async function CetakLaporanPenjualan({
       <table className="mt-4 w-full border-collapse">
         <tbody>
           <tr>
-            <Ringkas label="Nilai tagihan" nilai={rupiah(ringkasan.nilaiTagihan)} />
+            <Ringkas label="Nilai invoice" nilai={rupiah(ringkasan.nilaiTagihan)} />
             <Ringkas label="Sudah dibayar" nilai={rupiah(ringkasan.totalTerbayar)} />
             <Ringkas label="Piutang" nilai={rupiah(ringkasan.totalPiutang)} />
             <Ringkas label="Jatuh tempo" nilai={`${ringkasan.jumlahJatuhTempo} tagihan`} />
@@ -55,7 +55,7 @@ export default async function CetakLaporanPenjualan({
           {baris.length === 0 ? (
             <tr>
               <td className="border border-[#999] px-1.5 py-3 text-center" colSpan={8}>
-                Tidak ada tagihan pada rentang ini.
+                Tidak ada invoice pada rentang ini.
               </td>
             </tr>
           ) : (
@@ -94,7 +94,7 @@ export default async function CetakLaporanPenjualan({
       </table>
 
       <p className="mt-3 text-[10px] text-[#666]">
-        Tagihan berstatus dibatalkan tidak dihitung dalam ringkasan.
+        Invoice berstatus dibatalkan tidak dihitung dalam ringkasan.
       </p>
     </div>
   );

@@ -55,7 +55,7 @@ beforeEach(() => {
 });
 
 describe("finalisasiMargin", () => {
-  it("menolak tagihan yang belum punya satu pun baris biaya", async () => {
+  it("menolak invoice yang belum punya satu pun baris biaya", async () => {
     hitungBiaya.mockResolvedValue(0);
 
     const { finalisasiMargin } = await import("./actions");

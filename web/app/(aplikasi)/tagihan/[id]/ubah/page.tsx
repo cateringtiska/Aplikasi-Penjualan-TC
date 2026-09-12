@@ -9,7 +9,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { simpanTagihan } from "../../simpan";
 
-export const metadata: Metadata = { title: "Ubah tagihan" };
+export const metadata: Metadata = { title: "Ubah invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan/[id]/ubah">) {
@@ -45,7 +45,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
     <Halaman>
       <KepalaHalaman
         judul={`Ubah ${tagihan.invoice_number}`}
-        keterangan="Nomor tagihan tidak berubah setelah disimpan ulang."
+        keterangan="Nomor invoice tidak berubah setelah disimpan ulang."
       />
 
       <FormDokumen

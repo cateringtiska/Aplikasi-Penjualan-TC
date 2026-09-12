@@ -18,7 +18,7 @@ import { ubahStatusPenawaran } from "../actions";
 
    Yang ditampilkan hanya SATU langkah berikutnya, bukan seluruh kemungkinan
    status. Urutannya: draft -> terkirim -> disetujui, lalu barulah tombol
-   "Buat tagihan" muncul. Urutan itu dijaga di server; di sini hanya
+   "Buat invoice" muncul. Urutan itu dijaga di server; di sini hanya
    ditampilkan supaya terlihat.
    ========================================================================== */
 
@@ -96,6 +96,6 @@ export function AksiStatusPenawaran({
   }
 
   // Sudah disetujui: langkah berikutnya bukan status lagi, melainkan tombol
-  // "Buat tagihan" yang dirender halaman.
+  // "Buat invoice" yang dirender halaman.
   return null;
 }

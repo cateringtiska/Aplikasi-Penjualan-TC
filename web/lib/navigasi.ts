@@ -29,7 +29,7 @@ export const MENU: KelompokMenu[] = [
     judul: "Transaksi",
     butir: [
       { label: "Quotation", href: "/penawaran", peran: ["sales", "finance"] },
-      { label: "Tagihan", href: "/tagihan", peran: ["sales", "finance"] },
+      { label: "Invoice", href: "/tagihan", peran: ["sales", "finance"] },
       { label: "Pembayaran", href: "/pembayaran", peran: ["finance"] },
     ],
   },

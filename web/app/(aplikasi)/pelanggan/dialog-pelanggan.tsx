@@ -154,7 +154,7 @@ export function DialogPelanggan({
               name="address"
               rows={3}
               defaultValue={pelanggan?.address ?? ""}
-              placeholder="Alamat lengkap untuk dicetak di quotation dan tagihan"
+              placeholder="Alamat lengkap untuk dicetak di quotation dan invoice"
             />
           </Bidang>
 

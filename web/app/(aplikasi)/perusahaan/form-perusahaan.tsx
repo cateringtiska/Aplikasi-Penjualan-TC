@@ -44,7 +44,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
         </p>
       ) : null}
 
-      <Bagian judul="Identitas" keterangan="Tampil di kepala dokumen quotation dan tagihan.">
+      <Bagian judul="Identitas" keterangan="Tampil di kepala dokumen quotation dan invoice.">
         <Bidang label="Nama perusahaan" nama="company_name" galat={keadaan.galat?.company_name} wajib>
           <Input
             id="company_name"
@@ -131,7 +131,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
         />
 
         <BidangSyarat
-          label="Syarat pada tagihan"
+          label="Syarat pada invoice"
           nama="payment_terms_default"
           galat={keadaan.galat?.payment_terms_default}
           nilaiAwal={isi.payment_terms_default}

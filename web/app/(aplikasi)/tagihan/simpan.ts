@@ -54,13 +54,13 @@ export async function simpanTagihan(
           where: { id: BigInt(f.id) },
           select: { status: true, paid_amount: true, due_date: true },
         });
-        if (!ada) throw new Error("Tagihan tidak ditemukan.");
+        if (!ada) throw new Error("Invoice tidak ditemukan.");
         if (ada.status === "cancelled") {
-          throw new Error("Tagihan yang sudah dibatalkan tidak bisa diubah.");
+          throw new Error("Invoice yang sudah dibatalkan tidak bisa diubah.");
         }
         if (Number(ada.paid_amount) > 0) {
           throw new Error(
-            "Tagihan ini sudah menerima pembayaran, jadi rinciannya tidak bisa diubah. Batalkan pembayarannya lebih dulu.",
+            "Invoice ini sudah menerima pembayaran, jadi rinciannya tidak bisa diubah. Batalkan pembayarannya lebih dulu.",
           );
         }
 
@@ -148,7 +148,7 @@ export async function simpanTagihan(
       return idTagihan.toString();
     });
   } catch (galat) {
-    return pesanGagal(galat, "Tagihan gagal disimpan. Tidak ada data yang berubah.");
+    return pesanGagal(galat, "Invoice gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/tagihan");

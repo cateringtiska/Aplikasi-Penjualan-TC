@@ -124,9 +124,9 @@ export default async function HalamanDasbor() {
           )}
         </Panel>
 
-        <Panel judul="Tagihan terbaru" href="/tagihan">
+        <Panel judul="Invoice terbaru" href="/tagihan">
           {tagihanTerbaru.length === 0 ? (
-            <Kosong pesan="Belum ada tagihan." />
+            <Kosong pesan="Belum ada invoice." />
           ) : (
             <ul className="divide-y">
               {tagihanTerbaru.map((t) => (

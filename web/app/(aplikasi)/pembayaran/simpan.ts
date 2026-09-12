@@ -34,7 +34,7 @@ const skema = z.object({
   total_amount: z.string(),
   alokasi: z
     .array(z.object({ invoice_id: z.string(), jumlah: z.string() }))
-    .min(1, "Pilih minimal satu tagihan."),
+    .min(1, "Pilih minimal satu invoice."),
 });
 
 export type KeadaanPembayaran = {
@@ -80,7 +80,7 @@ export async function simpanPembayaran(
   }
 
   if (alokasi.length === 0) {
-    return { galat: { alokasi: "Isi jumlah alokasi pada minimal satu tagihan." } };
+    return { galat: { alokasi: "Isi jumlah alokasi pada minimal satu invoice." } };
   }
 
   const totalAlokasi = alokasi.reduce((jumlah, a) => jumlah.plus(a.jumlah), d(0));
@@ -112,7 +112,7 @@ export async function simpanPembayaran(
 
       for (const a of alokasi) {
         const t = tagihan.find((x) => x.id === a.invoice_id);
-        if (!t) throw new Error("Ada tagihan yang tidak ditemukan lagi.");
+        if (!t) throw new Error("Ada invoice yang tidak ditemukan lagi.");
         if (t.customer_id.toString() !== f.customer_id) {
           throw new Error(`${t.invoice_number} bukan milik pelanggan yang dipilih.`);
         }

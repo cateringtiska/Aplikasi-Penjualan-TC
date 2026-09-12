@@ -116,7 +116,7 @@ export default async function HalamanDetailPenawaran({
           {p.status === "approved" && !tagihan ? (
             <Button size="sm" render={<Link href={`/tagihan/baru?dari=${p.id}`} />}>
               <FileSpreadsheet className="size-4" />
-              Buat tagihan
+              Buat invoice
             </Button>
           ) : null}
         </div>

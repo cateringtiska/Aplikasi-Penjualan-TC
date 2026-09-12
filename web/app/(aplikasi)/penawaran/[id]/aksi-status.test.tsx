@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
    Yang dikunci di sini sekaligus urutan statusnya: draft menuju terkirim,
    terkirim menuju disetujui. Kalau urutan itu berubah diam-diam, jalan menuju
-   "Buat tagihan" ikut berubah, dan itu justru yang sedang dicari orang.
+   "Buat invoice" ikut berubah, dan itu justru yang sedang dicari orang.
    ========================================================================== */
 
 const ubahStatus = vi.fn();
@@ -65,7 +65,7 @@ describe("AksiStatusPenawaran", () => {
   it("tidak menawarkan apa pun setelah disetujui", () => {
     pasang("approved");
 
-    // Langkah berikutnya bukan status lagi, melainkan "Buat tagihan" yang
+    // Langkah berikutnya bukan status lagi, melainkan "Buat invoice" yang
     // dirender halaman. Satu tombol status yang tersisa di sini akan
     // membingungkan: statusnya sudah tidak bisa maju ke mana pun.
     expect(screen.queryAllByRole("button")).toHaveLength(0);

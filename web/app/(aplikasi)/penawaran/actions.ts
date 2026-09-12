@@ -59,7 +59,7 @@ export async function hapusPenawaran(id: string): Promise<void> {
     throw new Error("Hanya quotation berstatus draft yang bisa dihapus.");
   }
   if (penawaran.invoices.length > 0) {
-    throw new Error("Quotation ini sudah dijadikan tagihan, jadi tidak bisa dihapus.");
+    throw new Error("Quotation ini sudah dijadikan invoice, jadi tidak bisa dihapus.");
   }
 
   // Baris item ikut terhapus otomatis lewat aturan cascade di database.

@@ -22,7 +22,7 @@ import { d, rupiah } from "@/lib/uang";
 import { tandaiJatuhTempo } from "./actions";
 import { AksiBaris } from "./aksi-baris";
 
-export const metadata: Metadata = { title: "Tagihan" };
+export const metadata: Metadata = { title: "Invoice" };
 export const dynamic = "force-dynamic";
 
 const STATUS = [
@@ -79,12 +79,12 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Tagihan"
-        keterangan="Tagihan yang sudah terbit beserta sisa yang belum dibayar."
+        judul="Invoice"
+        keterangan="Invoice yang sudah terbit beserta sisa yang belum dibayar."
         aksi={
           <Button size="sm" render={<Link href="/tagihan/baru" />}>
             <Plus className="size-4" />
-            Buat tagihan
+            Buat invoice
           </Button>
         }
       />
@@ -97,17 +97,17 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
       <BingkaiTabel>
         {daftar.length === 0 ? (
           <KeadaanKosong
-            judul={kunci || saring ? "Tidak ada yang cocok" : "Belum ada tagihan"}
+            judul={kunci || saring ? "Tidak ada yang cocok" : "Belum ada invoice"}
             keterangan={
               kunci || saring
                 ? "Coba ubah kata kunci atau penyaring statusnya."
-                : "Tagihan biasanya dibuat dari quotation yang sudah disetujui."
+                : "Invoice biasanya dibuat dari quotation yang sudah disetujui."
             }
             aksi={
               kunci || saring ? undefined : (
                 <Button size="sm" render={<Link href="/tagihan/baru" />}>
                   <Plus className="size-4" />
-                  Buat tagihan
+                  Buat invoice
                 </Button>
               )
             }

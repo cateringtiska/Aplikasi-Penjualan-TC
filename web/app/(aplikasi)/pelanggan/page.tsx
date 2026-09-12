@@ -59,7 +59,7 @@ export default async function HalamanPelanggan({
     <Halaman>
       <KepalaHalaman
         judul="Customer"
-        keterangan="Data customer yang dipakai di quotation dan tagihan."
+        keterangan="Data customer yang dipakai di quotation dan invoice."
         aksi={<DialogPelanggan />}
       />
 

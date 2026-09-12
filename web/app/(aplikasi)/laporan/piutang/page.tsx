@@ -32,7 +32,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
     <Halaman>
       <KepalaHalaman
         judul="Kartu piutang"
-        keterangan="Sisa tagihan per customer, dikelompokkan menurut umur keterlambatannya."
+        keterangan="Sisa invoice per customer, dikelompokkan menurut umur keterlambatannya."
         aksi={
           <Button variant="outline" size="sm" render={<a href={`/laporan/piutang/excel${kunci ? `?cari=${encodeURIComponent(kunci)}` : ""}`} />}>
             <FileSpreadsheet className="size-4" />
@@ -67,7 +67,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
             keterangan={
               kunci
                 ? `Tidak ditemukan piutang atas nama "${kunci}".`
-                : "Semua tagihan sudah lunas. Tidak ada yang perlu ditagih."
+                : "Semua invoice sudah lunas. Tidak ada yang perlu ditagih."
             }
           />
         ) : (
@@ -75,7 +75,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th>Customer</Th>
-                <Th className="hidden w-28 sm:table-cell">Tagihan</Th>
+                <Th className="hidden w-28 sm:table-cell">Invoice</Th>
                 <Th className="hidden w-40 md:table-cell">Jatuh tempo tertua</Th>
                 <Th className="w-32 text-right">Terlambat</Th>
                 <Th className="w-40 text-right">Sisa piutang</Th>

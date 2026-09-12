@@ -78,7 +78,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
     <Halaman>
       <KepalaHalaman
         judul="Quotation"
-        keterangan="Quotation harga yang dikirim ke customer sebelum menjadi tagihan."
+        keterangan="Quotation harga yang dikirim ke customer sebelum menjadi invoice."
         aksi={
           <Button size="sm" render={<Link href="/penawaran/baru" />}>
             <Plus className="size-4" />

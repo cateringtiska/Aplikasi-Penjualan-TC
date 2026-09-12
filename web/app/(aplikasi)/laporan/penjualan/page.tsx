@@ -39,7 +39,7 @@ export default async function HalamanLaporanPenjualan({
     <Halaman>
       <KepalaHalaman
         judul="Laporan penjualan"
-        keterangan="Rekap quotation dan tagihan pada rentang tanggal yang dipilih."
+        keterangan="Rekap quotation dan invoice pada rentang tanggal yang dipilih."
         aksi={
           <>
             <Button
@@ -70,7 +70,7 @@ export default async function HalamanLaporanPenjualan({
 
       <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
         <Angka
-          label="Nilai tagihan"
+          label="Nilai invoice"
           nilai={rupiah(ringkasan.nilaiTagihan)}
           keterangan={`${ringkasan.jumlahTagihan} tagihan`}
           menonjol
@@ -96,7 +96,7 @@ export default async function HalamanLaporanPenjualan({
       <BingkaiTabel>
         {baris.length === 0 ? (
           <KeadaanKosong
-            judul="Tidak ada tagihan pada rentang ini"
+            judul="Tidak ada invoice pada rentang ini"
             keterangan="Ubah rentang tanggal atau pilih customer yang lain."
           />
         ) : (

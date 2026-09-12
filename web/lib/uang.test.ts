@@ -140,7 +140,7 @@ describe("Status invoice", () => {
   const besok = new Date("2026-12-31");
   const sekarang = new Date("2026-09-10");
 
-  it("menjadi lunas ketika pembayaran menutup seluruh tagihan", () => {
+  it("menjadi lunas ketika pembayaran menutup seluruh invoice", () => {
     expect(
       hitungStatusInvoice({
         statusSekarang: "unpaid",
@@ -214,7 +214,7 @@ describe("Status invoice", () => {
     ).toBe("unpaid");
   });
 
-  it("menghitung sisa tagihan", () => {
+  it("menghitung sisa invoice", () => {
     expect(sisaTagihan(43_325_000, 20_000_000).toString()).toBe("23325000");
   });
 

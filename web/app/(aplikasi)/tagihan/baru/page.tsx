@@ -9,7 +9,7 @@ import { wajibPeran } from "@/lib/rbac";
 import { hariIni, ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../data";
 import { simpanTagihan } from "../simpan";
 
-export const metadata: Metadata = { title: "Tagihan baru" };
+export const metadata: Metadata = { title: "Invoice baru" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/tagihan/baru">) {
@@ -114,11 +114,11 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Tagihan baru"
+        judul="Invoice baru"
         keterangan={
           asal
             ? `Seluruh rincian disalin dari penawaran ${asal.nomor}. Periksa tanggal jatuh temponya sebelum menyimpan.`
-            : "Nomor tagihan dibuat otomatis setelah disimpan."
+            : "Nomor invoice dibuat otomatis setelah disimpan."
         }
       />
 

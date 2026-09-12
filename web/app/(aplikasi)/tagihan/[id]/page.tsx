@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 import { d, labelStatusInvoice, romawi, rupiah } from "@/lib/uang";
 
-export const metadata: Metadata = { title: "Detail tagihan" };
+export const metadata: Metadata = { title: "Detail invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanDetailTagihan({ params }: PageProps<"/tagihan/[id]">) {
@@ -72,7 +72,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-3.5" />
-          Semua tagihan
+          Semua invoice
         </Link>
       </div>
 
@@ -124,7 +124,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
 
       {/* Ringkasan uang — bagian yang paling sering dicari orang di halaman ini */}
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
-        <AngkaBesar label="Nilai tagihan" nilai={rupiah(t.grand_total)} />
+        <AngkaBesar label="Nilai invoice" nilai={rupiah(t.grand_total)} />
         <AngkaBesar label="Sudah dibayar" nilai={rupiah(t.paid_amount)} />
         <AngkaBesar
           label="Sisa"
@@ -215,7 +215,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                 <BarisTotal label={`PB1 ${Number(t.pb1_percent)}%`} nilai={rupiah(t.pb1_amount)} />
               ) : null}
               <div className="mt-1.5 flex items-baseline justify-between border-t pt-2.5">
-                <dt className="font-medium">Total tagihan</dt>
+                <dt className="font-medium">Total invoice</dt>
                 <dd className="angka text-base font-semibold tabular-nums">
                   {rupiah(t.grand_total)}
                 </dd>

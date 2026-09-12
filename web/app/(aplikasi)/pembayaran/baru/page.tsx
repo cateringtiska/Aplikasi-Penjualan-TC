@@ -69,7 +69,7 @@ export default async function HalamanPembayaranBaru({
     <Halaman>
       <KepalaHalaman
         judul="Catat pembayaran"
-        keterangan="Satu setoran boleh menutup beberapa tagihan sekaligus."
+        keterangan="Satu setoran boleh menutup beberapa invoice sekaligus."
       />
 
       <FormPembayaran

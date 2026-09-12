@@ -37,7 +37,7 @@ const PERAN = [
   {
     nilai: "sales",
     label: "Sales",
-    jelas: "Quotation, tagihan, customer, produk, laporan penjualan dan piutang.",
+    jelas: "Quotation, invoice, customer, produk, laporan penjualan dan piutang.",
   },
   {
     nilai: "finance",

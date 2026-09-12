@@ -24,7 +24,7 @@ export default async function HalamanMasuk() {
           Masuk ke Penjualan TC
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Quotation, tagihan, dan piutang katering Tiska.
+          Quotation, invoice, dan piutang katering Tiska.
         </p>
 
         <div className="mt-8">
