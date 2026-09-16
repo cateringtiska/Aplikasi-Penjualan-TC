@@ -47,7 +47,7 @@ export default async function HalamanMarginPenawaran({
   if (!penawaran) notFound();
 
   const hasil = hitungMargin({
-    subtotalInvoice: penawaran.subtotal.toString(),
+    penjualan: penawaran.grand_total.toString(),
     biaya: biaya.map((b) => ({
       estimated_amount: b.estimated_amount?.toString() ?? null,
       actual_amount: b.actual_amount?.toString() ?? null,
@@ -97,11 +97,11 @@ export default async function HalamanMarginPenawaran({
 
       <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
         Angka di sini <strong>perkiraan</strong>, dipakai untuk menimbang harga sebelum
-        penawaran dikirim. Penjualan bersih diambil dari subtotal
-        ({rupiah(penawaran.subtotal)}), bukan dari total penawaran
-        ({rupiah(penawaran.grand_total)}) — service charge dan PB1 bukan pendapatan.
-        Saat penawaran ini dijadikan tagihan, seluruh baris biaya di bawah ikut tersalin,
-        lalu di sana diperbarui menjadi angka yang sebenarnya.
+        quotation dikirim. Penjualan yang diakui adalah seluruh nilai quotation
+        ({rupiah(penawaran.grand_total)}), sudah termasuk service charge, delivery, dan PB1.
+        Kalau PB1 akan disetorkan, catat sebagai baris biaya berkategori{" "}
+        <strong>PB1 disetor</strong>. Saat quotation ini dijadikan invoice, seluruh baris
+        biaya di bawah ikut tersalin, lalu di sana diperbarui menjadi angka yang sebenarnya.
       </p>
 
       <PanelBiaya

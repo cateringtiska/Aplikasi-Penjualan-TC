@@ -210,15 +210,33 @@ export type HasilMargin = {
 /**
  * Untung-rugi satu invoice.
  *
- * PENTING: penjualan bersih diambil dari SUBTOTAL invoice, bukan grand total.
- * Service charge dan PB1 sengaja tidak dihitung sebagai pendapatan — PB1
- * adalah pajak yang diteruskan ke pemerintah, bukan uang perusahaan.
+ * Penjualan yang diakui adalah SELURUH nilai yang ditagihkan — subtotal,
+ * service charge, delivery, dan PB1 — yaitu grand total invoice. Itulah uang
+ * yang benar-benar diminta dari customer.
+ *
+ * Sebelumnya hanya subtotal yang diakui, dengan alasan PB1 diteruskan ke
+ * pemerintah. Cara itu memaksa satu asumsi: bahwa PB1 SELALU disetorkan.
+ * Padahal tidak setiap acara begitu, dan asumsi yang dipaksakan di dalam
+ * rumus tidak bisa dikoreksi oleh siapa pun yang memakai laporannya.
+ *
+ * Sekarang penyetoran PB1 dicatat sebagai BARIS BIAYA berkategori "PB1",
+ * sehingga keadaan sebenarnya yang menentukan:
+ *
+ *   PB1 disetorkan       -> dicatat sebagai biaya, dan margin kembali
+ *                           sama persis seperti aturan lama
+ *   PB1 tidak disetorkan -> tidak ada baris biayanya, dan PB1 terbaca
+ *                           sebagai bagian dari margin
+ *
+ * Konsekuensinya harus disadari: PB1 yang tidak dicatat sebagai biaya akan
+ * terlihat sebagai untung. Kalau suatu saat ia tetap harus disetorkan,
+ * untung itu ikut hilang bersamanya.
  */
 export function hitungMargin(argumen: {
-  subtotalInvoice: NilaiUang;
+  /** Seluruh nilai yang ditagihkan — grand total invoice. */
+  penjualan: NilaiUang;
   biaya: BarisBiaya[];
 }): HasilMargin {
-  const net_sales = d(argumen.subtotalInvoice);
+  const net_sales = d(argumen.penjualan);
   const total_cost = argumen.biaya.reduce(
     (jumlah, baris) => jumlah.plus(nilaiBiaya(baris)),
     new Decimal(0),

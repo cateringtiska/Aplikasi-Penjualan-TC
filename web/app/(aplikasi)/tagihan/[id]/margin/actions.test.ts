@@ -48,7 +48,8 @@ beforeEach(() => {
   upsertMargin.mockReset();
   cariTagihan.mockReset();
   cariBiaya.mockReset();
-  cariTagihan.mockResolvedValue({ subtotal: "1000000" });
+  // Grand total, bukan subtotal: yang diakui sekarang seluruh nilai tagihan.
+  cariTagihan.mockResolvedValue({ grand_total: "1100000" });
   cariBiaya.mockResolvedValue([]);
   upsertMargin.mockResolvedValue({});
   ubahMargin.mockResolvedValue({});

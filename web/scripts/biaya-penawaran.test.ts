@@ -157,9 +157,11 @@ describe("salinPerkiraanBiaya", () => {
       where: { invoice_id: tagihan.id },
     });
     expect(d(margin.total_cost).toFixed(0)).toBe("5500000");
-    expect(d(margin.net_sales).toFixed(0)).toBe("10000000");
-    expect(d(margin.profit).toFixed(0)).toBe("4500000");
-    expect(d(margin.margin_percent).toFixed(0)).toBe("45");
+    // Grand total 11jt, bukan subtotal 10jt: yang diakui seluruh nilai yang
+    // ditagihkan, termasuk service charge dan PB1.
+    expect(d(margin.net_sales).toFixed(0)).toBe("11000000");
+    expect(d(margin.profit).toFixed(0)).toBe("5500000");
+    expect(d(margin.margin_percent).toFixed(0)).toBe("50");
     expect(margin.status).toBe("draft");
   });
 

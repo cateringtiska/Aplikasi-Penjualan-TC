@@ -214,7 +214,7 @@ describe("Alur penuh satu acara katering", () => {
     expect(d(t.grand_total).minus(d(t.paid_amount)).isZero()).toBe(true);
   });
 
-  it("menghitung margin dari subtotal, bukan dari total tagihan", async () => {
+  it("menghitung margin dari seluruh nilai tagihan, lalu menyimpannya utuh", async () => {
     const biaya = [
       { kategori: "hpp_bahan_baku", estimasi: 18_000_000, aktual: 19_250_000 },
       { kategori: "tenaga_kerja", estimasi: 4_500_000, aktual: null },
@@ -242,18 +242,20 @@ describe("Alur penuh satu acara katering", () => {
     });
 
     const hasil = hitungMargin({
-      subtotalInvoice: tagihan.subtotal.toString(),
+      penjualan: tagihan.grand_total.toString(),
       biaya: baris.map((b) => ({
         estimated_amount: b.estimated_amount?.toString() ?? null,
         actual_amount: b.actual_amount?.toString() ?? null,
       })),
     });
 
-    // Penjualan bersih memakai subtotal 38jt, BUKAN grand total 43,325jt.
-    expect(hasil.net_sales.toString()).toBe("38000000");
+    // Yang diakui adalah grand total 43,325jt — seluruh uang yang diminta
+    // dari customer, termasuk service charge dan PB1. Penyetoran PB1 dicatat
+    // sebagai baris biaya, bukan dipotong diam-diam di dalam rumus.
+    expect(hasil.net_sales.toString()).toBe("43325000");
     expect(hasil.total_cost.toString()).toBe("31250000"); // 19,25 + 4,5 + 7,5
-    expect(hasil.profit.toString()).toBe("6750000");
-    expect(hasil.margin_percent.toString()).toBe("17.76");
+    expect(hasil.profit.toString()).toBe("12075000");
+    expect(hasil.margin_percent.toString()).toBe("27.87");
     expect(hasil.profit_status).toBe("untung");
 
     await prisma.invoice_margins.create({
@@ -273,8 +275,8 @@ describe("Alur penuh satu acara katering", () => {
     const tersimpan = await prisma.invoice_margins.findUniqueOrThrow({
       where: { invoice_id: jejak.tagihan! },
     });
-    expect(tersimpan.profit.toString()).toBe("6750000");
-    expect(tersimpan.margin_percent.toString()).toBe("17.76");
+    expect(tersimpan.profit.toString()).toBe("12075000");
+    expect(tersimpan.margin_percent.toString()).toBe("27.87");
   });
 
   it("memakai biaya aktual hanya bila di atas nol", async () => {

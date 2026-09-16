@@ -11,6 +11,9 @@ export const KATEGORI_BIAYA = [
   { nilai: "sewa_peralatan", label: "Sewa Peralatan" },
   { nilai: "akomodasi", label: "Akomodasi" },
   { nilai: "entertainment", label: "Entertainment" },
+  // Dipakai ketika PB1 yang dipungut dari customer benar-benar disetorkan.
+  // Tanpa baris ini, PB1 terbaca sebagai bagian dari margin.
+  { nilai: "pb1", label: "PB1 disetor" },
   { nilai: "lain_lain", label: "Lain-lain" },
 ] as const;
 

@@ -49,7 +49,7 @@ export async function hitungUlangMargin(
   const [tagihan, biaya] = await Promise.all([
     klien.invoices.findUniqueOrThrow({
       where: { id: invoice_id },
-      select: { subtotal: true },
+      select: { grand_total: true },
     }),
     klien.invoice_costs.findMany({
       where: { invoice_id },
@@ -58,7 +58,7 @@ export async function hitungUlangMargin(
   ]);
 
   const hasil = hitungMargin({
-    subtotalInvoice: tagihan.subtotal.toString(),
+    penjualan: tagihan.grand_total.toString(),
     biaya: biaya.map((b) => ({
       estimated_amount: b.estimated_amount?.toString() ?? null,
       actual_amount: b.actual_amount?.toString() ?? null,

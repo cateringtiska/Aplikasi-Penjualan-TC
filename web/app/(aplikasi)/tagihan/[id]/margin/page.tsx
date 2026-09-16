@@ -31,6 +31,7 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
         invoice_date: true,
         subtotal: true,
         grand_total: true,
+        pb1_amount: true,
         event_type: true,
         customers: { select: { name: true } },
       },
@@ -50,7 +51,7 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
   // Dihitung di sini untuk ditampilkan, tanpa menyentuh database. Angka yang
   // tersimpan diperbarui hanya ketika biayanya benar-benar berubah.
   const hasil = hitungMargin({
-    subtotalInvoice: tagihan.subtotal.toString(),
+    penjualan: tagihan.grand_total.toString(),
     biaya: biaya.map((b) => ({
       estimated_amount: b.estimated_amount?.toString() ?? null,
       actual_amount: b.actual_amount?.toString() ?? null,
@@ -106,10 +107,16 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
       </section>
 
       <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-        Penjualan bersih diambil dari <strong>subtotal</strong> tagihan
-        ({rupiah(tagihan.subtotal)}), bukan dari total tagihan
-        ({rupiah(tagihan.grand_total)}). Service charge dan PB1 tidak dihitung sebagai
-        pendapatan — PB1 adalah pajak yang diteruskan ke pemerintah.
+        Penjualan yang diakui adalah <strong>seluruh nilai tagihan</strong>
+        ({rupiah(tagihan.grand_total)}) — sudah termasuk service charge, delivery, dan PB1.
+        {tagihan.pb1_amount && Number(tagihan.pb1_amount) > 0 ? (
+          <>
+            {" "}
+            Tagihan ini memungut PB1 {rupiah(tagihan.pb1_amount)}. Kalau PB1 itu disetorkan,
+            catat sebagai baris biaya berkategori <strong>PB1 disetor</strong>; kalau tidak
+            dicatat, ia terbaca sebagai bagian dari margin.
+          </>
+        ) : null}
         {terkunci && margin?.finalized_at ? (
           <>
             {" "}

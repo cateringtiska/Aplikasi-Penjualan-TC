@@ -89,7 +89,7 @@ export async function ambilLaporanMargin(kunci: string) {
         id: true,
         invoice_number: true,
         invoice_date: true,
-        subtotal: true,
+        grand_total: true,
         event_type: true,
         customers: { select: { name: true } },
         invoice_margins: {
@@ -122,7 +122,7 @@ export async function ambilLaporanMargin(kunci: string) {
         id: true,
         quotation_number: true,
         quotation_date: true,
-        subtotal: true,
+        grand_total: true,
         event_type: true,
         status: true,
         customers: { select: { name: true } },
@@ -139,9 +139,9 @@ export async function ambilLaporanMargin(kunci: string) {
       tanggal: t.invoice_date,
       pelanggan: t.customers.name,
       jenisAcara: t.event_type,
-      penjualan: d(m?.net_sales ?? t.subtotal),
+      penjualan: d(m?.net_sales ?? t.grand_total),
       biaya: d(m?.total_cost ?? 0),
-      untung: d(m?.profit ?? t.subtotal),
+      untung: d(m?.profit ?? t.grand_total),
       marginPersen: d(m?.margin_percent ?? 100),
       rugi: m?.profit_status === "rugi",
       adaBiaya: t._count.invoice_costs > 0,
@@ -156,7 +156,7 @@ export async function ambilLaporanMargin(kunci: string) {
     pelanggan: p.customers.name,
     jenisAcara: p.event_type,
     hasil: hitungMargin({
-      subtotalInvoice: p.subtotal.toString(),
+      penjualan: p.grand_total.toString(),
       biaya: p.quotation_costs.map((b) => ({
         estimated_amount: b.estimated_amount?.toString() ?? null,
         actual_amount: b.actual_amount?.toString() ?? null,

@@ -237,11 +237,16 @@ describe("Biaya dan margin", () => {
     expect(nilaiBiaya({ estimated_amount: 5_000_000 }).toString()).toBe("5000000");
   });
 
-  it("menghitung untung dari subtotal, bukan dari grand total", () => {
-    // Subtotal 38jt. Grand total 43.325.000 — sengaja tidak dipakai, karena
-    // PB1 adalah pajak yang diteruskan, bukan pendapatan perusahaan.
+  it("mengakui SELURUH nilai yang ditagihkan, termasuk service charge dan PB1", () => {
+    // Acara yang sama dipakai di seluruh berkas ini: subtotal 38jt, service
+    // charge 1.425.000, PB1 3.900.000, grand total 43.325.000.
+    //
+    // Yang diakui adalah 43.325.000 — seluruh uang yang diminta dari
+    // customer. Subtotal saja memaksa satu asumsi, bahwa PB1 selalu
+    // disetorkan, dan asumsi yang terkubur di dalam rumus tidak bisa
+    // dikoreksi oleh siapa pun yang membaca laporannya.
     const hasil = hitungMargin({
-      subtotalInvoice: 38_000_000,
+      penjualan: 43_325_000,
       biaya: [
         { estimated_amount: 18_000_000, actual_amount: 19_250_000 }, // HPP bahan baku
         { estimated_amount: 4_500_000 },                             // Tenaga kerja
@@ -249,16 +254,34 @@ describe("Biaya dan margin", () => {
       ],
     });
 
-    expect(hasil.net_sales.toString()).toBe("38000000");
+    expect(hasil.net_sales.toString()).toBe("43325000");
     expect(hasil.total_cost.toString()).toBe("31250000");
-    expect(hasil.profit.toString()).toBe("6750000");
-    expect(hasil.margin_percent.toString()).toBe("17.76"); // dibulatkan 2 desimal
+    expect(hasil.profit.toString()).toBe("12075000");
+    expect(hasil.margin_percent.toString()).toBe("27.87");
     expect(hasil.profit_status).toBe("untung");
+  });
+
+  it("kembali ke angka lama begitu PB1 dicatat sebagai biaya yang disetorkan", () => {
+    // Inti perubahan ini: yang menentukan bukan lagi rumusnya, melainkan
+    // kenyataannya. PB1 disetorkan -> catat sebagai biaya, dan untungnya
+    // sama persis dengan aturan lama yang hanya mengakui subtotal.
+    const hasil = hitungMargin({
+      penjualan: 43_325_000,
+      biaya: [
+        { estimated_amount: 18_000_000, actual_amount: 19_250_000 },
+        { estimated_amount: 4_500_000 },
+        { estimated_amount: 7_500_000, actual_amount: 7_500_000 },
+        { actual_amount: 3_900_000 }, // PB1 disetor
+        { actual_amount: 1_425_000 }, // Service charge diteruskan ke tim
+      ],
+    });
+
+    expect(hasil.profit.toString()).toBe("6750000");
   });
 
   it("menandai rugi ketika biaya melampaui penjualan", () => {
     const hasil = hitungMargin({
-      subtotalInvoice: 10_000_000,
+      penjualan: 10_000_000,
       biaya: [{ actual_amount: 12_500_000 }],
     });
 
@@ -268,7 +291,7 @@ describe("Biaya dan margin", () => {
   });
 
   it("tidak membagi dengan nol ketika invoice belum punya nilai", () => {
-    const hasil = hitungMargin({ subtotalInvoice: 0, biaya: [{ actual_amount: 500_000 }] });
+    const hasil = hitungMargin({ penjualan: 0, biaya: [{ actual_amount: 500_000 }] });
     expect(hasil.margin_percent.toString()).toBe("0");
     expect(hasil.profit_status).toBe("rugi");
   });
