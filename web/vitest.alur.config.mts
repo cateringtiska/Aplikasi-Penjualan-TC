@@ -26,6 +26,7 @@ export default defineConfig({
       "scripts/ekspor-excel.test.ts",
       "scripts/kartu-piutang.test.ts",
       "scripts/piutang-lunas.test.ts",
+      "scripts/jatuh-tempo.test.ts",
     ],
     // Vitest tidak memuat .env sendiri; tanpa ini DATABASE_URL kosong.
     setupFiles: ["dotenv/config"],

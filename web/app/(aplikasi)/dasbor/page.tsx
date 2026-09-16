@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
+
+import { tandaiJatuhTempo } from "../tagihan/actions";
 import { d, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -17,8 +19,19 @@ const BELUM_LUNAS = ["unpaid", "partial", "overdue"];
 
 export default async function HalamanDasbor() {
   const sekarang = new Date();
+  const awalHariIni = new Date(sekarang);
+  awalHariIni.setHours(0, 0, 0, 0);
+
   const awalBulan = new Date(sekarang.getFullYear(), sekarang.getMonth(), 1);
   const awalBulanDepan = new Date(sekarang.getFullYear(), sekarang.getMonth() + 1, 1);
+
+  // Status "jatuh tempo" hanya berpindah ketika ada yang menyentuhnya —
+  // sampai sekarang itu terjadi saat daftar Invoice dibuka. Dashboard adalah
+  // halaman PERTAMA yang dilihat orang setelah masuk, jadi tanpa ini, invoice
+  // yang lewat tempo semalam masih terhitung nol sampai ada yang kebetulan
+  // membuka daftar Invoice. Angka nol yang salah pada kartu "Jatuh tempo"
+  // adalah angka yang membuat orang berhenti menagih.
+  await tandaiJatuhTempo();
 
   const [piutang, bulanIni, penawaranMenunggu, jatuhTempo, penawaranTerbaru, tagihanTerbaru] =
     await Promise.all([
@@ -38,7 +51,13 @@ export default async function HalamanDasbor() {
         _count: true,
       }),
       prisma.quotations.count({ where: { status: { in: ["draft", "sent"] } } }),
-      prisma.invoices.count({ where: { status: "overdue" } }),
+      // Dihitung dari due_date, bukan dari kolom status. Kolom status adalah
+      // salinan yang perlu disegarkan; tanggal jatuh tempo adalah sumbernya.
+      // Kalau panggilan penyegaran di atas suatu saat hilang, angka ini tetap
+      // benar.
+      prisma.invoices.count({
+        where: { status: { in: BELUM_LUNAS }, due_date: { lt: awalHariIni } },
+      }),
       prisma.quotations.findMany({
         take: 5,
         orderBy: { id: "desc" },
