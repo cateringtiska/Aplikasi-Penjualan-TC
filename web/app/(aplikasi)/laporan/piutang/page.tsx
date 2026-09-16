@@ -86,7 +86,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                 <tr key={p.idPelanggan} className="border-b last:border-0 hover:bg-muted/25">
                   <Td>
                     <Link
-                      href={`/tagihan?cari=${encodeURIComponent(p.nama)}`}
+                      href={`/pelanggan/${p.idPelanggan}`}
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {p.nama}

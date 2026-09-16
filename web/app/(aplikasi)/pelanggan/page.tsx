@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import {
   BingkaiTabel,
@@ -97,7 +98,12 @@ export default async function HalamanPelanggan({
                   <tr key={p.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
                     <Td className="nomor-dokumen text-muted-foreground">{p.customer_code}</Td>
                     <Td>
-                      <span className="font-medium">{p.name}</span>
+                      <Link
+                        href={`/pelanggan/${p.id}`}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {p.name}
+                      </Link>
                       {p.email ? (
                         <span className="block text-xs text-muted-foreground">{p.email}</span>
                       ) : null}
