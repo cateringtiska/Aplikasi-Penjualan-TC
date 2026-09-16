@@ -41,10 +41,28 @@ export type BarisPiutang = {
   hariTerlambat: number;
 };
 
+/** Customer yang punya invoice tetapi tidak menyisakan piutang sama sekali. */
+export type CustomerLunas = {
+  id: string;
+  nama: string;
+  kode: string;
+  jumlahInvoice: number;
+  totalDibayar: Decimal;
+};
+
 export type HasilPiutang = {
   daftar: BarisPiutang[];
   umur: Record<KunciKelompok, Decimal>;
   totalSemua: Decimal;
+  /**
+   * Diisi HANYA ketika daftar piutangnya kosong.
+   *
+   * Mencari nama customer yang ternyata sudah lunas menghasilkan halaman
+   * kosong, dan halaman kosong terbaca sebagai "pembayaran saya tidak
+   * tercatat" — padahal justru sebaliknya. Daftar ini yang menjelaskannya,
+   * sekaligus menunjukkan ke mana riwayatnya pergi.
+   */
+  lunas: CustomerLunas[];
 };
 
 export async function ambilPiutang(kunci: string): Promise<HasilPiutang> {
@@ -114,5 +132,51 @@ export async function ambilPiutang(kunci: string): Promise<HasilPiutang> {
   const daftar = [...perPelanggan.values()].sort((a, b) => b.total.comparedTo(a.total));
   const totalSemua = daftar.reduce((jumlah, p) => jumlah.plus(p.total), d(0));
 
-  return { daftar, umur, totalSemua };
+  // Kueri tambahan ini hanya dijalankan saat tidak ada piutang sama sekali,
+  // jadi tidak membebani pemakaian sehari-hari.
+  const lunas = daftar.length === 0 ? await customerYangSudahLunas(kunci) : [];
+
+  return { daftar, umur, totalSemua, lunas };
+}
+
+async function customerYangSudahLunas(kunci: string): Promise<CustomerLunas[]> {
+  const pelanggan = await prisma.customers.findMany({
+    where: {
+      ...(kunci ? { name: { contains: kunci, mode: "insensitive" } } : {}),
+      // Yang belum pernah ditagih sama sekali bukan "sudah lunas" — ia hanya
+      // belum punya transaksi, dan menyebutnya lunas akan menyesatkan.
+      invoices: { some: { status: { not: "cancelled" } } },
+    },
+    orderBy: { name: "asc" },
+    take: 25,
+    select: {
+      id: true,
+      name: true,
+      customer_code: true,
+      invoices: {
+        where: { status: { not: "cancelled" } },
+        select: { grand_total: true, paid_amount: true },
+      },
+    },
+  });
+
+  const hasil: CustomerLunas[] = [];
+
+  for (const p of pelanggan) {
+    const sisa = p.invoices.reduce(
+      (j, i) => j.plus(d(i.grand_total)).minus(d(i.paid_amount)),
+      d(0),
+    );
+    if (sisa.gt(0)) continue;
+
+    hasil.push({
+      id: p.id.toString(),
+      nama: p.name,
+      kode: p.customer_code,
+      jumlahInvoice: p.invoices.length,
+      totalDibayar: p.invoices.reduce((j, i) => j.plus(d(i.paid_amount)), d(0)),
+    });
+  }
+
+  return hasil;
 }

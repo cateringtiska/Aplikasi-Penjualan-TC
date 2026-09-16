@@ -26,7 +26,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
-  const { daftar, umur, totalSemua } = await ambilPiutang(kunci);
+  const { daftar, umur, totalSemua, lunas } = await ambilPiutang(kunci);
 
   return (
     <Halaman>
@@ -62,14 +62,54 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
 
       <BingkaiTabel>
         {daftar.length === 0 ? (
-          <KeadaanKosong
-            judul={kunci ? "Tidak ada yang cocok" : "Tidak ada piutang"}
-            keterangan={
-              kunci
-                ? `Tidak ditemukan piutang atas nama "${kunci}".`
-                : "Semua invoice sudah lunas. Tidak ada yang perlu ditagih."
-            }
-          />
+          lunas.length > 0 ? (
+            /* Halaman kosong terbaca sebagai "pembayaran saya tidak tercatat",
+               padahal artinya justru sebaliknya. Jadi sebutkan siapa yang sudah
+               lunas, berapa yang sudah masuk, dan ke mana riwayatnya bisa
+               dilihat. */
+            <div className="px-4 py-8 sm:px-6">
+              <p className="text-center text-sm font-medium">
+                {kunci ? `Tidak ada sisa piutang atas nama "${kunci}".` : "Tidak ada piutang."}
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-center text-sm text-muted-foreground">
+                Bukan berarti pembayarannya tidak tercatat — justru sebaliknya. Yang berikut ini
+                sudah lunas seluruhnya, jadi ia keluar dari daftar umur piutang.
+              </p>
+
+              <ul className="mx-auto mt-5 flex max-w-md flex-col gap-2">
+                {lunas.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-md border bg-card px-3.5 py-2.5"
+                  >
+                    <Link
+                      href={`/pelanggan/${p.id}`}
+                      className="font-medium underline-offset-4 hover:underline"
+                    >
+                      {p.nama}
+                    </Link>
+                    <span className="text-xs text-muted-foreground">
+                      {p.jumlahInvoice} invoice · {rupiah(p.totalDibayar)} lunas
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Klik namanya untuk melihat kartu piutangnya — seluruh invoice dan pembayaran,
+                termasuk yang sudah lunas.
+              </p>
+            </div>
+          ) : (
+            <KeadaanKosong
+              judul={kunci ? "Tidak ada yang cocok" : "Tidak ada piutang"}
+              keterangan={
+                kunci
+                  ? `Tidak ada customer bernama "${kunci}" yang punya invoice.`
+                  : "Semua invoice sudah lunas. Tidak ada yang perlu ditagih."
+              }
+            />
+          )
         ) : (
           <table className="w-full text-sm">
             <thead>
