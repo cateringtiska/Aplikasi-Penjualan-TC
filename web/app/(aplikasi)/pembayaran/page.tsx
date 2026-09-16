@@ -118,7 +118,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
                       {p.payment_number}
                     </Link>
                     <span className="block text-xs text-muted-foreground">
-                      {p._count.payment_details} tagihan
+                      {p._count.payment_details} invoice
                     </span>
                   </Td>
                   <Td className="font-medium">{p.customers.name}</Td>

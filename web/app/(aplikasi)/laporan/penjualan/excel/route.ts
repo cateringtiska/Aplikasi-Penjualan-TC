@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     Number(ringkasan.nilaiTagihan),
     Number(ringkasan.totalTerbayar),
     Number(ringkasan.totalPiutang),
-    `${ringkasan.jumlahTagihan} tagihan aktif`,
+    `${ringkasan.jumlahTagihan} invoice aktif`,
   ]);
   barisTotal.font = { bold: true };
   barisTotal.border = { top: { style: "thin", color: { argb: "FF999999" } } };

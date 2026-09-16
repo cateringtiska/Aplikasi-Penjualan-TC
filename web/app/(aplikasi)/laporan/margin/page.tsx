@@ -71,7 +71,7 @@ export default async function HalamanLaporanMargin({
 
       {ringkasanNyata.belumDicatat > 0 ? (
         <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-          {ringkasanNyata.belumDicatat} tagihan belum punya catatan biaya sama sekali, jadi seluruh nilainya
+          {ringkasanNyata.belumDicatat} invoice belum punya catatan biaya sama sekali, jadi seluruh nilainya
           terhitung sebagai margin. Angka di atas baru bisa dipercaya setelah biayanya dicatat.
         </p>
       ) : null}
@@ -143,7 +143,7 @@ export default async function HalamanLaporanMargin({
 
       {nyata.length > 0 ? (
         <RingkasanTabel>
-          {nyata.length} tagihan · tagihan yang dibatalkan tidak dihitung
+          {nyata.length} invoice · invoice yang dibatalkan tidak dihitung
         </RingkasanTabel>
       ) : null}
 
@@ -239,7 +239,7 @@ export default async function HalamanLaporanMargin({
           </BingkaiTabel>
 
           <RingkasanTabel>
-            {perkiraan.length} penawaran · yang sudah jadi tagihan tidak dihitung dua kali
+            {perkiraan.length} quotation · yang sudah jadi invoice tidak dihitung dua kali
           </RingkasanTabel>
         </section>
       ) : null}

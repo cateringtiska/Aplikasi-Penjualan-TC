@@ -79,7 +79,7 @@ export default async function HalamanDetailPembayaran({
         <Angka label="Dari customer" nilai={p.customers.name} teks />
         <Angka
           label="Menutup"
-          nilai={`${p.payment_details.length} tagihan`}
+          nilai={`${p.payment_details.length} invoice`}
           teks
           keterangan={p.users ? `Dicatat oleh ${p.users.name}` : undefined}
         />

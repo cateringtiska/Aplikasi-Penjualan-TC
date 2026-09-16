@@ -142,7 +142,7 @@ export default async function HalamanPelanggan({
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} pelanggan{kunci ? " cocok" : ""} · {jumlahAktif} aktif
+          {daftar.length} customer{kunci ? " cocok" : ""} · {jumlahAktif} aktif
         </RingkasanTabel>
       ) : null}
     </Halaman>

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /**
  * Mengunduh laporan margin sebagai berkas Excel.
  *
- * DUA LEMBAR, bukan satu. Angka nyata dari tagihan dan angka perkiraan dari
+ * DUA LEMBAR, bukan satu. Angka nyata dari invoice dan angka perkiraan dari
  * quotation dipisah persis seperti di layar, supaya tidak ada yang tanpa
  * sengaja menyorot keduanya lalu menjumlahkannya di Excel. Untung perkiraan
  * adalah uang yang belum tentu datang; menjumlahkannya dengan uang yang sudah
@@ -70,14 +70,35 @@ export async function GET(request: NextRequest) {
     baris.border = { bottom: { style: "thin", color: { argb: "FF999999" } } };
   }
 
-  function rapikan(lembar: ExcelJS.Worksheet, lebar: number[], kolomAngka: number[]) {
+  // Rupiah dibulatkan ke satuan; persentase TIDAK. Margin 44,94% yang
+  // tertulis 45 membuat berkas dan layar menyebut angka berbeda untuk hal
+  // yang sama — dan yang dipegang akuntan adalah berkasnya.
+  const FORMAT_UANG = "#,##0";
+  const FORMAT_PERSEN = "0.00";
+
+  function rapikan(
+    lembar: ExcelJS.Worksheet,
+    lebar: number[],
+    kolomUang: number[],
+    kolomPersen: number[],
+  ) {
     lebar.forEach((w, i) => {
       lembar.getColumn(i + 1).width = w;
     });
-    for (const k of kolomAngka) {
-      lembar.getColumn(k).numFmt = "#,##0";
+    for (const k of kolomUang) {
+      lembar.getColumn(k).numFmt = FORMAT_UANG;
       lembar.getColumn(k).alignment = { horizontal: "right" };
     }
+    for (const k of kolomPersen) {
+      lembar.getColumn(k).numFmt = FORMAT_PERSEN;
+      lembar.getColumn(k).alignment = { horizontal: "right" };
+    }
+  }
+
+  /** Baris ringkasan: tiga kolom rupiah, lalu satu kolom persentase. */
+  function rapikanRingkasan(lembar: ExcelJS.Worksheet) {
+    for (const i of [1, 2, 3]) lembar.getRow(6).getCell(i).numFmt = FORMAT_UANG;
+    lembar.getRow(6).getCell(4).numFmt = FORMAT_PERSEN;
   }
 
   /* ---------- Lembar 1: angka nyata ---------- */
@@ -96,7 +117,7 @@ export async function GET(request: NextRequest) {
     Number(ringkasanNyata.untung.toFixed(2)),
     Number(ringkasanNyata.marginPersen.toFixed(2)),
   ];
-  for (let i = 1; i <= 4; i++) l1.getRow(6).getCell(i).numFmt = "#,##0.##";
+  rapikanRingkasan(l1);
 
   tulisKepala(l1, [
     "No. Invoice",
@@ -129,20 +150,20 @@ export async function GET(request: NextRequest) {
   const total1 = l1.addRow([
     "TOTAL",
     "",
-    `${nyata.length} tagihan`,
+    `${nyata.length} invoice`,
     "",
     Number(ringkasanNyata.penjualan.toFixed(2)),
     Number(ringkasanNyata.biaya.toFixed(2)),
     Number(ringkasanNyata.untung.toFixed(2)),
     Number(ringkasanNyata.marginPersen.toFixed(2)),
     ringkasanNyata.belumDicatat > 0
-      ? `${ringkasanNyata.belumDicatat} tagihan tanpa catatan biaya`
+      ? `${ringkasanNyata.belumDicatat} invoice tanpa catatan biaya`
       : "",
   ]);
   total1.font = { bold: true };
   total1.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  rapikan(l1, [16, 12, 30, 20, 16, 16, 16, 10, 28], [5, 6, 7, 8]);
+  rapikan(l1, [16, 12, 30, 20, 16, 16, 16, 12, 28], [5, 6, 7], [8]);
 
   /* ---------- Lembar 2: angka perkiraan ---------- */
 
@@ -165,7 +186,7 @@ export async function GET(request: NextRequest) {
     Number(ringkasanPerkiraan.untung.toFixed(2)),
     Number(ringkasanPerkiraan.marginPersen.toFixed(2)),
   ];
-  for (let i = 1; i <= 4; i++) l2.getRow(6).getCell(i).numFmt = "#,##0.##";
+  rapikanRingkasan(l2);
 
   tulisKepala(l2, [
     "No. Quotation",
@@ -204,7 +225,7 @@ export async function GET(request: NextRequest) {
   total2.font = { bold: true };
   total2.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  rapikan(l2, [16, 12, 30, 20, 16, 18, 18, 10], [5, 6, 7, 8]);
+  rapikan(l2, [16, 12, 30, 20, 16, 18, 18, 12], [5, 6, 7], [8]);
 
   const isi = await buku.xlsx.writeBuffer();
   const namaBerkas = `laporan-margin-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;

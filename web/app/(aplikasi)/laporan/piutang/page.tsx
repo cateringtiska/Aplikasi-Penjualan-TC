@@ -160,7 +160,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} pelanggan · total piutang {rupiah(totalSemua)}
+          {daftar.length} customer · total piutang {rupiah(totalSemua)}
         </RingkasanTabel>
       ) : null}
     </Halaman>

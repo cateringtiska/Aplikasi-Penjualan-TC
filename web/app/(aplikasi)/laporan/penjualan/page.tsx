@@ -72,7 +72,7 @@ export default async function HalamanLaporanPenjualan({
         <Angka
           label="Nilai invoice"
           nilai={rupiah(ringkasan.nilaiTagihan)}
-          keterangan={`${ringkasan.jumlahTagihan} tagihan`}
+          keterangan={`${ringkasan.jumlahTagihan} invoice`}
           menonjol
         />
         <Angka

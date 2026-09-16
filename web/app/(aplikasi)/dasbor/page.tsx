@@ -101,13 +101,13 @@ export default async function HalamanDasbor() {
         <Angka
           label="Piutang berjalan"
           nilai={rupiah(totalPiutang)}
-          keterangan={`${piutang._count} tagihan belum lunas`}
+          keterangan={`${piutang._count} invoice belum lunas`}
           menonjol
         />
         <Angka
           label="Penjualan bulan ini"
           nilai={rupiah(bulanIni._sum.grand_total)}
-          keterangan={`${bulanIni._count} tagihan terbit`}
+          keterangan={`${bulanIni._count} invoice terbit`}
         />
         <Angka
           label="Quotation menunggu"

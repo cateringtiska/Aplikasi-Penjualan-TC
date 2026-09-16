@@ -168,7 +168,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} penawaran · nilai {rupiah(nilaiTotal)}
+          {daftar.length} quotation · nilai {rupiah(nilaiTotal)}
         </RingkasanTabel>
       ) : null}
     </Halaman>

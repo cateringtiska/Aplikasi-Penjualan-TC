@@ -138,6 +138,14 @@ describe("unduhan laporan margin", () => {
       2,
     );
 
+    // Persentase TIDAK boleh diformat sebagai bilangan bulat. Nilainya
+    // memang benar di dalam sel, tetapi format "#,##0" membuat margin 44,94%
+    // TERTULIS 45 saat dibuka — berkas dan layar lalu menyebut angka berbeda
+    // untuk hal yang sama, dan yang dipegang akuntan adalah berkasnya.
+    expect(l1.getColumn(8).numFmt, "kolom Margin % harus berdesimal").toBe("0.00");
+    expect(l1.getColumn(7).numFmt, "kolom rupiah dibulatkan ke satuan").toBe("#,##0");
+    expect(l1.getRow(6).getCell(4).numFmt, "ringkasan Margin % berdesimal").toBe("0.00");
+
     const l2 = buku.getWorksheet("Perkiraan - Quotation")!;
     expect(Number(l2.getRow(6).getCell(3).value)).toBeCloseTo(
       Number(ringkasanPerkiraan.untung.toFixed(2)),

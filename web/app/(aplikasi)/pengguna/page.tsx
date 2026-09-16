@@ -131,7 +131,7 @@ export default async function HalamanPengguna() {
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} pengguna · {jumlahAktif} aktif
+          {daftar.length} user · {jumlahAktif} aktif
         </RingkasanTabel>
       ) : null}
 
