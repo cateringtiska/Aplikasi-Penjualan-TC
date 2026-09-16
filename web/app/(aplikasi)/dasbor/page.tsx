@@ -17,7 +17,10 @@ export const dynamic = "force-dynamic";
 
 const BELUM_LUNAS = ["unpaid", "partial", "overdue"];
 
-export default async function HalamanDasbor() {
+export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor">) {
+  const { akses } = await searchParams;
+  const ditolak = akses === "ditolak";
+
   const sekarang = new Date();
   const awalHariIni = new Date(sekarang);
   awalHariIni.setHours(0, 0, 0, 0);
@@ -94,6 +97,21 @@ export default async function HalamanDasbor() {
           {format(sekarang, "EEEE, d MMMM yyyy", { locale: localeId })}
         </p>
       </header>
+
+      {/* wajibPeran melempar ke sini dengan ?akses=ditolak. Tanpa
+          pemberitahuan ini, orang yang membuka halaman terlarang hanya
+          mendapati dirinya tiba-tiba di Dashboard — yang terbaca sebagai
+          tautan rusak, bukan sebagai penolakan yang memang disengaja. */}
+      {ditolak ? (
+        <p
+          role="alert"
+          className="mt-6 rounded-md border border-border-strong/60 bg-muted/50 px-3.5 py-3 text-sm"
+        >
+          Halaman yang Anda buka hanya untuk peran tertentu, jadi Anda dikembalikan ke
+          Dashboard. Ini bukan kesalahan — menu yang tidak terlihat memang sengaja ditutup
+          untuk peran Anda.
+        </p>
+      ) : null}
 
       {/* Empat angka utama disusun sebagai satu papan, bukan empat kartu
           terpisah — supaya terbaca sebagai satu ringkasan. */}
