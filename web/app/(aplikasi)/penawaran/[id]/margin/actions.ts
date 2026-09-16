@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import type { KeadaanBiaya } from "@/lib/biaya";
+import { pesanGagal } from "@/lib/dokumen";
 import { bacaFormulirBiaya } from "@/lib/biaya-masukan";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -52,8 +53,8 @@ export async function simpanBiayaPenawaran(
         },
       });
     }
-  } catch {
-    return { pesan: "Baris biaya gagal disimpan." };
+  } catch (galat) {
+    return pesanGagal(galat, "Baris biaya gagal disimpan.");
   }
 
   revalidatePath(`/penawaran/${idDokumen}/margin`);
