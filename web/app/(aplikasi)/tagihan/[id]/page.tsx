@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { ArrowLeft, Calculator, PencilLine, Printer, Wallet } from "lucide-react";
@@ -42,7 +44,10 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
         where: { parent_id: null },
         orderBy: { id: "asc" },
         include: {
-          other_invoice_items: { orderBy: { id: "asc" }, select: { id: true, item_name: true } },
+          other_invoice_items: {
+            orderBy: { id: "asc" },
+            select: { id: true, item_name: true, unit: true, qty: true, price: true, subtotal: true },
+          },
         },
       },
     },
@@ -163,8 +168,17 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                   </tr>
                 </thead>
                 <tbody>
-                  {t.invoice_items.map((b, i) => (
-                    <tr key={b.id.toString()} className="border-b align-top last:border-0">
+                  {t.invoice_items.map((b, i) => {
+                    // Sub-item berharga mendapat barisnya sendiri, bernomor
+                    // V.1, V.2 — sama seperti di dokumen cetak. Yang tak
+                    // berharga tetap menumpang sebagai rincian isi paket.
+                    const berharga = b.other_invoice_items.filter((a) => Number(a.subtotal) > 0);
+                    const rincian = b.other_invoice_items.filter((a) => Number(a.subtotal) <= 0);
+                    const judulKelompok = berharga.length > 0;
+
+                    return (
+                      <Fragment key={b.id.toString()}>
+                    <tr className="border-b align-top last:border-0">
                       <Td className="nomor-dokumen text-muted-foreground">{romawi(i + 1)}</Td>
                       <Td>
                         <span className="font-medium">{b.item_name}</span>
@@ -176,29 +190,55 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                             (tanpa service charge)
                           </span>
                         ) : null}
-                        {b.other_invoice_items.length > 0 ? (
+                        {rincian.length > 0 ? (
                           <ul className="mt-1.5 flex flex-col gap-0.5 border-l pl-3 text-xs text-muted-foreground">
-                            {b.other_invoice_items.map((a) => (
+                            {rincian.map((a) => (
                               <li key={a.id.toString()}>{a.item_name}</li>
                             ))}
                           </ul>
                         ) : null}
                       </Td>
                       <Td className="angka text-right tabular-nums text-muted-foreground">
-                        {Number(b.qty).toLocaleString("id-ID")} {b.unit ?? ""}
+                        {judulKelompok ? "" : `${Number(b.qty).toLocaleString("id-ID")} ${b.unit ?? ""}`}
                       </Td>
                       <Td className="angka text-right tabular-nums text-muted-foreground">
-                        {rupiah(b.price)}
+                        {judulKelompok ? "" : rupiah(b.price)}
                       </Td>
                       <Td className="angka text-right font-medium tabular-nums">
-                        {b.is_compliment ? (
+                        {judulKelompok ? (
+                          ""
+                        ) : b.is_compliment ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
                           rupiah(b.subtotal)
                         )}
                       </Td>
                     </tr>
-                  ))}
+
+                        {berharga.map((a, j) => (
+                          <tr key={a.id.toString()} className="border-b align-top last:border-0">
+                            <Td className="nomor-dokumen text-muted-foreground">
+                              {`${romawi(i + 1)}.${j + 1}`}
+                            </Td>
+                            <Td className="pl-7">{a.item_name}</Td>
+                            <Td className="angka text-right tabular-nums text-muted-foreground">
+                              {Number(a.qty).toLocaleString("id-ID")} {a.unit ?? ""}
+                            </Td>
+                            <Td className="angka text-right tabular-nums text-muted-foreground">
+                              {rupiah(a.price)}
+                            </Td>
+                            <Td className="angka text-right font-medium tabular-nums">
+                              {b.is_compliment ? (
+                                <span className="text-muted-foreground">—</span>
+                              ) : (
+                                rupiah(a.subtotal)
+                              )}
+                            </Td>
+                          </tr>
+                        ))}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

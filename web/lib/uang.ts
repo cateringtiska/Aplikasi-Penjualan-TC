@@ -77,15 +77,31 @@ export type BarisBerAnak = BarisItem & { children?: BarisItem[] };
  * formulirnya menyiksa tanpa menambah ketelitian.
  */
 export function ratakanBaris(items: BarisBerAnak[]): BarisItem[] {
-  return items.flatMap((induk) => [
-    induk,
-    ...(induk.children ?? []).map((anak) => ({
-      ...anak,
-      is_compliment: anak.is_compliment ?? induk.is_compliment,
-      charge_service: anak.charge_service ?? induk.charge_service,
-      charge_pb1: anak.charge_pb1 ?? induk.charge_pb1,
-    })),
-  ]);
+  return items.flatMap((induk) => {
+    const anak = (induk.children ?? []).map((a) => ({
+      ...a,
+      is_compliment: a.is_compliment ?? induk.is_compliment,
+      charge_service: a.charge_service ?? induk.charge_service,
+      charge_pb1: a.charge_pb1 ?? induk.charge_pb1,
+    }));
+
+    // Begitu ada sub-item berharga, induknya menjadi JUDUL KELOMPOK dan
+    // angkanya sendiri diabaikan. Tanpa ini, baris induk yang qty-nya masih
+    // 1 dari bawaan formulir ikut terhitung — dan kalau harganya juga
+    // terisi, nilainya terhitung DUA KALI.
+    return [punyaAnakBerharga(induk) ? { ...induk, qty: 0, price: 0 } : induk, ...anak];
+  });
+}
+
+/**
+ * Apakah baris ini judul kelompok?
+ *
+ * Ditentukan oleh anaknya, bukan oleh isian induknya. Meminta orang
+ * mengosongkan qty dan harga induk secara manual berarti menuntut mereka
+ * mengingat aturan yang bisa disimpulkan sendiri oleh aplikasinya.
+ */
+export function punyaAnakBerharga(induk: BarisBerAnak): boolean {
+  return (induk.children ?? []).some((a) => d(a.qty).times(d(a.price)).gt(0));
 }
 
 /** Nilai satu baris. Compliment selalu nol. */

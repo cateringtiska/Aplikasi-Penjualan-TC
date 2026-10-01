@@ -212,7 +212,10 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
             // menyebutkan isinya.
             const anakBerharga = b.anak.filter((a) => Number(a.subtotal) > 0);
             const anakRincian = b.anak.filter((a) => Number(a.subtotal) <= 0);
-            const indukBernilai = Number(b.qty) > 0 || Number(b.price) > 0;
+            // Induk yang punya sub-item berharga adalah JUDUL, apa pun isi
+            // kolom angkanya. Menampilkan "1" dan "Rp 0" di baris judul
+            // membuat pembacanya mencari-cari apa yang berharga nol.
+            const indukBernilai = anakBerharga.length === 0;
 
             return (
               <Fragment key={b.id}>

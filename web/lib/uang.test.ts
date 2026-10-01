@@ -139,6 +139,26 @@ describe("Total dokumen", () => {
     expect(hasil.grand_total.toString()).toBe("3115000");
   });
 
+  it("mengabaikan angka induk begitu sub-itemnya berharga", () => {
+    // Formulir mengisi qty induk dengan 1 secara bawaan. Tanpa penjagaan ini,
+    // baris "ANEKA STALL" ikut terhitung — dan kalau harganya juga sempat
+    // terisi, nilainya masuk DUA KALI: sekali di induk, sekali di anaknya.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 1,
+          price: 9_999_999, // sengaja: tidak boleh ikut terhitung
+          children: [
+            { qty: 35, price: 39_500 }, // Bakwan Malang
+            { qty: 35, price: 45_000 }, // Sate Ayam Ponorogo + Lontong
+          ],
+        },
+      ],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("2957500"); // 1.382.500 + 1.575.000
+  });
+
   it("tetap menghitung paket berharga yang anaknya hanya rincian isi", () => {
     // Bentuk "LUNCH BOX": induknya berharga, anaknya tanpa angka. Keduanya
     // harus bekerja dengan aturan yang sama — setiap baris sebesar qty kali

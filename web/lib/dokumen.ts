@@ -169,15 +169,15 @@ export function siapkanDokumen(
     const qty = uraikanRupiah(baris.qty);
     const price = uraikanRupiah(baris.price);
 
-    // Sebuah baris induk boleh menjadi KEPALA KELOMPOK: tanpa qty maupun
-    // harga, hanya judul, dengan sub-item yang membawa angkanya. Itulah
-    // bentuk "ANEKA STALL" pada dokumen katering.
-    const kepalaKelompok =
-      qty !== null &&
-      qty.isZero() &&
-      price !== null &&
-      price.isZero() &&
-      baris.children.length > 0;
+    // Sebuah baris induk menjadi JUDUL KELOMPOK begitu salah satu
+    // sub-itemnya berharga — bentuk "ANEKA STALL" pada dokumen katering.
+    // Isian qty dan harga induknya tidak perlu dikosongkan sendiri; ia
+    // diabaikan, dan itu diputuskan oleh anaknya.
+    const kepalaKelompok = baris.children.some((a) => {
+      const q = uraikanRupiah(a.qty ?? "");
+      const h = uraikanRupiah(a.price ?? "");
+      return q !== null && h !== null && q.times(h).gt(0);
+    });
 
     if (!kepalaKelompok && (qty === null || qty.lte(0))) {
       return {
@@ -211,10 +211,13 @@ export function siapkanDokumen(
       }
     }
 
+    // Judul kelompok DISIMPAN bernilai nol, bukan sekadar disembunyikan saat
+    // ditampilkan. Angka yang tersimpan lalu sejalan dengan yang tercetak,
+    // dan tidak ada tempat kedua yang harus ingat mengabaikannya.
     items.push({
       ...baris,
-      qtyD: qty,
-      priceD: price,
+      qtyD: kepalaKelompok ? d(0) : (qty ?? d(0)),
+      priceD: kepalaKelompok ? d(0) : price,
       anakSiap: baris.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit ?? null,
