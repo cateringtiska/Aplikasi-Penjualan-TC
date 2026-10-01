@@ -55,18 +55,18 @@ export default async function HalamanLaporanMargin({
       </p>
 
       <PapanAngka className="mb-4">
-        <KartuAngka label="Penjualan bersih" nilai={rupiah(ringkasanNyata.penjualan)} />
-        <KartuAngka label="Total biaya" nilai={rupiah(ringkasanNyata.biaya)} />
+        <KartuAngka label="Penjualan bersih" warna="biru" nilai={rupiah(ringkasanNyata.penjualan)} />
+        <KartuAngka label="Total biaya" warna="oranye" nilai={rupiah(ringkasanNyata.biaya)} />
         <KartuAngka
           label={ringkasanNyata.untung.isNegative() ? "Rugi" : "Margin"}
           nilai={rupiah(ringkasanNyata.untung.abs())}
           menonjol
-          nada={ringkasanNyata.untung.isNegative() ? "mendesak" : "baik"}
+          warna={ringkasanNyata.untung.isNegative() ? "merah" : "hijau"}
         />
         <KartuAngka
           label="Margin rata-rata"
           nilai={`${ringkasanNyata.marginPersen.toString().replace(".", ",")}%`}
-          nada={ringkasanNyata.marginPersen.isNegative() ? "mendesak" : "baik"}
+          warna={ringkasanNyata.marginPersen.isNegative() ? "merah" : "ungu"}
         />
       </PapanAngka>
 
@@ -159,18 +159,18 @@ export default async function HalamanLaporanMargin({
           </p>
 
           <PapanAngka className="mb-4">
-            <KartuAngka label="Penjualan bersih" nilai={rupiah(ringkasanPerkiraan.penjualan)} />
-            <KartuAngka label="Perkiraan biaya" nilai={rupiah(ringkasanPerkiraan.biaya)} />
+            <KartuAngka label="Penjualan bersih" warna="biru" nilai={rupiah(ringkasanPerkiraan.penjualan)} />
+            <KartuAngka label="Perkiraan biaya" warna="oranye" nilai={rupiah(ringkasanPerkiraan.biaya)} />
             <KartuAngka
               label={ringkasanPerkiraan.untung.isNegative() ? "Perkiraan rugi" : "Perkiraan margin"}
               nilai={rupiah(ringkasanPerkiraan.untung.abs())}
               menonjol
-              nada={ringkasanPerkiraan.untung.isNegative() ? "mendesak" : "baik"}
+              warna={ringkasanPerkiraan.untung.isNegative() ? "merah" : "hijau"}
             />
             <KartuAngka
               label="Margin rata-rata"
               nilai={`${ringkasanPerkiraan.marginPersen.toString().replace(".", ",")}%`}
-              nada={ringkasanPerkiraan.marginPersen.isNegative() ? "mendesak" : "baik"}
+              warna={ringkasanPerkiraan.marginPersen.isNegative() ? "merah" : "ungu"}
             />
           </PapanAngka>
 

@@ -121,26 +121,26 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           label="Piutang berjalan"
           nilai={rupiah(totalPiutang)}
           keterangan={`${piutang._count} invoice belum lunas`}
-          nada={totalPiutang.gt(0) ? "menunggu" : "netral"}
+          warna="kuning"
           menonjol
         />
         <KartuAngka
           label="Penjualan bulan ini"
           nilai={rupiah(bulanIni._sum.grand_total)}
           keterangan={`${bulanIni._count} invoice terbit`}
-          nada={bulanIni._count > 0 ? "baik" : "netral"}
+          warna="hijau"
         />
         <KartuAngka
           label="Quotation menunggu"
           nilai={String(penawaranMenunggu)}
           keterangan={penawaranMenunggu > 0 ? "belum dijawab customer" : "tidak ada"}
-          nada={penawaranMenunggu > 0 ? "menunggu" : "netral"}
+          warna="biru"
         />
         <KartuAngka
           label="Jatuh tempo"
           nilai={String(jatuhTempo)}
           keterangan={jatuhTempo > 0 ? "perlu ditagih" : "tidak ada"}
-          nada={jatuhTempo > 0 ? "mendesak" : "netral"}
+          warna="merah"
         />
       </PapanAngka>
 

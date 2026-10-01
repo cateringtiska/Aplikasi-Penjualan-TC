@@ -72,6 +72,7 @@ export default async function HalamanLaporanPenjualan({
       <PapanAngka className="mb-4">
         <KartuAngka
           label="Nilai invoice"
+          warna="biru"
           nilai={rupiah(ringkasan.nilaiTagihan)}
           keterangan={`${ringkasan.jumlahTagihan} invoice`}
           menonjol
@@ -80,7 +81,7 @@ export default async function HalamanLaporanPenjualan({
           label="Sudah dibayar"
           nilai={rupiah(ringkasan.totalTerbayar)}
           keterangan="uang yang sudah masuk"
-          nada={ringkasan.totalTerbayar.gt(0) ? "baik" : "netral"}
+          warna="hijau"
         />
         <KartuAngka
           label="Piutang"
@@ -90,16 +91,11 @@ export default async function HalamanLaporanPenjualan({
               ? `${ringkasan.jumlahJatuhTempo} lewat tempo`
               : "belum ada yang lewat tempo"
           }
-          nada={
-            ringkasan.jumlahJatuhTempo > 0
-              ? "mendesak"
-              : ringkasan.totalPiutang.gt(0)
-                ? "menunggu"
-                : "netral"
-          }
+          warna="kuning"
         />
         <KartuAngka
           label="Quotation"
+          warna="ungu"
           nilai={rupiah(ringkasan.nilaiPenawaran)}
           keterangan={`${ringkasan.jumlahPenawaran} dibuat · ${ringkasan.penawaranDisetujui} disetujui`}
         />

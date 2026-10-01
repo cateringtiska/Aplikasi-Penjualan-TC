@@ -2,30 +2,26 @@
    PAPAN ANGKA RINGKASAN
 
    Satu komponen untuk seluruh kartu angka di aplikasi — Dashboard, tiga
-   laporan, dan dua halaman margin. Sebelumnya setiap halaman punya salinan
+   laporan, dan tiga halaman rincian. Sebelumnya setiap halaman punya salinan
    sendiri, dan salinan yang berbeda sempat memakai warna berbeda untuk arti
    yang sama.
 
-   WARNA DI SINI MENYATAKAN KEADAAN, BUKAN KATEGORI.
+   SETIAP KARTU PUNYA WARNANYA SENDIRI, dan dalam satu papan tidak ada dua
+   kartu berwarna sama. Ini permintaan pemiliknya: tidak ada kartu yang polos,
+   supaya seluruh angka ringkasan langsung tertangkap mata.
 
-   Itu bedanya antara papan yang berguna dan papan yang meriah. Kalau setiap
-   kartu selalu berwarna, tidak ada yang menonjol dan pemiliknya berhenti
-   memperhatikannya. Jadi warnanya hanya muncul ketika angkanya memang
-   mengatakan sesuatu:
+   Warnanya menandai KARTU MANA, bukan baik-buruknya angka. Jadi kartu
+   "Jatuh tempo" tetap merah walau isinya nol — merahnya menyatakan topik,
+   bukan peringatan. Yang menyatakan keadaan adalah angkanya sendiri dan
+   keterangan di bawahnya ("perlu ditagih" / "tidak ada").
 
-     mendesak   merah    butuh tindakan hari ini — ada yang jatuh tempo
-     menunggu   kuning   menunggu tindakan — piutang berjalan, quotation
-                         yang belum dijawab
-     baik       hijau    sudah sebagaimana mestinya — uang masuk, margin
-                         positif
-     netral     polos    angka yang sekadar besaran, tidak baik atau buruk
+   Satu pengecualian yang tetap dipertahankan: kartu margin berpindah ke
+   merah ketika hasilnya RUGI. Di sana warna memang menyatakan keadaan,
+   karena rugi adalah satu-satunya angka di papan ini yang maknanya berbalik.
 
-   Angka nol hampir selalu netral: "Jatuh tempo 0" bukan kabar buruk, dan
-   mewarnainya merah justru melatih orang mengabaikan warna merah.
-
-   Tiga warnanya diambil dari palet status uang yang sudah dipakai lencana
-   (lunas / sebagian / tempo), lengkap dengan versi gelapnya — jadi merah di
-   kartu ini sama persis dengan merah pada lencana "Jatuh Tempo".
+   Enam warna disusun dengan lightness dan chroma sekelas, hanya hue-nya yang
+   berbeda — supaya tidak ada satu kartu pun yang berteriak lebih keras dari
+   tetangganya. Semuanya punya pasangan untuk mode gelap.
 
    SATU TEMPAT YANG SENGAJA TIDAK MEMAKAI INI: baris ringkasan di kaki
    formulir pembayaran. Bentuknya daftar mendatar yang menempel di bawah
@@ -33,25 +29,19 @@
    kebutuhan yang berbeda ke dalam satu bentuk.
    ========================================================================== */
 
-export type NadaAngka = "netral" | "baik" | "menunggu" | "mendesak";
+export type WarnaKartu = "hijau" | "kuning" | "oranye" | "merah" | "biru" | "ungu";
 
-const NADA: Record<NadaAngka, { angka: string; latar: string; keterangan: string }> = {
-  netral: { angka: "", latar: "", keterangan: "text-muted-foreground" },
-  baik: {
-    angka: "text-lunas",
-    latar: "bg-lunas-halus",
-    keterangan: "text-lunas/80",
-  },
-  menunggu: {
+const WARNA: Record<WarnaKartu, { angka: string; latar: string; keterangan: string }> = {
+  hijau: { angka: "text-lunas", latar: "bg-lunas-halus", keterangan: "text-lunas/80" },
+  kuning: {
     angka: "text-sebagian",
     latar: "bg-sebagian-halus",
     keterangan: "text-sebagian/80",
   },
-  mendesak: {
-    angka: "text-tempo",
-    latar: "bg-tempo-halus",
-    keterangan: "text-tempo/80",
-  },
+  oranye: { angka: "text-oranye", latar: "bg-oranye-halus", keterangan: "text-oranye/80" },
+  merah: { angka: "text-tempo", latar: "bg-tempo-halus", keterangan: "text-tempo/80" },
+  biru: { angka: "text-biru", latar: "bg-biru-halus", keterangan: "text-biru/80" },
+  ungu: { angka: "text-ungu", latar: "bg-ungu-halus", keterangan: "text-ungu/80" },
 };
 
 /**
@@ -84,33 +74,32 @@ export function KartuAngka({
   label,
   nilai,
   keterangan,
-  nada = "netral",
+  warna,
   menonjol,
   teks,
 }: {
   label: string;
   nilai: string;
   keterangan?: string;
-  nada?: NadaAngka;
+  /** Warna kartu ini. Dalam satu papan, jangan ada dua yang sama. */
+  warna: WarnaKartu;
   menonjol?: boolean;
   /** Nilainya bukan angka — nama customer, misalnya. Tanpa tabular-nums. */
   teks?: boolean;
 }) {
-  const warna = NADA[nada];
+  const w = WARNA[warna];
 
   return (
-    <div className={`px-4 py-4 sm:px-5 ${warna.latar}`}>
+    <div className={`px-4 py-4 sm:px-5 ${w.latar}`}>
       <p className="eyebrow">{label}</p>
       <p
         className={`mt-1.5 font-semibold tracking-[-0.025em] ${
           teks ? "text-base" : `angka tabular-nums ${menonjol ? "text-[1.375rem]" : "text-lg"}`
-        } ${warna.angka}`}
+        } ${w.angka}`}
       >
         {nilai}
       </p>
-      {keterangan ? (
-        <p className={`mt-0.5 text-xs ${warna.keterangan}`}>{keterangan}</p>
-      ) : null}
+      {keterangan ? <p className={`mt-0.5 text-xs ${w.keterangan}`}>{keterangan}</p> : null}
     </div>
   );
 }

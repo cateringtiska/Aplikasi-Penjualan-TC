@@ -67,6 +67,12 @@
   --color-sebagian-halus: var(--sebagian-halus);
   --color-tempo: var(--tempo);
   --color-tempo-halus: var(--tempo-halus);
+  --color-oranye: var(--oranye);
+  --color-oranye-halus: var(--oranye-halus);
+  --color-biru: var(--biru);
+  --color-biru-halus: var(--biru-halus);
+  --color-ungu: var(--ungu);
+  --color-ungu-halus: var(--ungu-halus);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -115,6 +121,12 @@
   --sebagian-halus: oklch(0.958 0.038 82);
   --tempo: oklch(0.525 0.175 25);
   --tempo-halus: oklch(0.958 0.028 25);
+  --oranye: oklch(0.545 0.135 45);
+  --oranye-halus: oklch(0.958 0.034 45);
+  --biru: oklch(0.515 0.115 248);
+  --biru-halus: oklch(0.957 0.026 248);
+  --ungu: oklch(0.515 0.125 300);
+  --ungu-halus: oklch(0.957 0.026 300);
 
   --chart-1: oklch(0.215 0.01 250);
   --chart-2: oklch(0.42 0.012 250);
@@ -166,6 +178,12 @@
   --sebagian-halus: oklch(0.272 0.045 78);
   --tempo: oklch(0.712 0.155 25);
   --tempo-halus: oklch(0.282 0.055 25);
+  --oranye: oklch(0.745 0.135 45);
+  --oranye-halus: oklch(0.278 0.05 45);
+  --biru: oklch(0.73 0.115 248);
+  --biru-halus: oklch(0.272 0.045 248);
+  --ungu: oklch(0.735 0.115 300);
+  --ungu-halus: oklch(0.275 0.045 300);
 
   --chart-1: oklch(0.93 0.004 250);
   --chart-2: oklch(0.775 0.008 250);

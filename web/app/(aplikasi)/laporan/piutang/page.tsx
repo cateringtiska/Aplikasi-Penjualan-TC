@@ -21,6 +21,14 @@ import { rupiah } from "@/lib/uang";
 export const metadata: Metadata = { title: "Kartu piutang" };
 export const dynamic = "force-dynamic";
 
+/** Hijau, kuning, oranye, merah — menanjak mengikuti umur keterlambatan. */
+const WARNA_UMUR = {
+  belum: "hijau",
+  h1: "kuning",
+  h31: "oranye",
+  h60: "merah",
+} as const;
+
 export default async function HalamanPiutang({ searchParams }: PageProps<"/laporan/piutang">) {
   await wajibPeran("sales", "finance");
 
@@ -42,24 +50,16 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
         }
       />
 
-      {/* Warnanya menanjak mengikuti umur: yang belum jatuh tempo polos,
-          keterlambatan jadi kuning, dan lewat 60 hari jadi merah. Itu yang
-          biasanya perlu ditindaklanjuti secara khusus. */}
+      {/* Warnanya menanjak mengikuti umur — hijau, kuning, oranye, merah —
+          supaya kelompok mana yang paling perlu ditindaklanjuti terbaca
+          tanpa harus membandingkan angkanya satu per satu. */}
       <PapanAngka className="mb-6">
         {KELOMPOK.map((k) => (
           <KartuAngka
             key={k.kunci}
             label={k.label}
             nilai={rupiah(umur[k.kunci])}
-            nada={
-              umur[k.kunci].lte(0)
-                ? "netral"
-                : k.kunci === "h60"
-                  ? "mendesak"
-                  : k.kunci === "belum"
-                    ? "netral"
-                    : "menunggu"
-            }
+            warna={WARNA_UMUR[k.kunci]}
           />
         ))}
       </PapanAngka>

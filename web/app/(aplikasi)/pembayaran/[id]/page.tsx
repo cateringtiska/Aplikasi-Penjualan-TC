@@ -76,10 +76,11 @@ export default async function HalamanDetailPembayaran({
       </header>
 
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
-        <KartuAngka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol nada="baik" />
-        <KartuAngka label="Dari customer" nilai={p.customers.name} teks />
+        <KartuAngka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol warna="hijau" />
+        <KartuAngka label="Dari customer" warna="biru" nilai={p.customers.name} teks />
         <KartuAngka
           label="Menutup"
+          warna="ungu"
           nilai={`${p.payment_details.length} invoice`}
           teks
           keterangan={p.users ? `Dicatat oleh ${p.users.name}` : undefined}

@@ -65,17 +65,17 @@ export default async function HalamanKartuCustomer({
       </header>
 
       <PapanAngka kolom={3} className="mb-6">
-        <KartuAngka label="Total invoice" nilai={rupiah(totalInvoice)} />
+        <KartuAngka label="Total invoice" warna="biru" nilai={rupiah(totalInvoice)} />
         <KartuAngka
           label="Sudah dibayar"
           nilai={rupiah(totalBayar)}
-          nada={totalBayar.gt(0) ? "baik" : "netral"}
+          warna="hijau"
         />
         <KartuAngka
           label={lunas ? "Lunas" : "Sisa piutang"}
           nilai={rupiah(sisa)}
           menonjol
-          nada={lunas ? "baik" : "menunggu"}
+          warna={lunas ? "ungu" : "kuning"}
         />
       </PapanAngka>
 

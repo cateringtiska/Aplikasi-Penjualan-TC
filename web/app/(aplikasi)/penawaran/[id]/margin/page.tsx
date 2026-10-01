@@ -81,18 +81,18 @@ export default async function HalamanMarginPenawaran({
       </header>
 
       <PapanAngka className="mb-6">
-        <KartuAngka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
-        <KartuAngka label="Perkiraan biaya" nilai={rupiah(hasil.total_cost)} />
+        <KartuAngka label="Penjualan bersih" warna="biru" nilai={rupiah(hasil.net_sales)} />
+        <KartuAngka label="Perkiraan biaya" warna="oranye" nilai={rupiah(hasil.total_cost)} />
         <KartuAngka
           label={hasil.profit_status === "untung" ? "Perkiraan margin" : "Perkiraan rugi"}
           nilai={rupiah(hasil.profit.abs())}
           menonjol
-          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
+          warna={hasil.profit_status === "rugi" ? "merah" : "hijau"}
         />
         <KartuAngka
           label="Margin %"
           nilai={`${hasil.margin_percent.toString().replace(".", ",")}%`}
-          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
+          warna={hasil.profit_status === "rugi" ? "merah" : "ungu"}
         />
       </PapanAngka>
 
