@@ -28,3 +28,6 @@ Thumbs.db
 
 # Cadangan database: memuat data pelanggan dan angka keuangan sungguhan.
 cadangan/
+
+# Tangkapan layar yang tertempel ke folder proyek — bukan bagian aplikasi.
+image.png
