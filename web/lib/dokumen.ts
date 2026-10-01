@@ -93,6 +93,23 @@ export type KolomDokumen = {
   updated_at: Date;
 };
 
+/**
+ * Isian yang hanya berisi tanda hubung dianggap KOSONG.
+ *
+ * Orang mengetik "-" untuk menyatakan "tidak ada" — kebiasaan dari mengisi
+ * formulir kertas. Aplikasi lalu memperlakukannya sebagai isi yang sah, dan
+ * hasilnya muncul di dokumen yang dikirim ke klien: judul "INVOICE - -",
+ * karena jenis acaranya memang berisi satu tanda hubung.
+ *
+ * Yang dikosongkan hanya nilai yang SELURUHNYA tanda hubung. "The Telkom Hub
+ * - Jl. Gatot Subroto" tetap utuh.
+ */
+function kosongkanStrip(nilai: string | null | undefined): string | null {
+  const bersih = (nilai ?? "").trim();
+  if (bersih === "" || /^[-–—]+$/.test(bersih)) return null;
+  return bersih;
+}
+
 function angkaBulat(teks: unknown): number | null {
   const nilai = uraikanRupiah(teks);
   if (nilai === null) return null;
@@ -183,16 +200,16 @@ export function siapkanDokumen(
     items,
     kolom: {
       customer_id: BigInt(f.customer_id),
-      contact_person: f.contact_person || null,
-      contact_phone: f.contact_phone || null,
+      contact_person: kosongkanStrip(f.contact_person),
+      contact_phone: kosongkanStrip(f.contact_phone),
       event_date: f.event_date ? new Date(f.event_date) : null,
       event_days: angkaBulat(f.event_days),
-      event_type: f.event_type || null,
-      event_time: f.event_time || null,
+      event_type: kosongkanStrip(f.event_type),
+      event_time: kosongkanStrip(f.event_time),
       guest_count: angkaBulat(f.guest_count),
-      fnb_planner: f.fnb_planner || null,
-      venue: f.venue || null,
-      notes: f.notes || null,
+      fnb_planner: kosongkanStrip(f.fnb_planner),
+      venue: kosongkanStrip(f.venue),
+      notes: kosongkanStrip(f.notes),
       subtotal: total.subtotal.toFixed(2),
       service_charge_percent: f.service_charge_percent
         ? d(f.service_charge_percent).toFixed(2)
