@@ -33,6 +33,7 @@ const barisItem = z.object({
   price: z.string(),
   is_compliment: z.boolean().default(false),
   charge_service: z.boolean().default(true),
+  charge_pb1: z.boolean().default(true),
   children: z.array(barisAnak).default([]),
 });
 
@@ -187,6 +188,7 @@ export function siapkanDokumen(
       price: b.priceD,
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
+      charge_pb1: b.charge_pb1,
     })),
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
@@ -239,6 +241,7 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       subtotal: (b.is_compliment ? d(0) : b.qtyD.times(b.priceD)).toFixed(2),
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
+      charge_pb1: b.charge_pb1,
       created_at: new Date(),
       updated_at: new Date(),
     },

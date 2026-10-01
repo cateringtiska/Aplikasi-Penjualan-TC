@@ -49,6 +49,7 @@ export type BarisItem = {
   is_compliment?: boolean;
   /** Hanya baris bertanda ini yang masuk dasar perhitungan service charge. */
   charge_service?: boolean;
+  charge_pb1?: boolean;
 };
 
 /** Nilai satu baris. Compliment selalu nol. */
@@ -78,6 +79,24 @@ export function dasarServiceCharge(items: BarisItem[]): Decimal {
     .reduce((jumlah, item) => jumlah.plus(d(item.qty).times(d(item.price))), new Decimal(0));
 }
 
+/**
+ * Dasar perhitungan PB1.
+ *
+ * Sama bentuknya dengan dasar service charge: hanya baris yang ditandai dan
+ * bukan compliment yang ikut. Sebelumnya PB1 dihitung dari SELURUH subtotal,
+ * tanpa bisa dikecualikan per baris — padahal tidak semua yang dijual
+ * katering termasuk objek PB1.
+ *
+ * charge_pb1 dianggap true bila tidak diisi, sama seperti charge_service.
+ * Itu yang membuat dokumen lama — yang seluruhnya kena PB1 — tetap
+ * menghasilkan angka yang sama persis.
+ */
+export function dasarPb1(items: BarisItem[]): Decimal {
+  return items
+    .filter((item) => (item.charge_pb1 ?? true) && !item.is_compliment)
+    .reduce((jumlah, item) => jumlah.plus(d(item.qty).times(d(item.price))), new Decimal(0));
+}
+
 /* -------------------------------------------------------------------------
    TOTAL DOKUMEN (quotation & invoice memakai rumus yang sama persis)
    ------------------------------------------------------------------------- */
@@ -104,6 +123,7 @@ export type HasilTotal = {
   subtotal: Decimal;
   dasar_service_charge: Decimal;
   service_charge_amount: Decimal;
+  dasar_pb1: Decimal;
   pb1_amount: Decimal;
   delivery_amount: Decimal;
   grand_total: Decimal;
@@ -120,9 +140,11 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
     ? new Decimal(0)
     : bulatkanRupiah(dasar.times(persenSc).dividedBy(100));
 
-  // PB1 dihitung dari SUBTOTAL, bukan dari subtotal + service charge.
+  // PB1 dihitung dari baris yang DITANDAI, bukan dari seluruh subtotal, dan
+  // tetap bukan dari subtotal + service charge.
+  const dasarPajak = dasarPb1(masukan.items);
   const pb1_amount = masukan.pb1_enabled
-    ? bulatkanRupiah(subtotal.times(d(masukan.pb1_percent)).dividedBy(100))
+    ? bulatkanRupiah(dasarPajak.times(d(masukan.pb1_percent)).dividedBy(100))
     : new Decimal(0);
 
   // Delivery ditambahkan PALING AKHIR, setelah kedua pungutan dihitung.
@@ -133,6 +155,7 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
     subtotal,
     dasar_service_charge: dasar,
     service_charge_amount,
+    dasar_pb1: dasarPajak,
     pb1_amount,
     delivery_amount,
     grand_total: subtotal

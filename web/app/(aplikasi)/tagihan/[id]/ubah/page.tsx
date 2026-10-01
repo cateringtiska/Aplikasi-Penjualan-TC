@@ -85,6 +85,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
             price: Number(b.price).toLocaleString("id-ID"),
             is_compliment: b.is_compliment,
             charge_service: b.charge_service,
+            charge_pb1: b.charge_pb1,
             children: b.other_invoice_items.map((a, i) => ({
               kunci: `${b.id}-${i}`,
               item_name: a.item_name,

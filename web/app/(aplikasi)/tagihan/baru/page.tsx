@@ -105,6 +105,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
         price: Number(b.price).toLocaleString("id-ID"),
         is_compliment: b.is_compliment,
         charge_service: b.charge_service,
+            charge_pb1: b.charge_pb1,
         children: b.other_quotation_items.map((a, i) => ({
           kunci: `q${b.id}-${i}`,
           item_name: a.item_name,

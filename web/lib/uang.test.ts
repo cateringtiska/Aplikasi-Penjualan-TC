@@ -119,6 +119,72 @@ describe("Total dokumen", () => {
     expect(hasil.pb1_amount.toString()).toBe("0");
   });
 
+  it("menghitung PB1 hanya dari baris yang ditandai", () => {
+    // Dua baris senilai sama; hanya satu yang objek PB1.
+    const hasil = hitungTotalDokumen({
+      items: [
+        { qty: 1, price: 1_000_000, charge_pb1: true },
+        { qty: 1, price: 1_000_000, charge_pb1: false },
+      ],
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    expect(hasil.subtotal.toString()).toBe("2000000");
+    expect(hasil.dasar_pb1.toString()).toBe("1000000");
+    // 10% dari 1 juta, BUKAN dari subtotal 2 juta.
+    expect(hasil.pb1_amount.toString()).toBe("100000");
+    expect(hasil.grand_total.toString()).toBe("2100000");
+  });
+
+  it("menganggap baris tanpa penanda tetap kena PB1", () => {
+    // Inilah yang membuat dokumen lama menghasilkan angka yang sama persis:
+    // sebelum penanda ini ada, SELURUH subtotal memang dikenai PB1.
+    const hasil = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }, { qty: 1, price: 1_000_000 }],
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    expect(hasil.dasar_pb1.toString()).toBe("2000000");
+    expect(hasil.pb1_amount.toString()).toBe("200000");
+  });
+
+  it("memisahkan dasar PB1 dari dasar service charge", () => {
+    // Keduanya ditandai per baris, dan tidak harus baris yang sama. Sebuah
+    // baris bisa kena service charge tetapi bebas PB1, atau sebaliknya.
+    const hasil = hitungTotalDokumen({
+      items: [
+        { qty: 1, price: 1_000_000, charge_service: true, charge_pb1: false },
+        { qty: 1, price: 4_000_000, charge_service: false, charge_pb1: true },
+      ],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    expect(hasil.dasar_service_charge.toString()).toBe("1000000");
+    expect(hasil.service_charge_amount.toString()).toBe("100000");
+    expect(hasil.dasar_pb1.toString()).toBe("4000000");
+    expect(hasil.pb1_amount.toString()).toBe("400000");
+  });
+
+  it("tidak memajaki baris compliment, walau ditandai kena PB1", () => {
+    const hasil = hitungTotalDokumen({
+      items: [
+        { qty: 1, price: 1_000_000, charge_pb1: true },
+        { qty: 300, price: 15_000, charge_pb1: true, is_compliment: true },
+      ],
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    // Baris compliment bernilai nol bagi pelanggan; memajakinya berarti
+    // menagih pajak atas sesuatu yang tidak ditagihkan.
+    expect(hasil.dasar_pb1.toString()).toBe("1000000");
+    expect(hasil.pb1_amount.toString()).toBe("100000");
+  });
+
   it("menambahkan delivery ke total TANPA memajakinya", () => {
     // Inti aturannya. Delivery adalah ongkos kirim, bukan nilai makanan —
     // jadi ia tidak pernah masuk dasar service charge maupun dasar PB1.

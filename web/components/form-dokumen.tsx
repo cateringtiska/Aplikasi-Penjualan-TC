@@ -61,6 +61,7 @@ export type BarisForm = {
   price: string;
   is_compliment: boolean;
   charge_service: boolean;
+  charge_pb1: boolean;
   children: { kunci: string; item_name: string }[];
 };
 
@@ -74,6 +75,7 @@ export function barisKosong(): BarisForm {
     price: "",
     is_compliment: false,
     charge_service: true,
+    charge_pb1: true,
     children: [],
   };
 }
@@ -159,6 +161,7 @@ export function FormDokumen({
           price: uraikanRupiah(b.price) ?? 0,
           is_compliment: b.is_compliment,
           charge_service: b.charge_service,
+          charge_pb1: b.charge_pb1,
         })),
         service_charge_percent: f.service_charge_percent || null,
         pb1_enabled: f.pb1_enabled,
@@ -203,6 +206,7 @@ export function FormDokumen({
       price: b.price,
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
+      charge_pb1: b.charge_pb1,
       children: b.children.map((a) => ({ item_name: a.item_name })),
     })),
   });
@@ -441,7 +445,7 @@ export function FormDokumen({
       {/* ---------- Biaya tambahan ---------- */}
       <Bagian
         judul="Service charge, pajak & pengantaran"
-        keterangan="Service charge hanya dihitung dari baris yang ditandai dikenakan."
+        keterangan="Service charge dan PB1 masing-masing hanya dihitung dari baris yang ditandai."
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <Bidang label="Service charge (%)" nama="service_charge_percent">
@@ -469,14 +473,19 @@ export function FormDokumen({
               Kenakan PB1
             </label>
             {f.pb1_enabled ? (
-              <Input
-                inputMode="decimal"
-                value={f.pb1_percent}
-                onChange={(e) => ubah("pb1_percent", e.target.value)}
-                placeholder="10"
-                aria-label="Persen PB1"
-                className="angka tabular-nums"
-              />
+              <>
+                <Input
+                  inputMode="decimal"
+                  value={f.pb1_percent}
+                  onChange={(e) => ubah("pb1_percent", e.target.value)}
+                  placeholder="10"
+                  aria-label="Persen PB1"
+                  className="angka tabular-nums"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Dasar perhitungan: {rupiah(total.dasar_pb1)}
+                </p>
+              </>
             ) : null}
           </div>
 
@@ -701,6 +710,13 @@ function BarisItem({
             onCheckedChange={(v) => onUbah({ charge_service: v === true })}
           />
           Kena service charge
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <Checkbox
+            checked={baris.charge_pb1}
+            onCheckedChange={(v) => onUbah({ charge_pb1: v === true })}
+          />
+          Kena PB1
         </label>
         <label className="flex cursor-pointer items-center gap-2 text-xs">
           <Checkbox
