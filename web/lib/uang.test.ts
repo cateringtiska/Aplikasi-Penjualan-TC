@@ -325,6 +325,83 @@ describe("Total dokumen", () => {
     expect(dengan.grand_total.toString()).toBe("1450000");
   });
 
+  it("menambahkan biaya tambahan ke total TANPA memajakinya", () => {
+    // Angka dari dokumen sungguhan: subtotal 13.500.000, PB1 10%, lalu tiga
+    // baris jasa yang kedudukannya sama dengan delivery — di luar kedua
+    // pungutan. Menjadikannya baris item biasa akan membuatnya ikut kena
+    // PB1, dan customer ditagih pajak atas jasa yang tidak dipajaki.
+    const hasil = hitungTotalDokumen({
+      items: [
+        { qty: 100, price: 35_000 },
+        { qty: 100, price: 100_000 },
+      ],
+      pb1_enabled: true,
+      pb1_percent: 10,
+      biaya_tambahan: [
+        { label: "Tim Servis utk Menu Buffet (1 orang)", amount: 350_000 },
+        { label: "Layanan Servis Penyediaan Coffee/ Tea & Buffet", amount: 2_700_000 },
+        { label: "Tambahan Set-up & Layanan 1 Titik VIP Buffet", amount: 1_350_000 },
+      ],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("13500000");
+
+    // PB1 dihitung dari 13.500.000 saja — bukan dari 17.900.000.
+    expect(hasil.dasar_pb1.toString()).toBe("13500000");
+    expect(hasil.pb1_amount.toString()).toBe("1350000");
+
+    expect(hasil.biaya_tambahan_amount.toString()).toBe("4400000");
+    expect(hasil.grand_total.toString()).toBe("19250000");
+  });
+
+  it("tidak mengubah dasar pungutan apa pun ketika biaya tambahan ditambah", () => {
+    const tanpa = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    const dengan = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+      biaya_tambahan: [{ label: "Set-up panggung", amount: 500_000 }],
+    });
+
+    expect(dengan.dasar_service_charge.toString()).toBe(tanpa.dasar_service_charge.toString());
+    expect(dengan.service_charge_amount.toString()).toBe(tanpa.service_charge_amount.toString());
+    expect(dengan.dasar_pb1.toString()).toBe(tanpa.dasar_pb1.toString());
+    expect(dengan.pb1_amount.toString()).toBe(tanpa.pb1_amount.toString());
+    expect(dengan.subtotal.toString()).toBe(tanpa.subtotal.toString());
+
+    expect(dengan.grand_total.minus(tanpa.grand_total).toString()).toBe("500000");
+  });
+
+  it("menjumlahkan delivery dan biaya tambahan berdampingan", () => {
+    // Keduanya hidup bersama: delivery punya kolomnya sendiri, biaya
+    // tambahan punya tabelnya sendiri. Totalnya harus memuat dua-duanya.
+    const hasil = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }],
+      delivery_amount: 250_000,
+      biaya_tambahan: [
+        { label: "Tim servis", amount: 350_000 },
+        { label: "Set-up", amount: 150_000 },
+      ],
+    });
+
+    expect(hasil.delivery_amount.toString()).toBe("250000");
+    expect(hasil.biaya_tambahan_amount.toString()).toBe("500000");
+    expect(hasil.grand_total.toString()).toBe("1750000");
+  });
+
+  it("memperlakukan biaya tambahan kosong sebagai nol", () => {
+    const hasil = hitungTotalDokumen({ items: [{ qty: 1, price: 500_000 }] });
+    expect(hasil.biaya_tambahan_amount.toString()).toBe("0");
+    expect(hasil.grand_total.toString()).toBe("500000");
+  });
+
   it("memperlakukan delivery kosong sebagai nol", () => {
     const hasil = hitungTotalDokumen({ items: [{ qty: 1, price: 500_000 }] });
     expect(hasil.delivery_amount.toString()).toBe("0");

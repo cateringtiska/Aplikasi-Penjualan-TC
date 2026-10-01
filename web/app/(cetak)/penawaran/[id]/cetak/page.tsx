@@ -29,6 +29,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
       where: { id: BigInt(id) },
       include: {
         customers: true,
+        quotation_charges: { orderBy: { id: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -101,6 +102,11 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
         pb1_percent: p.pb1_percent?.toString() ?? null,
         pb1_amount: p.pb1_amount.toString(),
         delivery_amount: p.delivery_amount.toString(),
+        biaya_tambahan: p.quotation_charges.map((b) => ({
+          id: b.id.toString(),
+          label: b.label,
+          amount: b.amount.toString(),
+        })),
         grand_total: p.grand_total.toString(),
 
         catatan: p.notes,

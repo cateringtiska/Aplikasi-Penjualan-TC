@@ -167,6 +167,7 @@ model invoices {
   pb1_percent            Decimal?          @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal           @default(0) @db.Decimal(15, 2)
   delivery_amount        Decimal           @default(0) @db.Decimal(15, 2)
+  invoice_charges        invoice_charges[]
   invoice_costs          invoice_costs[]
   invoice_items          invoice_items[]
   invoice_margins        invoice_margins?
@@ -292,40 +293,41 @@ model quotation_items {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model quotations {
-  id                     BigInt            @id @default(autoincrement())
-  quotation_number       String            @unique(map: "quotations_quotation_number_unique") @db.VarChar(255)
+  id                     BigInt              @id @default(autoincrement())
+  quotation_number       String              @unique(map: "quotations_quotation_number_unique") @db.VarChar(255)
   customer_id            BigInt
-  quotation_date         DateTime          @db.Date
-  valid_until            DateTime          @db.Date
-  status                 String            @default("draft") @db.VarChar(255)
+  quotation_date         DateTime            @db.Date
+  valid_until            DateTime            @db.Date
+  status                 String              @default("draft") @db.VarChar(255)
   notes                  String?
-  subtotal               Decimal           @default(0) @db.Decimal(15, 2)
+  subtotal               Decimal             @default(0) @db.Decimal(15, 2)
   created_by             BigInt?
-  created_at             DateTime?         @db.Timestamp(0)
-  updated_at             DateTime?         @db.Timestamp(0)
-  contact_person         String?           @db.VarChar(255)
-  contact_phone          String?           @db.VarChar(255)
-  event_date             DateTime?         @db.Date
+  created_at             DateTime?           @db.Timestamp(0)
+  updated_at             DateTime?           @db.Timestamp(0)
+  contact_person         String?             @db.VarChar(255)
+  contact_phone          String?             @db.VarChar(255)
+  event_date             DateTime?           @db.Date
   event_days             Int?
-  event_type             String?           @db.VarChar(255)
-  event_time             String?           @db.VarChar(255)
+  event_type             String?             @db.VarChar(255)
+  event_time             String?             @db.VarChar(255)
   guest_count            Int?
-  fnb_planner            String?           @db.VarChar(255)
-  venue                  String?           @db.VarChar(255)
-  service_charge_percent Decimal?          @db.Decimal(5, 2)
-  service_charge_amount  Decimal           @default(0) @db.Decimal(15, 2)
-  grand_total            Decimal           @default(0) @db.Decimal(15, 2)
-  show_payment_terms     Boolean           @default(false)
+  fnb_planner            String?             @db.VarChar(255)
+  venue                  String?             @db.VarChar(255)
+  service_charge_percent Decimal?            @db.Decimal(5, 2)
+  service_charge_amount  Decimal             @default(0) @db.Decimal(15, 2)
+  grand_total            Decimal             @default(0) @db.Decimal(15, 2)
+  show_payment_terms     Boolean             @default(false)
   payment_terms          String?
-  pb1_enabled            Boolean           @default(false)
-  pb1_percent            Decimal?          @default(10) @db.Decimal(5, 2)
-  pb1_amount             Decimal           @default(0) @db.Decimal(15, 2)
-  delivery_amount        Decimal           @default(0) @db.Decimal(15, 2)
+  pb1_enabled            Boolean             @default(false)
+  pb1_percent            Decimal?            @default(10) @db.Decimal(5, 2)
+  pb1_amount             Decimal             @default(0) @db.Decimal(15, 2)
+  delivery_amount        Decimal             @default(0) @db.Decimal(15, 2)
   invoices               invoices[]
+  quotation_charges      quotation_charges[]
   quotation_costs        quotation_costs[]
   quotation_items        quotation_items[]
-  users                  users?            @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
-  customers              customers         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
+  users                  users?              @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
+  customers              customers           @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -384,4 +386,30 @@ model quotation_costs {
   quotations       quotations @relation(fields: [quotation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "quotation_costs_quotation_id_foreign")
 
   @@index([quotation_id], map: "quotation_costs_quotation_id_index")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invoice_charges {
+  id         BigInt    @id @default(autoincrement())
+  invoice_id BigInt
+  label      String    @db.VarChar(255)
+  amount     Decimal   @default(0) @db.Decimal(15, 2)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  invoices   invoices  @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "invoice_charges_invoice_id_foreign")
+
+  @@index([invoice_id], map: "invoice_charges_invoice_id_index")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model quotation_charges {
+  id           BigInt     @id @default(autoincrement())
+  quotation_id BigInt
+  label        String     @db.VarChar(255)
+  amount       Decimal    @default(0) @db.Decimal(15, 2)
+  created_at   DateTime?  @db.Timestamp(0)
+  updated_at   DateTime?  @db.Timestamp(0)
+  quotations   quotations @relation(fields: [quotation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "quotation_charges_quotation_id_foreign")
+
+  @@index([quotation_id], map: "quotation_charges_quotation_id_index")
 }

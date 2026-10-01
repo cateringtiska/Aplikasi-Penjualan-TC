@@ -74,6 +74,7 @@ export type IsiDokumen = {
   pb1_percent: string | null;
   pb1_amount: string;
   delivery_amount: string;
+  biaya_tambahan: { id: string; label: string; amount: string }[];
   grand_total: string;
 
   catatan: string | null;
@@ -279,6 +280,11 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           {Number(isi.delivery_amount) > 0 ? (
             <TrTotal label="Delivery" nilai={rupiah(isi.delivery_amount)} />
           ) : null}
+          {/* Biaya tambahan bernama, urutannya persis seperti yang diketik.
+              Sama kedudukannya dengan delivery: di luar kedua pungutan. */}
+          {isi.biaya_tambahan.map((b) => (
+            <TrTotal key={b.id} label={b.label} nilai={rupiah(b.amount)} />
+          ))}
           <TrTotal label="TOTAL" nilai={rupiah(isi.grand_total)} />
         </tbody>
       </table>

@@ -40,6 +40,15 @@ const barisItem = z.object({
   children: z.array(barisAnak).default([]),
 });
 
+/**
+ * Satu baris biaya tambahan — namanya bebas, jumlahnya di luar PB1 dan
+ * service charge. Lihat `MasukanTotal.biaya_tambahan` di uang.ts.
+ */
+const barisTambahan = z.object({
+  label: z.string().trim().max(255),
+  amount: z.string().optional(),
+});
+
 export const skemaDokumen = z.object({
   id: z.string().trim().optional().nullable(),
   customer_id: z.string().trim().min(1, "Customer belum dipilih."),
@@ -57,6 +66,7 @@ export const skemaDokumen = z.object({
   notes: z.string().trim().max(BATAS_CATATAN).nullable().optional(),
   service_charge_percent: z.string().nullable().optional(),
   delivery_amount: z.string().nullable().optional(),
+  biaya_tambahan: z.array(barisTambahan).default([]),
   pb1_enabled: z.boolean().default(false),
   pb1_percent: z.string().nullable().optional(),
   show_payment_terms: z.boolean().default(false),
@@ -78,8 +88,17 @@ export type BarisSiap = z.infer<typeof barisItem> & {
   anakSiap: AnakSiap[];
 };
 
+/** Baris biaya tambahan yang sudah bersih dan siap disimpan. */
+export type BarisTambahanSiap = { label: string; amount: Decimal };
+
 export type HasilSiap =
-  | { ok: true; f: IsiDokumenTervalidasi; items: BarisSiap[]; kolom: KolomDokumen }
+  | {
+      ok: true;
+      f: IsiDokumenTervalidasi;
+      items: BarisSiap[];
+      tambahan: BarisTambahanSiap[];
+      kolom: KolomDokumen;
+    }
   | { ok: false; keadaan: KeadaanDokumen };
 
 /** Kolom-kolom yang sama untuk quotations maupun invoices. */
@@ -235,6 +254,41 @@ export function siapkanDokumen(
     };
   }
 
+  // Baris biaya tambahan. Baris yang kosong sama sekali DIBUANG tanpa
+  // keluhan — orang menambah baris lalu berubah pikiran, dan memaksanya
+  // menghapus baris kosong sebelum boleh menyimpan hanya menghalangi.
+  //
+  // Yang tidak boleh lolos adalah jumlah tanpa nama: angka tanpa keterangan
+  // di dokumen yang dikirim ke customer akan ditanyakan balik, dan saat itu
+  // tidak ada seorang pun yang masih ingat untuk apa.
+  const tambahan: { label: string; amount: Decimal }[] = [];
+  for (const [i, baris] of f.biaya_tambahan.entries()) {
+    const label = baris.label.trim();
+    const teks = String(baris.amount ?? "").trim();
+
+    if (label === "" && teks === "") continue;
+
+    const nilai = teks === "" ? d(0) : uraikanRupiah(teks);
+    if (nilai === null || nilai.isNegative()) {
+      return {
+        ok: false,
+        keadaan: {
+          galat: { biaya_tambahan: `Biaya tambahan ${i + 1}: isi angka saja, dan tidak boleh minus.` },
+        },
+      };
+    }
+    if (label === "") {
+      return {
+        ok: false,
+        keadaan: {
+          galat: { biaya_tambahan: `Biaya tambahan ${i + 1}: namanya belum diisi.` },
+        },
+      };
+    }
+
+    tambahan.push({ label, amount: nilai });
+  }
+
   if (new Date(f.tanggal_akhir) < new Date(f.tanggal)) {
     return {
       ok: false,
@@ -257,12 +311,14 @@ export function siapkanDokumen(
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent ?? 10,
     delivery_amount: uraikanRupiah(f.delivery_amount) ?? 0,
+    biaya_tambahan: tambahan,
   });
 
   return {
     ok: true,
     f,
     items,
+    tambahan,
     kolom: {
       customer_id: BigInt(f.customer_id),
       contact_person: kosongkanStrip(f.contact_person),

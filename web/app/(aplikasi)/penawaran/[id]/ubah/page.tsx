@@ -23,6 +23,7 @@ export default async function HalamanUbahPenawaran({
     prisma.quotations.findUnique({
       where: { id: BigInt(id) },
       include: {
+        quotation_charges: { orderBy: { id: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -73,6 +74,11 @@ export default async function HalamanUbahPenawaran({
           venue: penawaran.venue ?? "",
           notes: penawaran.notes ?? "",
           delivery_amount: Number(penawaran.delivery_amount) > 0 ? Number(penawaran.delivery_amount).toString() : "",
+          biaya_tambahan: penawaran.quotation_charges.map((b) => ({
+            kunci: `c${b.id}`,
+            label: b.label,
+            amount: Number(b.amount).toLocaleString("id-ID"),
+          })),
           service_charge_percent: penawaran.service_charge_percent
             ? Number(penawaran.service_charge_percent).toString()
             : "",

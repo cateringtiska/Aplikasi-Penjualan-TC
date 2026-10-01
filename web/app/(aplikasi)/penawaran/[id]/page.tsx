@@ -37,6 +37,7 @@ export default async function HalamanDetailPenawaran({
       // Di skema, satu penawaran bisa punya banyak tagihan. Dalam praktiknya
       // hanya satu, jadi cukup ambil yang pertama.
       invoices: { take: 1, select: { id: true, invoice_number: true } },
+      quotation_charges: { orderBy: { id: "asc" } },
       quotation_items: {
         where: { parent_id: null },
         orderBy: { id: "asc" },
@@ -247,6 +248,15 @@ export default async function HalamanDetailPenawaran({
                   nilai={rupiah(p.pb1_amount)}
                 />
               ) : null}
+              {/* Delivery dan biaya tambahan ditaruh SESUDAH kedua pungutan,
+                  urutan yang sama dengan dokumen cetaknya — supaya angka di
+                  layar bisa dicocokkan baris demi baris dengan yang dikirim. */}
+              {Number(p.delivery_amount) > 0 ? (
+                <BarisTotal label="Delivery" nilai={rupiah(p.delivery_amount)} />
+              ) : null}
+              {p.quotation_charges.map((b) => (
+                <BarisTotal key={b.id.toString()} label={b.label} nilai={rupiah(b.amount)} />
+              ))}
               <div className="mt-1.5 flex items-baseline justify-between border-t pt-2.5">
                 <dt className="font-medium">Total quotation</dt>
                 <dd className="angka text-base font-semibold tabular-nums">

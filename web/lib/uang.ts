@@ -169,7 +169,31 @@ export type MasukanTotal = {
    * PB1 dihitung dari subtotal, jadi delivery akan ikut terpajaki.
    */
   delivery_amount?: NilaiUang;
+  /**
+   * Biaya tambahan bernama, di luar service charge maupun PB1.
+   *
+   * Kedudukannya sama persis dengan delivery — ditambahkan paling akhir dan
+   * tidak pernah masuk dasar pungutan apa pun. Bedanya namanya bebas dan
+   * jumlahnya boleh lebih dari satu, karena dokumen katering sungguhan
+   * memuat baris seperti "Tim Servis utk Menu Buffet (1 orang)" dan
+   * "Tambahan Set-up & Layanan 1 Titik VIP Buffet" yang tidak mungkin
+   * ditebak sebelumnya.
+   *
+   * Tidak bisa diganti baris item biasa: baris item masuk subtotal, dan
+   * subtotal adalah dasar service charge maupun PB1.
+   */
+  biaya_tambahan?: BarisTambahan[];
 };
+
+/** Satu baris biaya tambahan: namanya dan jumlahnya. */
+export type BarisTambahan = {
+  label?: string;
+  amount?: NilaiUang;
+};
+
+export function totalBiayaTambahan(baris: BarisTambahan[] | undefined): Decimal {
+  return (baris ?? []).reduce((jumlah, b) => jumlah.plus(d(b.amount)), new Decimal(0));
+}
 
 export type HasilTotal = {
   subtotal: Decimal;
@@ -178,6 +202,7 @@ export type HasilTotal = {
   dasar_pb1: Decimal;
   pb1_amount: Decimal;
   delivery_amount: Decimal;
+  biaya_tambahan_amount: Decimal;
   grand_total: Decimal;
 };
 
@@ -204,9 +229,11 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
     ? bulatkanRupiah(dasarPajak.times(d(masukan.pb1_percent)).dividedBy(100))
     : new Decimal(0);
 
-  // Delivery ditambahkan PALING AKHIR, setelah kedua pungutan dihitung.
-  // Urutan ini yang membuatnya bebas dari service charge dan PB1.
+  // Delivery dan biaya tambahan ditambahkan PALING AKHIR, setelah kedua
+  // pungutan dihitung. Urutan ini yang membuat keduanya bebas dari service
+  // charge dan PB1 — bukan sekadar kebiasaan penulisan.
   const delivery_amount = d(masukan.delivery_amount);
+  const biaya_tambahan_amount = totalBiayaTambahan(masukan.biaya_tambahan);
 
   return {
     subtotal,
@@ -215,10 +242,12 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
     dasar_pb1: dasarPajak,
     pb1_amount,
     delivery_amount,
+    biaya_tambahan_amount,
     grand_total: subtotal
       .plus(service_charge_amount)
       .plus(pb1_amount)
-      .plus(delivery_amount),
+      .plus(delivery_amount)
+      .plus(biaya_tambahan_amount),
   };
 }
 

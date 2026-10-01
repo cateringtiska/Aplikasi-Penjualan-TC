@@ -10,6 +10,7 @@ import {
   pesanGagal,
   siapkanDokumen,
 } from "@/lib/dokumen";
+import { tulisBiayaTambahanPenawaran } from "@/lib/biaya-tambahan";
 import { nomorPenawaranBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
@@ -28,7 +29,7 @@ export async function simpanPenawaran(
   const siap = siapkanDokumen(mentah, { labelTanggalAkhir: "Tanggal berlaku" });
   if (!siap.ok) return siap.keadaan;
 
-  const { f, items, kolom } = siap;
+  const { f, items, tambahan, kolom } = siap;
 
   let idHasil: string;
 
@@ -105,6 +106,11 @@ export async function simpanPenawaran(
           });
         }
       }
+
+      // Biaya tambahan ditulis dalam transaksi yang sama. Grand total sudah
+      // memuat jumlahnya; kalau barisnya gagal masuk, dokumennya menagih
+      // angka yang tidak bisa dijelaskan rinciannya sendiri.
+      await tulisBiayaTambahanPenawaran(idPenawaran, tambahan, tx);
 
       return idPenawaran.toString();
     });

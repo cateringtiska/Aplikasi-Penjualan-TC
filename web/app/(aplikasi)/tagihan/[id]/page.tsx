@@ -40,6 +40,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           },
         },
       },
+      invoice_charges: { orderBy: { id: "asc" } },
       invoice_items: {
         where: { parent_id: null },
         orderBy: { id: "asc" },
@@ -254,6 +255,15 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
               {t.pb1_enabled && Number(t.pb1_amount) > 0 ? (
                 <BarisTotal label={`PB1 ${Number(t.pb1_percent)}%`} nilai={rupiah(t.pb1_amount)} />
               ) : null}
+              {/* Delivery dan biaya tambahan ditaruh SESUDAH kedua pungutan,
+                  urutan yang sama dengan dokumen cetaknya — supaya angka di
+                  layar bisa dicocokkan baris demi baris dengan yang dikirim. */}
+              {Number(t.delivery_amount) > 0 ? (
+                <BarisTotal label="Delivery" nilai={rupiah(t.delivery_amount)} />
+              ) : null}
+              {t.invoice_charges.map((b) => (
+                <BarisTotal key={b.id.toString()} label={b.label} nilai={rupiah(b.amount)} />
+              ))}
               <div className="mt-1.5 flex items-baseline justify-between border-t pt-2.5">
                 <dt className="font-medium">Total invoice</dt>
                 <dd className="angka text-base font-semibold tabular-nums">

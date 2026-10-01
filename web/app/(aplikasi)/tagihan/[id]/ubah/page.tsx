@@ -21,6 +21,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
     prisma.invoices.findUnique({
       where: { id: BigInt(id) },
       include: {
+        invoice_charges: { orderBy: { id: "asc" } },
         invoice_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -71,6 +72,11 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
           venue: tagihan.venue ?? "",
           notes: tagihan.notes ?? "",
           delivery_amount: Number(tagihan.delivery_amount) > 0 ? Number(tagihan.delivery_amount).toString() : "",
+          biaya_tambahan: tagihan.invoice_charges.map((b) => ({
+            kunci: `c${b.id}`,
+            label: b.label,
+            amount: Number(b.amount).toLocaleString("id-ID"),
+          })),
           service_charge_percent: tagihan.service_charge_percent
             ? Number(tagihan.service_charge_percent).toString()
             : "",

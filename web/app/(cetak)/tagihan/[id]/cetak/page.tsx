@@ -28,6 +28,7 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
       where: { id: BigInt(id) },
       include: {
         customers: true,
+        invoice_charges: { orderBy: { id: "asc" } },
         invoice_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -100,6 +101,11 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
         pb1_percent: t.pb1_percent?.toString() ?? null,
         pb1_amount: t.pb1_amount.toString(),
         delivery_amount: t.delivery_amount.toString(),
+        biaya_tambahan: t.invoice_charges.map((b) => ({
+          id: b.id.toString(),
+          label: b.label,
+          amount: b.amount.toString(),
+        })),
         grand_total: t.grand_total.toString(),
 
         catatan: t.notes,

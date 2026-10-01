@@ -45,6 +45,7 @@ export type IsiAwal = {
   notes: string;
   service_charge_percent: string;
   delivery_amount: string;
+  biaya_tambahan: BarisTambahanForm[];
   pb1_enabled: boolean;
   pb1_percent: string;
   show_payment_terms: boolean;
@@ -64,6 +65,21 @@ export type BarisForm = {
   charge_pb1: boolean;
   children: { kunci: string; item_name: string; unit: string; qty: string; price: string }[];
 };
+
+/**
+ * Satu baris biaya tambahan bernama, di luar service charge dan PB1 —
+ * "Tim Servis utk Menu Buffet (1 orang)", "Tambahan Set-up & Layanan 1 Titik
+ * VIP Buffet", dan seterusnya.
+ */
+export type BarisTambahanForm = {
+  kunci: string;
+  label: string;
+  amount: string;
+};
+
+export function tambahanKosong(): BarisTambahanForm {
+  return { kunci: crypto.randomUUID(), label: "", amount: "" };
+}
 
 export function barisKosong(): BarisForm {
   return {
@@ -136,6 +152,15 @@ export function FormDokumen({
     }));
   }
 
+  function ubahTambahan(index: number, perubahan: Partial<BarisTambahanForm>) {
+    setF((lama) => ({
+      ...lama,
+      biaya_tambahan: lama.biaya_tambahan.map((b, i) =>
+        i === index ? { ...b, ...perubahan } : b,
+      ),
+    }));
+  }
+
   function pilihProduk(index: number, idProduk: string) {
     const p = produk.find((x) => x.id === idProduk);
     ubahBaris(index, {
@@ -171,6 +196,10 @@ export function FormDokumen({
         pb1_enabled: f.pb1_enabled,
         pb1_percent: f.pb1_percent || 10,
         delivery_amount: uraikanRupiah(f.delivery_amount) ?? 0,
+        biaya_tambahan: f.biaya_tambahan.map((b) => ({
+          label: b.label,
+          amount: uraikanRupiah(b.amount) ?? 0,
+        })),
       }),
     [
       f.items,
@@ -178,6 +207,7 @@ export function FormDokumen({
       f.pb1_enabled,
       f.pb1_percent,
       f.delivery_amount,
+      f.biaya_tambahan,
     ],
   );
 
@@ -198,6 +228,10 @@ export function FormDokumen({
     notes: f.notes,
     service_charge_percent: f.service_charge_percent || null,
     delivery_amount: f.delivery_amount || null,
+    biaya_tambahan: f.biaya_tambahan.map((b) => ({
+      label: b.label,
+      amount: b.amount,
+    })),
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent || null,
     show_payment_terms: f.show_payment_terms,
@@ -518,6 +552,68 @@ export function FormDokumen({
         </div>
       </Bagian>
 
+      {/* ---------- Biaya tambahan bernama ---------- */}
+      <Bagian
+        judul="Biaya tambahan"
+        keterangan="Di luar service charge dan PB1, sama seperti delivery. Namanya bebas — misalnya “Tim Servis utk Menu Buffet (1 orang)”."
+      >
+        {keadaan.galat?.biaya_tambahan ? (
+          <p className="text-sm text-destructive">{keadaan.galat.biaya_tambahan}</p>
+        ) : null}
+
+        {f.biaya_tambahan.length > 0 ? (
+          <ul className="flex flex-col gap-2.5">
+            {f.biaya_tambahan.map((b, i) => (
+              <li key={b.kunci} className="flex items-center gap-2">
+                <Input
+                  value={b.label}
+                  onChange={(e) => ubahTambahan(i, { label: e.target.value })}
+                  placeholder="Nama biaya"
+                  aria-label={`Nama biaya tambahan ${i + 1}`}
+                  className="flex-1"
+                />
+                <Input
+                  inputMode="numeric"
+                  value={b.amount}
+                  onChange={(e) => ubahTambahan(i, { amount: e.target.value })}
+                  placeholder="0"
+                  aria-label={`Jumlah biaya tambahan ${i + 1}`}
+                  className="angka w-40 shrink-0 text-right tabular-nums"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() =>
+                    ubah(
+                      "biaya_tambahan",
+                      f.biaya_tambahan.filter((_, y) => y !== i),
+                    )
+                  }
+                  aria-label={`Hapus biaya tambahan ${i + 1}`}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">Belum ada biaya tambahan.</p>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => ubah("biaya_tambahan", [...f.biaya_tambahan, tambahanKosong()])}
+        >
+          <Plus className="size-4" />
+          Tambah biaya
+        </Button>
+      </Bagian>
+
       {/* ---------- Syarat & catatan ---------- */}
       <Bagian judul="Syarat pembayaran & catatan">
         <label className="flex cursor-pointer items-center gap-2.5 text-sm">
@@ -565,6 +661,9 @@ export function FormDokumen({
             ) : null}
             {total.delivery_amount.gt(0) ? (
               <Angka label="Delivery" nilai={rupiah(total.delivery_amount)} />
+            ) : null}
+            {total.biaya_tambahan_amount.gt(0) ? (
+              <Angka label="Tambahan" nilai={rupiah(total.biaya_tambahan_amount)} />
             ) : null}
             <Angka label="Total" nilai={rupiah(total.grand_total)} tebal />
           </dl>

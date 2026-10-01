@@ -42,6 +42,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     notes: "",
     service_charge_percent: "",
     delivery_amount: "",
+    biaya_tambahan: [],
     pb1_enabled: false,
     pb1_percent: "10",
     show_payment_terms: Boolean(pengaturan?.payment_terms_default),
@@ -57,6 +58,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       where: { id: BigInt(idPenawaran) },
       include: {
         invoices: { take: 1, select: { id: true } },
+        quotation_charges: { orderBy: { id: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -91,6 +93,13 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       venue: p.venue ?? "",
       notes: `Dikonversi dari Penawaran ${p.quotation_number}`,
       delivery_amount: Number(p.delivery_amount) > 0 ? Number(p.delivery_amount).toString() : "",
+      // Biaya tambahan ikut pindah. Tagihan yang kehilangan baris ini akan
+      // menagih lebih kecil dari penawaran yang sudah disetujui customer.
+      biaya_tambahan: p.quotation_charges.map((b) => ({
+        kunci: `qc${b.id}`,
+        label: b.label,
+        amount: Number(b.amount).toLocaleString("id-ID"),
+      })),
       service_charge_percent: p.service_charge_percent
         ? Number(p.service_charge_percent).toString()
         : "",
