@@ -52,6 +52,42 @@ export type BarisItem = {
   charge_pb1?: boolean;
 };
 
+/**
+ * Baris yang boleh punya sub-item berharga.
+ *
+ * Dua bentuk dipakai bersamaan di dokumen sungguhan:
+ *
+ *   PAKET BERHARGA   induknya punya qty dan harga; anaknya sekadar rincian
+ *                    isi, tanpa harga sendiri.
+ *   KEPALA KELOMPOK  induknya hanya judul ("ANEKA STALL") tanpa qty maupun
+ *                    harga; anaknya yang membawa angkanya.
+ *
+ * Keduanya bekerja dengan satu aturan yang sama: SETIAP BARIS dihitung
+ * sebesar qty kali harganya sendiri. Kepala kelompok bernilai nol karena
+ * qty-nya nol, bukan karena diperlakukan khusus.
+ */
+export type BarisBerAnak = BarisItem & { children?: BarisItem[] };
+
+/**
+ * Induk dan anaknya menjadi satu daftar rata.
+ *
+ * Anak MEWARISI penanda induknya — compliment, service charge, PB1 — kecuali
+ * ia menyebutkan sendiri. Satu kelompok stall dikenai pungutan sebagai satu
+ * kesatuan; meminta tiga kotak centang di setiap sub-item hanya akan membuat
+ * formulirnya menyiksa tanpa menambah ketelitian.
+ */
+export function ratakanBaris(items: BarisBerAnak[]): BarisItem[] {
+  return items.flatMap((induk) => [
+    induk,
+    ...(induk.children ?? []).map((anak) => ({
+      ...anak,
+      is_compliment: anak.is_compliment ?? induk.is_compliment,
+      charge_service: anak.charge_service ?? induk.charge_service,
+      charge_pb1: anak.charge_pb1 ?? induk.charge_pb1,
+    })),
+  ]);
+}
+
 /** Nilai satu baris. Compliment selalu nol. */
 export function subtotalBaris(item: BarisItem): Decimal {
   if (item.is_compliment) return new Decimal(0);
@@ -102,7 +138,7 @@ export function dasarPb1(items: BarisItem[]): Decimal {
    ------------------------------------------------------------------------- */
 
 export type MasukanTotal = {
-  items: BarisItem[];
+  items: BarisBerAnak[];
   /** Persen service charge. Kosong atau nol berarti tidak dikenakan. */
   service_charge_percent?: NilaiUang;
   /** PB1 hanya dihitung bila dinyalakan pada dokumen ini. */
@@ -130,8 +166,13 @@ export type HasilTotal = {
 };
 
 export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
-  const subtotal = hitungSubtotal(masukan.items);
-  const dasar = dasarServiceCharge(masukan.items);
+  // Diratakan DI SINI, bukan oleh pemanggilnya. Sub-item berharga yang
+  // terlewat tidak menghasilkan galat apa pun — hanya total yang diam-diam
+  // kurang, dan itu baru ketahuan setelah dokumennya dikirim.
+  const baris = ratakanBaris(masukan.items);
+
+  const subtotal = hitungSubtotal(baris);
+  const dasar = dasarServiceCharge(baris);
 
   // Laravel: $this->service_charge_percent ? round(...) : 0
   // Di PHP, "0" dan "" sama-sama falsy, jadi persen nol berarti tidak dikenakan.
@@ -142,7 +183,7 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
 
   // PB1 dihitung dari baris yang DITANDAI, bukan dari seluruh subtotal, dan
   // tetap bukan dari subtotal + service charge.
-  const dasarPajak = dasarPb1(masukan.items);
+  const dasarPajak = dasarPb1(baris);
   const pb1_amount = masukan.pb1_enabled
     ? bulatkanRupiah(dasarPajak.times(d(masukan.pb1_percent)).dividedBy(100))
     : new Decimal(0);

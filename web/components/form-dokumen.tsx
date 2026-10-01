@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
+import { d, hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
 
 import type { KeadaanDokumen } from "@/lib/dokumen";
 
@@ -62,7 +62,7 @@ export type BarisForm = {
   is_compliment: boolean;
   charge_service: boolean;
   charge_pb1: boolean;
-  children: { kunci: string; item_name: string }[];
+  children: { kunci: string; item_name: string; unit: string; qty: string; price: string }[];
 };
 
 export function barisKosong(): BarisForm {
@@ -162,6 +162,10 @@ export function FormDokumen({
           is_compliment: b.is_compliment,
           charge_service: b.charge_service,
           charge_pb1: b.charge_pb1,
+          children: b.children.map((a) => ({
+            qty: uraikanRupiah(a.qty) ?? 0,
+            price: uraikanRupiah(a.price) ?? 0,
+          })),
         })),
         service_charge_percent: f.service_charge_percent || null,
         pb1_enabled: f.pb1_enabled,
@@ -207,7 +211,12 @@ export function FormDokumen({
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
-      children: b.children.map((a) => ({ item_name: a.item_name })),
+      children: b.children.map((a) => ({
+        item_name: a.item_name,
+        unit: a.unit || null,
+        qty: a.qty,
+        price: a.price,
+      })),
     })),
   });
 
@@ -608,6 +617,13 @@ function BarisItem({
     is_compliment: baris.is_compliment,
   });
 
+  /** Mengubah satu sub-item tanpa menyentuh saudaranya. */
+  function ubahAnak(j: number, ubahan: Partial<BarisForm["children"][number]>) {
+    onUbah({
+      children: baris.children.map((x, y) => (y === j ? { ...x, ...ubahan } : x)),
+    });
+  }
+
   return (
     <li className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3 pb-3">
@@ -733,7 +749,10 @@ function BarisItem({
           className="ml-auto h-7 text-xs"
           onClick={() =>
             onUbah({
-              children: [...baris.children, { kunci: crypto.randomUUID(), item_name: "" }],
+              children: [
+                ...baris.children,
+                { kunci: crypto.randomUUID(), item_name: "", unit: "", qty: "", price: "" },
+              ],
             })
           }
         >
@@ -745,20 +764,45 @@ function BarisItem({
       {baris.children.length > 0 ? (
         <ul className="mt-3 flex flex-col gap-2 border-l-2 pl-4">
           {baris.children.map((anak, j) => (
-            <li key={anak.kunci} className="flex items-center gap-2">
+            <li key={anak.kunci} className="flex flex-wrap items-center gap-2">
               <Input
                 value={anak.item_name}
-                onChange={(e) =>
-                  onUbah({
-                    children: baris.children.map((x, y) =>
-                      y === j ? { ...x, item_name: e.target.value } : x,
-                    ),
-                  })
-                }
+                onChange={(e) => ubahAnak(j, { item_name: e.target.value })}
                 placeholder="Rincian isi paket"
                 aria-label={`Sub-item ${j + 1} pada baris ${nomor}`}
-                className="h-8 text-sm"
+                className="h-8 min-w-40 flex-1 text-sm"
               />
+              {/* Jumlah dan harga boleh dikosongkan: sub-item yang sekadar
+                  merinci isi paket tidak punya angkanya sendiri. Yang diisi
+                  akan ikut dijumlahkan ke subtotal dokumen. */}
+              <Input
+                value={anak.qty}
+                onChange={(e) => ubahAnak(j, { qty: e.target.value })}
+                inputMode="numeric"
+                placeholder="Jml"
+                aria-label={`Jumlah sub-item ${j + 1} pada baris ${nomor}`}
+                className="angka h-8 w-20 text-sm tabular-nums"
+              />
+              <Input
+                value={anak.unit}
+                onChange={(e) => ubahAnak(j, { unit: e.target.value })}
+                placeholder="Satuan"
+                aria-label={`Satuan sub-item ${j + 1} pada baris ${nomor}`}
+                className="h-8 w-24 text-sm"
+              />
+              <Input
+                value={anak.price}
+                onChange={(e) => ubahAnak(j, { price: e.target.value })}
+                inputMode="numeric"
+                placeholder="Harga"
+                aria-label={`Harga sub-item ${j + 1} pada baris ${nomor}`}
+                className="angka h-8 w-28 text-sm tabular-nums"
+              />
+              <span className="angka w-28 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                {rupiah(
+                  (uraikanRupiah(anak.qty) ?? d(0)).times(uraikanRupiah(anak.price) ?? d(0)),
+                )}
+              </span>
               <Button
                 type="button"
                 variant="ghost"

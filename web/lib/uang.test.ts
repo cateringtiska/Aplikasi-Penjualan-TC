@@ -119,6 +119,92 @@ describe("Total dokumen", () => {
     expect(hasil.pb1_amount.toString()).toBe("0");
   });
 
+  it("menjumlahkan sub-item berharga ke dalam subtotal", () => {
+    // Bentuk "ANEKA STALL": induknya judul kelompok tanpa angka, anaknya yang
+    // membawa harga. Dipakai di dokumen katering sungguhan.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 0,
+          price: 0,
+          children: [
+            { qty: 35, price: 50_000 }, // Bihun Iga Bakso
+            { qty: 35, price: 39_000 }, // Siomay Bandung
+          ],
+        },
+      ],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("3115000"); // 1.750.000 + 1.365.000
+    expect(hasil.grand_total.toString()).toBe("3115000");
+  });
+
+  it("tetap menghitung paket berharga yang anaknya hanya rincian isi", () => {
+    // Bentuk "LUNCH BOX": induknya berharga, anaknya tanpa angka. Keduanya
+    // harus bekerja dengan aturan yang sama — setiap baris sebesar qty kali
+    // harganya sendiri.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 35,
+          price: 78_500,
+          children: [{ qty: 0, price: 0 }, { qty: 0, price: 0 }],
+        },
+      ],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("2747500");
+  });
+
+  it("sub-item mewarisi penanda pungutan dari induknya", () => {
+    // Satu kelompok stall dikenai pungutan sebagai satu kesatuan. Kalau
+    // anaknya tidak ikut mewarisi, dasar pungutannya hanya sebesar induk —
+    // yang pada judul kelompok berarti NOL, dan pungutannya hilang diam-diam.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 0,
+          price: 0,
+          charge_service: true,
+          charge_pb1: true,
+          children: [{ qty: 35, price: 50_000 }],
+        },
+        {
+          qty: 0,
+          price: 0,
+          charge_service: false,
+          charge_pb1: false,
+          children: [{ qty: 35, price: 39_000 }],
+        },
+      ],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    expect(hasil.subtotal.toString()).toBe("3115000");
+    expect(hasil.dasar_service_charge.toString()).toBe("1750000");
+    expect(hasil.dasar_pb1.toString()).toBe("1750000");
+    expect(hasil.service_charge_amount.toString()).toBe("175000");
+    expect(hasil.pb1_amount.toString()).toBe("175000");
+  });
+
+  it("menihilkan seluruh kelompok ketika induknya compliment", () => {
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 0,
+          price: 0,
+          is_compliment: true,
+          children: [{ qty: 35, price: 50_000 }],
+        },
+      ],
+    });
+
+    // Kelompok yang digratiskan harus nol seluruhnya, bukan hanya judulnya.
+    expect(hasil.subtotal.toString()).toBe("0");
+  });
+
   it("menghitung PB1 hanya dari baris yang ditandai", () => {
     // Dua baris senilai sama; hanya satu yang objek PB1.
     const hasil = hitungTotalDokumen({

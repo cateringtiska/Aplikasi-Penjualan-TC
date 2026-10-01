@@ -109,14 +109,18 @@ export async function simpanTagihan(
 
         if (anak.length > 0) {
           await tx.invoice_items.createMany({
-            data: anak.map((nama) => ({
+            // Sub-item kini membawa qty dan harganya sendiri. Penanda
+            // pungutan TIDAK disimpan di sini: ia diwarisi dari induknya saat
+            // menghitung, dan menyimpan salinannya hanya membuka peluang
+            // keduanya menyimpang.
+            data: anak.map((a) => ({
               invoice_id: idTagihan,
               parent_id: barisInduk.id,
-              item_name: nama,
-              unit: null,
-              qty: "0",
-              price: "0",
-              subtotal: "0",
+              item_name: a.item_name,
+              unit: a.unit,
+              qty: a.qty,
+              price: a.price,
+              subtotal: a.subtotal,
               is_compliment: false,
               charge_service: false,
               created_at: new Date(),

@@ -35,7 +35,14 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
           include: {
             other_quotation_items: {
               orderBy: { id: "asc" },
-              select: { id: true, item_name: true },
+              select: {
+                id: true,
+                item_name: true,
+                unit: true,
+                qty: true,
+                price: true,
+                subtotal: true,
+              },
             },
           },
         },
@@ -80,6 +87,10 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
           anak: b.other_quotation_items.map((a) => ({
             id: a.id.toString(),
             item_name: a.item_name,
+            unit: a.unit,
+            qty: a.qty.toString(),
+            price: a.price.toString(),
+            subtotal: a.subtotal.toString(),
           })),
         })),
 

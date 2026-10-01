@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import { format } from "date-fns";
 
 import { romawi, rupiah } from "@/lib/uang";
@@ -22,7 +24,14 @@ export type BarisCetak = {
   price: string;
   subtotal: string;
   is_compliment: boolean;
-  anak: { id: string; item_name: string }[];
+  anak: {
+    id: string;
+    item_name: string;
+    unit: string | null;
+    qty: string;
+    price: string;
+    subtotal: string;
+  }[];
 };
 
 export type Perusahaan = {
@@ -194,27 +203,62 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           </tr>
         </thead>
         <tbody>
-          {isi.baris.map((b, i) => (
-            <tr key={b.id} className="break-inside-avoid">
-              <Td>{romawi(i + 1)}</Td>
-              <Td>
-                {b.item_name}
-                {b.anak.length > 0 ? (
-                  <div className="mt-0.5">
-                    {b.anak.map((a) => (
-                      <div key={a.id} className="ml-3 text-[10px] text-[#666]">
-                        - {a.item_name}
+          {isi.baris.map((b, i) => {
+            // Sub-item berharga mendapat barisnya sendiri, bernomor V.1, V.2;
+            // yang tak berharga tetap menumpang di kolom deskripsi induknya
+            // sebagai rincian isi paket. Keduanya dipakai di dokumen katering:
+            // "ANEKA STALL" adalah judul kelompok yang anaknya berharga,
+            // sedangkan "LUNCH BOX" adalah paket berharga yang anaknya hanya
+            // menyebutkan isinya.
+            const anakBerharga = b.anak.filter((a) => Number(a.subtotal) > 0);
+            const anakRincian = b.anak.filter((a) => Number(a.subtotal) <= 0);
+            const indukBernilai = Number(b.qty) > 0 || Number(b.price) > 0;
+
+            return (
+              <Fragment key={b.id}>
+                <tr className="break-inside-avoid">
+                  <Td>{romawi(i + 1)}</Td>
+                  <Td>
+                    <span className={anakBerharga.length > 0 ? "font-bold" : ""}>
+                      {b.item_name}
+                    </span>
+                    {anakRincian.length > 0 ? (
+                      <div className="mt-0.5">
+                        {anakRincian.map((a) => (
+                          <div key={a.id} className="ml-3 text-[10px] text-[#666]">
+                            - {a.item_name}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : null}
-              </Td>
-              <Td>{Number(b.qty).toLocaleString("id-ID")}</Td>
-              <Td>{b.unit ?? ""}</Td>
-              <Td kanan>{b.is_compliment ? "Compliment" : rupiah(b.price)}</Td>
-              <Td kanan>{b.is_compliment ? "Compliment" : rupiah(b.subtotal)}</Td>
-            </tr>
-          ))}
+                    ) : null}
+                  </Td>
+                  {/* Judul kelompok dibiarkan kosong, bukan diisi angka nol —
+                      nol terbaca sebagai harga, kosong terbaca sebagai judul. */}
+                  <Td>{indukBernilai ? Number(b.qty).toLocaleString("id-ID") : ""}</Td>
+                  <Td>{indukBernilai ? (b.unit ?? "") : ""}</Td>
+                  <Td kanan>
+                    {b.is_compliment ? "Compliment" : indukBernilai ? rupiah(b.price) : ""}
+                  </Td>
+                  <Td kanan>
+                    {b.is_compliment ? "Compliment" : indukBernilai ? rupiah(b.subtotal) : ""}
+                  </Td>
+                </tr>
+
+                {anakBerharga.map((a, j) => (
+                  <tr key={a.id} className="break-inside-avoid">
+                    <Td>{`${romawi(i + 1)}.${j + 1}`}</Td>
+                    <Td>
+                      <span className="ml-3">{a.item_name}</span>
+                    </Td>
+                    <Td>{Number(a.qty).toLocaleString("id-ID")}</Td>
+                    <Td>{a.unit ?? ""}</Td>
+                    <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.price)}</Td>
+                    <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.subtotal)}</Td>
+                  </tr>
+                ))}
+              </Fragment>
+            );
+          })}
 
           <TrTotal label="Sub Total" nilai={rupiah(isi.subtotal)} />
           {Number(isi.service_charge_amount) > 0 ? (

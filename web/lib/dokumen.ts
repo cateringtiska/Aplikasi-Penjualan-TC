@@ -23,6 +23,9 @@ export type KeadaanDokumen = {
 
 const barisAnak = z.object({
   item_name: z.string().trim().max(255),
+  unit: z.string().trim().max(255).nullable().optional(),
+  qty: z.string().optional(),
+  price: z.string().optional(),
 });
 
 const barisItem = z.object({
@@ -62,7 +65,18 @@ export const skemaDokumen = z.object({
 });
 
 export type IsiDokumenTervalidasi = z.infer<typeof skemaDokumen>;
-export type BarisSiap = z.infer<typeof barisItem> & { qtyD: Decimal; priceD: Decimal };
+export type AnakSiap = {
+  item_name: string;
+  unit: string | null;
+  qtyD: Decimal;
+  priceD: Decimal;
+};
+
+export type BarisSiap = z.infer<typeof barisItem> & {
+  qtyD: Decimal;
+  priceD: Decimal;
+  anakSiap: AnakSiap[];
+};
 
 export type HasilSiap =
   | { ok: true; f: IsiDokumenTervalidasi; items: BarisSiap[]; kolom: KolomDokumen }
@@ -155,14 +169,59 @@ export function siapkanDokumen(
     const qty = uraikanRupiah(baris.qty);
     const price = uraikanRupiah(baris.price);
 
-    if (qty === null || qty.lte(0)) {
-      return { ok: false, keadaan: { galat: { items: `Baris ${i + 1}: jumlah harus lebih dari nol.` } } };
+    // Sebuah baris induk boleh menjadi KEPALA KELOMPOK: tanpa qty maupun
+    // harga, hanya judul, dengan sub-item yang membawa angkanya. Itulah
+    // bentuk "ANEKA STALL" pada dokumen katering.
+    const kepalaKelompok =
+      qty !== null &&
+      qty.isZero() &&
+      price !== null &&
+      price.isZero() &&
+      baris.children.length > 0;
+
+    if (!kepalaKelompok && (qty === null || qty.lte(0))) {
+      return {
+        ok: false,
+        keadaan: {
+          galat: {
+            items: `Baris ${i + 1}: jumlah harus lebih dari nol — kecuali baris ini judul kelompok, yang harus berjumlah 0, berharga 0, dan punya sub-item.`,
+          },
+        },
+      };
     }
     if (price === null || price.isNegative()) {
       return { ok: false, keadaan: { galat: { items: `Baris ${i + 1}: harga tidak boleh minus.` } } };
     }
 
-    items.push({ ...baris, qtyD: qty, priceD: price });
+    for (const [j, anak] of baris.children.entries()) {
+      const qtyAnak = uraikanRupiah(anak.qty ?? "");
+      const hargaAnak = uraikanRupiah(anak.price ?? "");
+
+      if ((anak.qty ?? "").trim() !== "" && (qtyAnak === null || qtyAnak.isNegative())) {
+        return {
+          ok: false,
+          keadaan: { galat: { items: `Baris ${i + 1} sub-item ${j + 1}: jumlah tidak boleh minus.` } },
+        };
+      }
+      if ((anak.price ?? "").trim() !== "" && (hargaAnak === null || hargaAnak.isNegative())) {
+        return {
+          ok: false,
+          keadaan: { galat: { items: `Baris ${i + 1} sub-item ${j + 1}: harga tidak boleh minus.` } },
+        };
+      }
+    }
+
+    items.push({
+      ...baris,
+      qtyD: qty,
+      priceD: price,
+      anakSiap: baris.children.map((a) => ({
+        item_name: a.item_name,
+        unit: a.unit ?? null,
+        qtyD: uraikanRupiah(a.qty ?? "") ?? d(0),
+        priceD: uraikanRupiah(a.price ?? "") ?? d(0),
+      })),
+    });
   }
 
   const teksDelivery = String(f.delivery_amount ?? "").trim();
@@ -189,6 +248,7 @@ export function siapkanDokumen(
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
+      children: b.anakSiap.map((a) => ({ qty: a.qtyD, price: a.priceD })),
     })),
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
@@ -245,7 +305,16 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       created_at: new Date(),
       updated_at: new Date(),
     },
-    anak: b.children.map((a) => a.item_name.trim()).filter((nama) => nama !== ""),
+    anak: b.anakSiap
+      .filter((a) => a.item_name.trim() !== "")
+      .map((a) => ({
+        item_name: a.item_name.trim(),
+        unit: a.unit || null,
+        qty: a.qtyD.toFixed(2),
+        price: a.priceD.toFixed(2),
+        // Compliment menurun dari induknya, jadi nilainya ikut nol.
+        subtotal: (b.is_compliment ? d(0) : a.qtyD.times(a.priceD)).toFixed(2),
+      })),
   }));
 }
 

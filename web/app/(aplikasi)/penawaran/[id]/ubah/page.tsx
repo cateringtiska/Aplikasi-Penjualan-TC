@@ -27,7 +27,9 @@ export default async function HalamanUbahPenawaran({
           where: { parent_id: null },
           orderBy: { id: "asc" },
           include: {
-            other_quotation_items: { orderBy: { id: "asc" }, select: { item_name: true } },
+            other_quotation_items: { orderBy: { id: "asc" },
+              select: { item_name: true, unit: true, qty: true, price: true },
+             },
           },
         },
       },
@@ -93,6 +95,9 @@ export default async function HalamanUbahPenawaran({
             children: b.other_quotation_items.map((a, i) => ({
               kunci: `${b.id}-${i}`,
               item_name: a.item_name,
+              unit: a.unit ?? "",
+              qty: a.qty && Number(a.qty) > 0 ? Number(a.qty).toString() : "",
+              price: a.price && Number(a.price) > 0 ? Number(a.price).toString() : "",
             })),
           })),
         }}
