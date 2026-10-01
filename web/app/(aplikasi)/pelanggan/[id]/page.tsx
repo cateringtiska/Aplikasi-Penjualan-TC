@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BingkaiTabel, Halaman, KeadaanKosong } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Button } from "@/components/ui/button";
 import { ambilKartuPiutang } from "@/lib/kartu-piutang";
 import { wajibPeran } from "@/lib/rbac";
@@ -63,16 +64,20 @@ export default async function HalamanKartuCustomer({
         </Button>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
-        <Angka label="Total invoice" nilai={rupiah(totalInvoice)} />
-        <Angka label="Sudah dibayar" nilai={rupiah(totalBayar)} />
-        <Angka
+      <PapanAngka kolom={3} className="mb-6">
+        <KartuAngka label="Total invoice" nilai={rupiah(totalInvoice)} />
+        <KartuAngka
+          label="Sudah dibayar"
+          nilai={rupiah(totalBayar)}
+          nada={totalBayar.gt(0) ? "baik" : "netral"}
+        />
+        <KartuAngka
           label={lunas ? "Lunas" : "Sisa piutang"}
           nilai={rupiah(sisa)}
           menonjol
-          tempo={!lunas}
+          nada={lunas ? "baik" : "menunggu"}
         />
-      </section>
+      </PapanAngka>
 
       <h2 className="pb-1 text-sm font-semibold tracking-[-0.01em]">Mutasi</h2>
       <p className="pb-2.5 text-xs text-muted-foreground">
@@ -135,7 +140,7 @@ export default async function HalamanKartuCustomer({
                   </Td>
                   <Td className="angka text-right tabular-nums">{rupiah(totalInvoice)}</Td>
                   <Td className="angka text-right tabular-nums">{rupiah(totalBayar)}</Td>
-                  <Td className={`angka text-right tabular-nums ${lunas ? "" : "text-tempo"}`}>
+                  <Td className={`angka text-right tabular-nums ${lunas ? "" : "text-sebagian"}`}>
                     {rupiah(sisa)}
                   </Td>
                 </tr>
@@ -145,31 +150,6 @@ export default async function HalamanKartuCustomer({
         )}
       </BingkaiTabel>
     </Halaman>
-  );
-}
-
-function Angka({
-  label,
-  nilai,
-  menonjol,
-  tempo,
-}: {
-  label: string;
-  nilai: string;
-  menonjol?: boolean;
-  tempo?: boolean;
-}) {
-  return (
-    <div className="px-4 py-4 sm:px-5">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
-          menonjol ? "text-[1.375rem]" : "text-lg"
-        } ${tempo ? "text-tempo" : ""}`}
-      >
-        {nilai}
-      </p>
-    </div>
   );
 }
 

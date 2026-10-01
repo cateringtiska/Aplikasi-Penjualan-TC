@@ -11,6 +11,7 @@ import {
   KepalaHalaman,
   RingkasanTabel,
 } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
@@ -41,20 +42,27 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
         }
       />
 
-      <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
+      {/* Warnanya menanjak mengikuti umur: yang belum jatuh tempo polos,
+          keterlambatan jadi kuning, dan lewat 60 hari jadi merah. Itu yang
+          biasanya perlu ditindaklanjuti secara khusus. */}
+      <PapanAngka className="mb-6">
         {KELOMPOK.map((k) => (
-          <div key={k.kunci} className="px-4 py-4 sm:px-5">
-            <p className="eyebrow">{k.label}</p>
-            <p
-              className={`angka mt-1.5 text-lg font-semibold tracking-[-0.025em] tabular-nums ${
-                k.kunci === "h60" && umur.h60.gt(0) ? "text-tempo" : ""
-              }`}
-            >
-              {rupiah(umur[k.kunci])}
-            </p>
-          </div>
+          <KartuAngka
+            key={k.kunci}
+            label={k.label}
+            nilai={rupiah(umur[k.kunci])}
+            nada={
+              umur[k.kunci].lte(0)
+                ? "netral"
+                : k.kunci === "h60"
+                  ? "mendesak"
+                  : k.kunci === "belum"
+                    ? "netral"
+                    : "menunggu"
+            }
+          />
         ))}
-      </section>
+      </PapanAngka>
 
       <div className="pb-4">
         <Pencarian placeholder="Cari nama customer…" />

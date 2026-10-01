@@ -11,6 +11,7 @@ import {
   KepalaHalaman,
   RingkasanTabel,
 } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { wajibPeran } from "@/lib/rbac";
@@ -68,30 +69,41 @@ export default async function HalamanLaporanPenjualan({
         <SaringLaporan pelanggan={pelanggan} />
       </div>
 
-      <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka
+      <PapanAngka className="mb-4">
+        <KartuAngka
           label="Nilai invoice"
           nilai={rupiah(ringkasan.nilaiTagihan)}
           keterangan={`${ringkasan.jumlahTagihan} invoice`}
           menonjol
         />
-        <Angka
+        <KartuAngka
           label="Sudah dibayar"
           nilai={rupiah(ringkasan.totalTerbayar)}
           keterangan="uang yang sudah masuk"
+          nada={ringkasan.totalTerbayar.gt(0) ? "baik" : "netral"}
         />
-        <Angka
+        <KartuAngka
           label="Piutang"
           nilai={rupiah(ringkasan.totalPiutang)}
-          keterangan={`${ringkasan.jumlahJatuhTempo} lewat tempo`}
-          peringatan={ringkasan.jumlahJatuhTempo > 0}
+          keterangan={
+            ringkasan.jumlahJatuhTempo > 0
+              ? `${ringkasan.jumlahJatuhTempo} lewat tempo`
+              : "belum ada yang lewat tempo"
+          }
+          nada={
+            ringkasan.jumlahJatuhTempo > 0
+              ? "mendesak"
+              : ringkasan.totalPiutang.gt(0)
+                ? "menunggu"
+                : "netral"
+          }
         />
-        <Angka
+        <KartuAngka
           label="Quotation"
           nilai={rupiah(ringkasan.nilaiPenawaran)}
           keterangan={`${ringkasan.jumlahPenawaran} dibuat · ${ringkasan.penawaranDisetujui} disetujui`}
         />
-      </section>
+      </PapanAngka>
 
       <BingkaiTabel>
         {baris.length === 0 ? (
@@ -162,33 +174,6 @@ export default async function HalamanLaporanPenjualan({
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  keterangan,
-  menonjol,
-  peringatan,
-}: {
-  label: string;
-  nilai: string;
-  keterangan: string;
-  menonjol?: boolean;
-  peringatan?: boolean;
-}) {
-  return (
-    <div className="px-4 py-4 sm:px-5">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
-          menonjol ? "text-[1.375rem]" : "text-lg"
-        } ${peringatan ? "text-tempo" : ""}`}
-      >
-        {nilai}
-      </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{keterangan}</p>
-    </div>
-  );
-}
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

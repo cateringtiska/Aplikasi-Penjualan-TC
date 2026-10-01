@@ -28,6 +28,22 @@ import {
 
 const TANDA = "UJI ALUR";
 
+/**
+ * Tanggal relatif terhadap hari ini.
+ *
+ * Tanggal tetap membusuk: yang hari ini berada di masa depan akan berada di
+ * masa lalu beberapa minggu lagi, dan tes yang menguji "belum jatuh tempo"
+ * mendadak gagal tanpa ada kode yang berubah. Pernah terjadi — tes ini
+ * ditulis 10 September dengan jatuh tempo 24 September, lalu jatuh pada
+ * 1 Oktober.
+ */
+function hari(selisih: number): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + selisih);
+  return d;
+}
+
 // Penawaran pernikahan yang sama dengan yang dipakai di tes rumus, supaya
 // angka yang diharapkan bisa dibandingkan langsung antar kedua berkas.
 const ITEM = [
@@ -100,8 +116,8 @@ describe("Alur penuh satu acara katering", () => {
       data: {
         quotation_number: `UJI-QUO-${Date.now()}`,
         customer_id: pelanggan.id,
-        quotation_date: new Date("2026-09-10"),
-        valid_until: new Date("2026-09-24"),
+        quotation_date: hari(-20),
+        valid_until: hari(14),
         status: "draft",
         event_type: "Resepsi pernikahan",
         guest_count: 300,
@@ -157,8 +173,8 @@ describe("Alur penuh satu acara katering", () => {
         invoice_number: `UJI-INV-${Date.now()}`,
         quotation_id: asal.id,
         customer_id: asal.customer_id,
-        invoice_date: new Date("2026-09-10"),
-        due_date: new Date("2026-09-24"),
+        invoice_date: hari(-20),
+        due_date: hari(14),
         status: "unpaid",
         paid_amount: "0",
         subtotal: asal.subtotal,
@@ -312,7 +328,7 @@ describe("Alur penuh satu acara katering", () => {
     // Jatuh tempo dimundurkan ke masa lalu, lalu dibayar sebagian.
     await prisma.invoices.update({
       where: { id: jejak.tagihan! },
-      data: { due_date: new Date("2026-08-01") },
+      data: { due_date: hari(-45) },
     });
 
     await catatPembayaran(5_000_000);

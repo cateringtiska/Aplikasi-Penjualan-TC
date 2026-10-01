@@ -3,6 +3,7 @@ import { id as localeId } from "date-fns/locale";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
 
@@ -115,30 +116,33 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
 
       {/* Empat angka utama disusun sebagai satu papan, bukan empat kartu
           terpisah — supaya terbaca sebagai satu ringkasan. */}
-      <section className="mt-7 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka
+      <PapanAngka className="mt-7">
+        <KartuAngka
           label="Piutang berjalan"
           nilai={rupiah(totalPiutang)}
           keterangan={`${piutang._count} invoice belum lunas`}
+          nada={totalPiutang.gt(0) ? "menunggu" : "netral"}
           menonjol
         />
-        <Angka
+        <KartuAngka
           label="Penjualan bulan ini"
           nilai={rupiah(bulanIni._sum.grand_total)}
           keterangan={`${bulanIni._count} invoice terbit`}
+          nada={bulanIni._count > 0 ? "baik" : "netral"}
         />
-        <Angka
+        <KartuAngka
           label="Quotation menunggu"
           nilai={String(penawaranMenunggu)}
-          keterangan="draft atau terkirim"
+          keterangan={penawaranMenunggu > 0 ? "belum dijawab customer" : "tidak ada"}
+          nada={penawaranMenunggu > 0 ? "menunggu" : "netral"}
         />
-        <Angka
+        <KartuAngka
           label="Jatuh tempo"
           nilai={String(jatuhTempo)}
           keterangan={jatuhTempo > 0 ? "perlu ditagih" : "tidak ada"}
-          peringatan={jatuhTempo > 0}
+          nada={jatuhTempo > 0 ? "mendesak" : "netral"}
         />
-      </section>
+      </PapanAngka>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <Panel judul="Quotation terbaru" href="/penawaran">
@@ -185,33 +189,6 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  keterangan,
-  menonjol,
-  peringatan,
-}: {
-  label: string;
-  nilai: string;
-  keterangan: string;
-  menonjol?: boolean;
-  peringatan?: boolean;
-}) {
-  return (
-    <div className="px-4 py-4 sm:px-5">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
-          menonjol ? "text-[1.375rem]" : "text-lg"
-        } ${peringatan ? "text-tempo" : ""}`}
-      >
-        {nilai}
-      </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{keterangan}</p>
-    </div>
-  );
-}
 
 function Panel({
   judul,

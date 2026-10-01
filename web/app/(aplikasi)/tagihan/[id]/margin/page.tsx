@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PanelBiaya } from "@/components/panel-biaya";
 import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
@@ -90,21 +91,26 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
         </p>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
-        <Angka label="Total biaya" nilai={rupiah(hasil.total_cost)} />
-        <Angka
+      <PapanAngka className="mb-6">
+        <KartuAngka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
+        <KartuAngka
+          label="Total biaya"
+          nilai={rupiah(hasil.total_cost)}
+          keterangan={biaya.length === 0 ? "belum ada biaya dicatat" : undefined}
+          nada={biaya.length === 0 ? "menunggu" : "netral"}
+        />
+        <KartuAngka
           label={hasil.profit_status === "untung" ? "Margin" : "Rugi"}
           nilai={rupiah(hasil.profit.abs())}
           menonjol
-          rugi={hasil.profit_status === "rugi"}
+          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
         />
-        <Angka
+        <KartuAngka
           label="Margin %"
           nilai={`${hasil.margin_percent.toString().replace(".", ",")}%`}
-          rugi={hasil.profit_status === "rugi"}
+          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
         />
-      </section>
+      </PapanAngka>
 
       <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
         Penjualan yang diakui adalah <strong>seluruh nilai tagihan</strong>
@@ -139,27 +145,3 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  menonjol,
-  rugi,
-}: {
-  label: string;
-  nilai: string;
-  menonjol?: boolean;
-  rugi?: boolean;
-}) {
-  return (
-    <div className="px-4 py-4 sm:px-5">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
-          menonjol ? "text-[1.375rem]" : "text-lg"
-        } ${rugi ? "text-tempo" : ""}`}
-      >
-        {nilai}
-      </p>
-    </div>
-  );
-}

@@ -11,6 +11,7 @@ import {
   KepalaHalaman,
   RingkasanTabel,
 } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { ambilLaporanMargin } from "@/lib/laporan-margin";
@@ -53,21 +54,21 @@ export default async function HalamanLaporanMargin({
         Uang yang sudah benar-benar ditagihkan, dikurangi biaya yang sudah dicatat.
       </p>
 
-      <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka label="Penjualan bersih" nilai={rupiah(ringkasanNyata.penjualan)} />
-        <Angka label="Total biaya" nilai={rupiah(ringkasanNyata.biaya)} />
-        <Angka
+      <PapanAngka className="mb-4">
+        <KartuAngka label="Penjualan bersih" nilai={rupiah(ringkasanNyata.penjualan)} />
+        <KartuAngka label="Total biaya" nilai={rupiah(ringkasanNyata.biaya)} />
+        <KartuAngka
           label={ringkasanNyata.untung.isNegative() ? "Rugi" : "Margin"}
           nilai={rupiah(ringkasanNyata.untung.abs())}
           menonjol
-          rugi={ringkasanNyata.untung.isNegative()}
+          nada={ringkasanNyata.untung.isNegative() ? "mendesak" : "baik"}
         />
-        <Angka
+        <KartuAngka
           label="Margin rata-rata"
           nilai={`${ringkasanNyata.marginPersen.toString().replace(".", ",")}%`}
-          rugi={ringkasanNyata.marginPersen.isNegative()}
+          nada={ringkasanNyata.marginPersen.isNegative() ? "mendesak" : "baik"}
         />
-      </section>
+      </PapanAngka>
 
       {ringkasanNyata.belumDicatat > 0 ? (
         <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
@@ -157,21 +158,21 @@ export default async function HalamanLaporanMargin({
             penawarannya. Dipakai menimbang harga sebelum dikirim ke klien.
           </p>
 
-          <section className="mb-4 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-            <Angka label="Penjualan bersih" nilai={rupiah(ringkasanPerkiraan.penjualan)} />
-            <Angka label="Perkiraan biaya" nilai={rupiah(ringkasanPerkiraan.biaya)} />
-            <Angka
+          <PapanAngka className="mb-4">
+            <KartuAngka label="Penjualan bersih" nilai={rupiah(ringkasanPerkiraan.penjualan)} />
+            <KartuAngka label="Perkiraan biaya" nilai={rupiah(ringkasanPerkiraan.biaya)} />
+            <KartuAngka
               label={ringkasanPerkiraan.untung.isNegative() ? "Perkiraan rugi" : "Perkiraan margin"}
               nilai={rupiah(ringkasanPerkiraan.untung.abs())}
               menonjol
-              rugi={ringkasanPerkiraan.untung.isNegative()}
+              nada={ringkasanPerkiraan.untung.isNegative() ? "mendesak" : "baik"}
             />
-            <Angka
+            <KartuAngka
               label="Margin rata-rata"
               nilai={`${ringkasanPerkiraan.marginPersen.toString().replace(".", ",")}%`}
-              rugi={ringkasanPerkiraan.marginPersen.isNegative()}
+              nada={ringkasanPerkiraan.marginPersen.isNegative() ? "mendesak" : "baik"}
             />
-          </section>
+          </PapanAngka>
 
           {ringkasanPerkiraan.belumDicatat > 0 ? (
             <p className="mb-4 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
@@ -247,30 +248,6 @@ export default async function HalamanLaporanMargin({
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  menonjol,
-  rugi,
-}: {
-  label: string;
-  nilai: string;
-  menonjol?: boolean;
-  rugi?: boolean;
-}) {
-  return (
-    <div className="px-4 py-4 sm:px-5">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
-          menonjol ? "text-[1.375rem]" : "text-lg"
-        } ${rugi ? "text-tempo" : ""}`}
-      >
-        {nilai}
-      </p>
-    </div>
-  );
-}
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

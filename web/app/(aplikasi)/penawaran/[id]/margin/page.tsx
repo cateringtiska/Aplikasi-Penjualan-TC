@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
+import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PanelBiaya } from "@/components/panel-biaya";
 import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
@@ -79,21 +80,21 @@ export default async function HalamanMarginPenawaran({
         </p>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 divide-border rounded-lg border bg-card sm:grid-cols-4 sm:divide-x">
-        <Angka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
-        <Angka label="Perkiraan biaya" nilai={rupiah(hasil.total_cost)} />
-        <Angka
+      <PapanAngka className="mb-6">
+        <KartuAngka label="Penjualan bersih" nilai={rupiah(hasil.net_sales)} />
+        <KartuAngka label="Perkiraan biaya" nilai={rupiah(hasil.total_cost)} />
+        <KartuAngka
           label={hasil.profit_status === "untung" ? "Perkiraan margin" : "Perkiraan rugi"}
           nilai={rupiah(hasil.profit.abs())}
           menonjol
-          rugi={hasil.profit_status === "rugi"}
+          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
         />
-        <Angka
+        <KartuAngka
           label="Margin %"
           nilai={`${hasil.margin_percent.toString().replace(".", ",")}%`}
-          rugi={hasil.profit_status === "rugi"}
+          nada={hasil.profit_status === "rugi" ? "mendesak" : "baik"}
         />
-      </section>
+      </PapanAngka>
 
       <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
         Angka di sini <strong>perkiraan</strong>, dipakai untuk menimbang harga sebelum
@@ -115,27 +116,3 @@ export default async function HalamanMarginPenawaran({
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  menonjol,
-  rugi,
-}: {
-  label: string;
-  nilai: string;
-  menonjol?: boolean;
-  rugi?: boolean;
-}) {
-  return (
-    <div className="px-4 py-3.5">
-      <p className="text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p
-        className={`angka mt-1 tabular-nums ${menonjol ? "text-lg font-semibold" : "text-base font-medium"} ${rugi ? "text-destructive" : ""}`}
-      >
-        {nilai}
-      </p>
-    </div>
-  );
-}

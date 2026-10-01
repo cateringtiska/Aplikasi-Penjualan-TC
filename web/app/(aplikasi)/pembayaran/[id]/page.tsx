@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
+import { KartuAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
@@ -75,9 +76,9 @@ export default async function HalamanDetailPembayaran({
       </header>
 
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
-        <Angka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol />
-        <Angka label="Dari customer" nilai={p.customers.name} teks />
-        <Angka
+        <KartuAngka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol nada="baik" />
+        <KartuAngka label="Dari customer" nilai={p.customers.name} teks />
+        <KartuAngka
           label="Menutup"
           nilai={`${p.payment_details.length} invoice`}
           teks
@@ -145,35 +146,6 @@ export default async function HalamanDetailPembayaran({
   );
 }
 
-function Angka({
-  label,
-  nilai,
-  keterangan,
-  menonjol,
-  teks,
-}: {
-  label: string;
-  nilai: string;
-  keterangan?: string;
-  menonjol?: boolean;
-  teks?: boolean;
-}) {
-  return (
-    <div className="px-5 py-4">
-      <p className="eyebrow">{label}</p>
-      <p
-        className={`mt-1.5 font-semibold tracking-[-0.02em] ${
-          menonjol ? "text-[1.375rem]" : "text-base"
-        } ${teks ? "" : "angka tabular-nums"}`}
-      >
-        {nilai}
-      </p>
-      {keterangan ? (
-        <p className="mt-0.5 text-xs text-muted-foreground">{keterangan}</p>
-      ) : null}
-    </div>
-  );
-}
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
