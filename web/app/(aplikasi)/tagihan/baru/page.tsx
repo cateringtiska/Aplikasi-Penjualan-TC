@@ -41,6 +41,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     venue: "",
     notes: "",
     service_charge_percent: "",
+    delivery_amount: "",
     pb1_enabled: false,
     pb1_percent: "10",
     show_payment_terms: Boolean(pengaturan?.payment_terms_default),
@@ -87,6 +88,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       fnb_planner: p.fnb_planner ?? "",
       venue: p.venue ?? "",
       notes: `Dikonversi dari Penawaran ${p.quotation_number}`,
+      delivery_amount: Number(p.delivery_amount) > 0 ? Number(p.delivery_amount).toString() : "",
       service_charge_percent: p.service_charge_percent
         ? Number(p.service_charge_percent).toString()
         : "",

@@ -44,6 +44,7 @@ export type IsiAwal = {
   venue: string;
   notes: string;
   service_charge_percent: string;
+  delivery_amount: string;
   pb1_enabled: boolean;
   pb1_percent: string;
   show_payment_terms: boolean;
@@ -162,8 +163,15 @@ export function FormDokumen({
         service_charge_percent: f.service_charge_percent || null,
         pb1_enabled: f.pb1_enabled,
         pb1_percent: f.pb1_percent || 10,
+        delivery_amount: uraikanRupiah(f.delivery_amount) ?? 0,
       }),
-    [f.items, f.service_charge_percent, f.pb1_enabled, f.pb1_percent],
+    [
+      f.items,
+      f.service_charge_percent,
+      f.pb1_enabled,
+      f.pb1_percent,
+      f.delivery_amount,
+    ],
   );
 
   const muatan = JSON.stringify({
@@ -182,6 +190,7 @@ export function FormDokumen({
     venue: f.venue,
     notes: f.notes,
     service_charge_percent: f.service_charge_percent || null,
+    delivery_amount: f.delivery_amount || null,
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent || null,
     show_payment_terms: f.show_payment_terms,
@@ -431,10 +440,10 @@ export function FormDokumen({
 
       {/* ---------- Biaya tambahan ---------- */}
       <Bagian
-        judul="Service charge & pajak"
+        judul="Service charge, pajak & pengantaran"
         keterangan="Service charge hanya dihitung dari baris yang ditandai dikenakan."
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Bidang label="Service charge (%)" nama="service_charge_percent">
             <Input
               id="service_charge_percent"
@@ -470,6 +479,24 @@ export function FormDokumen({
               />
             ) : null}
           </div>
+
+          <Bidang
+            label="Delivery (Rp)"
+            nama="delivery_amount"
+            galat={keadaan.galat?.delivery_amount}
+          >
+            <Input
+              id="delivery_amount"
+              inputMode="numeric"
+              value={f.delivery_amount}
+              onChange={(e) => ubah("delivery_amount", e.target.value)}
+              placeholder="0"
+              className="angka tabular-nums"
+            />
+            <p className="text-xs text-muted-foreground">
+              Di luar service charge dan PB1 — ongkos kirim, bukan nilai makanan.
+            </p>
+          </Bidang>
         </div>
       </Bagian>
 
@@ -517,6 +544,9 @@ export function FormDokumen({
             ) : null}
             {total.pb1_amount.gt(0) ? (
               <Angka label="PB1" nilai={rupiah(total.pb1_amount)} />
+            ) : null}
+            {total.delivery_amount.gt(0) ? (
+              <Angka label="Delivery" nilai={rupiah(total.delivery_amount)} />
             ) : null}
             <Angka label="Total" nilai={rupiah(total.grand_total)} tebal />
           </dl>

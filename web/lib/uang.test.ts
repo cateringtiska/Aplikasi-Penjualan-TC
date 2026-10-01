@@ -119,6 +119,46 @@ describe("Total dokumen", () => {
     expect(hasil.pb1_amount.toString()).toBe("0");
   });
 
+  it("menambahkan delivery ke total TANPA memajakinya", () => {
+    // Inti aturannya. Delivery adalah ongkos kirim, bukan nilai makanan —
+    // jadi ia tidak pernah masuk dasar service charge maupun dasar PB1.
+    // Memasukkannya sebagai baris item biasa tidak bisa: PB1 dihitung dari
+    // subtotal, sehingga ongkos kirim akan ikut terpajaki.
+    const tanpa = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    const dengan = hitungTotalDokumen({
+      items: [{ qty: 1, price: 1_000_000 }],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+      delivery_amount: 250_000,
+    });
+
+    // Kedua pungutan harus sama persis dengan dan tanpa delivery.
+    expect(dengan.dasar_service_charge.toString()).toBe(tanpa.dasar_service_charge.toString());
+    expect(dengan.service_charge_amount.toString()).toBe(tanpa.service_charge_amount.toString());
+    expect(dengan.pb1_amount.toString()).toBe(tanpa.pb1_amount.toString());
+    expect(dengan.subtotal.toString()).toBe(tanpa.subtotal.toString());
+
+    // Yang berubah hanya totalnya, persis sebesar delivery-nya.
+    expect(dengan.delivery_amount.toString()).toBe("250000");
+    expect(dengan.grand_total.minus(tanpa.grand_total).toString()).toBe("250000");
+
+    // 1.000.000 + 100.000 service charge + 100.000 PB1 + 250.000 delivery
+    expect(dengan.grand_total.toString()).toBe("1450000");
+  });
+
+  it("memperlakukan delivery kosong sebagai nol", () => {
+    const hasil = hitungTotalDokumen({ items: [{ qty: 1, price: 500_000 }] });
+    expect(hasil.delivery_amount.toString()).toBe("0");
+    expect(hasil.grand_total.toString()).toBe("500000");
+  });
+
   it("membulatkan setengah rupiah MENJAUHI nol, meniru round() PHP", () => {
     // Dasar 10, service charge 5% = tepat 0,5 -> harus jadi 1, bukan 0.
     const hasil = hitungTotalDokumen({

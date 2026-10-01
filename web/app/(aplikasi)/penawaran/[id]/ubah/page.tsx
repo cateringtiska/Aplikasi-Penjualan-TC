@@ -70,6 +70,7 @@ export default async function HalamanUbahPenawaran({
           fnb_planner: penawaran.fnb_planner ?? "",
           venue: penawaran.venue ?? "",
           notes: penawaran.notes ?? "",
+          delivery_amount: Number(penawaran.delivery_amount) > 0 ? Number(penawaran.delivery_amount).toString() : "",
           service_charge_percent: penawaran.service_charge_percent
             ? Number(penawaran.service_charge_percent).toString()
             : "",

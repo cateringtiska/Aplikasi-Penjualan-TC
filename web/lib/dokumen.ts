@@ -52,6 +52,7 @@ export const skemaDokumen = z.object({
   venue: z.string().trim().max(255).nullable().optional(),
   notes: z.string().trim().max(BATAS_CATATAN).nullable().optional(),
   service_charge_percent: z.string().nullable().optional(),
+  delivery_amount: z.string().nullable().optional(),
   pb1_enabled: z.boolean().default(false),
   pb1_percent: z.string().nullable().optional(),
   show_payment_terms: z.boolean().default(false),
@@ -85,6 +86,7 @@ export type KolomDokumen = {
   pb1_enabled: boolean;
   pb1_percent: string | null;
   pb1_amount: string;
+  delivery_amount: string;
   grand_total: string;
   show_payment_terms: boolean;
   payment_terms: string | null;
@@ -145,6 +147,14 @@ export function siapkanDokumen(
     items.push({ ...baris, qtyD: qty, priceD: price });
   }
 
+  const teksDelivery = String(f.delivery_amount ?? "").trim();
+  if (teksDelivery !== "" && uraikanRupiah(teksDelivery) === null) {
+    return {
+      ok: false,
+      keadaan: { galat: { delivery_amount: "Isi angka saja, contoh: 250.000" } },
+    };
+  }
+
   if (new Date(f.tanggal_akhir) < new Date(f.tanggal)) {
     return {
       ok: false,
@@ -164,6 +174,7 @@ export function siapkanDokumen(
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent ?? 10,
+    delivery_amount: uraikanRupiah(f.delivery_amount) ?? 0,
   });
 
   return {
@@ -190,6 +201,7 @@ export function siapkanDokumen(
       pb1_enabled: f.pb1_enabled,
       pb1_percent: f.pb1_enabled ? d(f.pb1_percent ?? 10).toFixed(2) : null,
       pb1_amount: total.pb1_amount.toFixed(2),
+      delivery_amount: total.delivery_amount.toFixed(2),
       grand_total: total.grand_total.toFixed(2),
       show_payment_terms: f.show_payment_terms,
       payment_terms: f.show_payment_terms ? f.payment_terms || null : null,

@@ -64,6 +64,7 @@ export type IsiDokumen = {
   pb1_enabled: boolean;
   pb1_percent: string | null;
   pb1_amount: string;
+  delivery_amount: string;
   grand_total: string;
 
   catatan: string | null;
@@ -224,6 +225,12 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           ) : null}
           {isi.pb1_enabled && Number(isi.pb1_amount) > 0 ? (
             <TrTotal label={`PB1 (${persen(isi.pb1_percent)}%)`} nilai={rupiah(isi.pb1_amount)} />
+          ) : null}
+          {/* Delivery ditaruh SESUDAH kedua pungutan, supaya pembaca dokumen
+              bisa menelusuri perhitungannya dari atas ke bawah dan melihat
+              sendiri bahwa ongkos kirim ini tidak ikut dipajaki. */}
+          {Number(isi.delivery_amount) > 0 ? (
+            <TrTotal label="Delivery" nilai={rupiah(isi.delivery_amount)} />
           ) : null}
           <TrTotal label="TOTAL" nilai={rupiah(isi.grand_total)} />
         </tbody>

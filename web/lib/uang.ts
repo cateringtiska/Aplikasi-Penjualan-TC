@@ -89,6 +89,15 @@ export type MasukanTotal = {
   /** PB1 hanya dihitung bila dinyalakan pada dokumen ini. */
   pb1_enabled?: boolean;
   pb1_percent?: NilaiUang;
+  /**
+   * Ongkos pengantaran.
+   *
+   * Ditambahkan ke total TETAPI tidak pernah masuk dasar service charge
+   * maupun PB1 — ia ongkos kirim, bukan bagian dari nilai makanan yang
+   * dipajaki. Itu sebabnya ia tidak bisa sekadar menjadi baris item:
+   * PB1 dihitung dari subtotal, jadi delivery akan ikut terpajaki.
+   */
+  delivery_amount?: NilaiUang;
 };
 
 export type HasilTotal = {
@@ -96,6 +105,7 @@ export type HasilTotal = {
   dasar_service_charge: Decimal;
   service_charge_amount: Decimal;
   pb1_amount: Decimal;
+  delivery_amount: Decimal;
   grand_total: Decimal;
 };
 
@@ -115,12 +125,20 @@ export function hitungTotalDokumen(masukan: MasukanTotal): HasilTotal {
     ? bulatkanRupiah(subtotal.times(d(masukan.pb1_percent)).dividedBy(100))
     : new Decimal(0);
 
+  // Delivery ditambahkan PALING AKHIR, setelah kedua pungutan dihitung.
+  // Urutan ini yang membuatnya bebas dari service charge dan PB1.
+  const delivery_amount = d(masukan.delivery_amount);
+
   return {
     subtotal,
     dasar_service_charge: dasar,
     service_charge_amount,
     pb1_amount,
-    grand_total: subtotal.plus(service_charge_amount).plus(pb1_amount),
+    delivery_amount,
+    grand_total: subtotal
+      .plus(service_charge_amount)
+      .plus(pb1_amount)
+      .plus(delivery_amount),
   };
 }
 

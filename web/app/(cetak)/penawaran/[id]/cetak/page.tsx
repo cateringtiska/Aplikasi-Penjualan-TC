@@ -89,6 +89,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
         pb1_enabled: p.pb1_enabled,
         pb1_percent: p.pb1_percent?.toString() ?? null,
         pb1_amount: p.pb1_amount.toString(),
+        delivery_amount: p.delivery_amount.toString(),
         grand_total: p.grand_total.toString(),
 
         catatan: p.notes,

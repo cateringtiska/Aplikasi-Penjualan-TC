@@ -49,6 +49,7 @@ export default async function HalamanPenawaranBaru() {
           venue: "",
           notes: "",
           service_charge_percent: "",
+          delivery_amount: "",
           pb1_enabled: false,
           pb1_percent: "10",
           show_payment_terms: Boolean(pengaturan?.quotation_terms_default),

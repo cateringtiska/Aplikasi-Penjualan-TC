@@ -88,6 +88,7 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
         pb1_enabled: t.pb1_enabled,
         pb1_percent: t.pb1_percent?.toString() ?? null,
         pb1_amount: t.pb1_amount.toString(),
+        delivery_amount: t.delivery_amount.toString(),
         grand_total: t.grand_total.toString(),
 
         catatan: t.notes,

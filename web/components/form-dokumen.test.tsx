@@ -59,6 +59,7 @@ const ISI_AWAL = {
   venue: "",
   notes: "",
   service_charge_percent: "",
+  delivery_amount: "",
   pb1_enabled: false,
   pb1_percent: "10",
   show_payment_terms: false,

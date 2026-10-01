@@ -165,6 +165,7 @@ model invoices {
   pb1_enabled            Boolean           @default(false)
   pb1_percent            Decimal?          @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal           @default(0) @db.Decimal(15, 2)
+  delivery_amount        Decimal           @default(0) @db.Decimal(15, 2)
   invoice_costs          invoice_costs[]
   invoice_items          invoice_items[]
   invoice_margins        invoice_margins?
@@ -317,6 +318,7 @@ model quotations {
   pb1_enabled            Boolean           @default(false)
   pb1_percent            Decimal?          @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal           @default(0) @db.Decimal(15, 2)
+  delivery_amount        Decimal           @default(0) @db.Decimal(15, 2)
   invoices               invoices[]
   quotation_costs        quotation_costs[]
   quotation_items        quotation_items[]
