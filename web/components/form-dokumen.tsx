@@ -222,13 +222,43 @@ export function FormDokumen({
               id="customer_id"
               value={f.customer_id}
               onChange={(e) => {
-                const p = pelanggan.find((x) => x.id === e.target.value);
-                setF((lama) => ({
-                  ...lama,
-                  customer_id: e.target.value,
-                  contact_person: lama.contact_person || p?.contact_person || "",
-                  contact_phone: lama.contact_phone || p?.phone || "",
-                }));
+                const dipilih = pelanggan.find((x) => x.id === e.target.value);
+
+                setF((lama) => {
+                  const sebelumnya = pelanggan.find((x) => x.id === lama.customer_id);
+
+                  /* Mengganti customer harus ikut mengganti kontaknya —
+                     sebelumnya tidak, karena kolomnya hanya diisi kalau masih
+                     kosong, sehingga kontak customer PERTAMA menempel terus.
+                     Tetapi ketikan sendiri juga tidak boleh hilang: sebuah
+                     acara bisa saja ditangani orang lain, bukan PIC yang
+                     tercatat di data customer.
+                     Pembedanya: isian yang masih sama persis dengan bawaan
+                     customer sebelumnya berarti belum disentuh siapa pun. */
+                  const ikut = (
+                    sekarang: string,
+                    bawaanLama: string | null | undefined,
+                    bawaanBaru: string | null | undefined,
+                  ) =>
+                    sekarang === "" || sekarang === (bawaanLama ?? "")
+                      ? (bawaanBaru ?? "")
+                      : sekarang;
+
+                  return {
+                    ...lama,
+                    customer_id: e.target.value,
+                    contact_person: ikut(
+                      lama.contact_person,
+                      sebelumnya?.contact_person,
+                      dipilih?.contact_person,
+                    ),
+                    contact_phone: ikut(
+                      lama.contact_phone,
+                      sebelumnya?.phone,
+                      dipilih?.phone,
+                    ),
+                  };
+                });
               }}
               className="h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
