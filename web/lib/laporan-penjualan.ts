@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import type { SaringMilik } from "@/lib/rbac";
 import { d, labelStatusInvoice } from "@/lib/uang";
 
 /* ==========================================================================
@@ -32,13 +33,14 @@ function kondisiTanggal(saring: SaringLaporan) {
   return Object.keys(rentang).length > 0 ? rentang : undefined;
 }
 
-export async function ambilLaporan(saring: SaringLaporan) {
+export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
   const tanggal = kondisiTanggal(saring);
   const pelangganId = saring.pelanggan ? BigInt(saring.pelanggan) : undefined;
 
   const [tagihan, penawaran, daftarPelanggan] = await Promise.all([
     prisma.invoices.findMany({
       where: {
+        ...milik,
         ...(tanggal ? { invoice_date: tanggal } : {}),
         ...(pelangganId ? { customer_id: pelangganId } : {}),
       },
@@ -57,6 +59,7 @@ export async function ambilLaporan(saring: SaringLaporan) {
     }),
     prisma.quotations.findMany({
       where: {
+        ...milik,
         ...(tanggal ? { quotation_date: tanggal } : {}),
         ...(pelangganId ? { customer_id: pelangganId } : {}),
       },

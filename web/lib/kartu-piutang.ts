@@ -3,6 +3,7 @@ import "server-only";
 import type { Decimal } from "decimal.js";
 
 import { prisma } from "./prisma";
+import type { SaringMilik } from "./rbac";
 import { d } from "./uang";
 
 /* ==========================================================================
@@ -54,7 +55,7 @@ export type KartuPiutang = {
   sisa: Decimal;
 };
 
-export async function ambilKartuPiutang(id: string): Promise<KartuPiutang | null> {
+export async function ambilKartuPiutang(id: string, milik: SaringMilik): Promise<KartuPiutang | null> {
   const idPelanggan = BigInt(id);
 
   const [pelanggan, invoice, alokasi] = await Promise.all([
@@ -70,7 +71,7 @@ export async function ambilKartuPiutang(id: string): Promise<KartuPiutang | null
       },
     }),
     prisma.invoices.findMany({
-      where: { customer_id: idPelanggan, status: { not: "cancelled" } },
+      where: { ...milik, customer_id: idPelanggan, status: { not: "cancelled" } },
       orderBy: { invoice_date: "asc" },
       select: {
         id: true,
@@ -80,8 +81,12 @@ export async function ambilKartuPiutang(id: string): Promise<KartuPiutang | null
         event_type: true,
       },
     }),
-    prisma.payment_details.findMany({
-      where: { payments: { customer_id: idPelanggan } },
+    // Alokasi pembayaran DISARING dengan saringan yang sama seperti
+      // invoicenya. Kalau hanya invoicenya yang disaring, kartunya memuat
+      // kredit untuk invoice yang tidak ikut terlihat, dan saldo berjalannya
+      // terbaca minus — angka yang salah, bukan sekadar angka yang sebagian.
+      prisma.payment_details.findMany({
+      where: { payments: { customer_id: idPelanggan }, invoices: { ...milik } },
       orderBy: { id: "asc" },
       select: {
         id: true,

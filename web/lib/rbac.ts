@@ -38,6 +38,33 @@ export async function wajibPeran(...diizinkan: Peran[]): Promise<Sesi> {
   redirect("/dasbor?akses=ditolak");
 }
 
+/* -------------------------------------------------------------------------
+   SALES HANYA MELIHAT YANG IA KERJAKAN SENDIRI
+   ------------------------------------------------------------------------- */
+
+/**
+ * Penyaring dokumen untuk peran Sales.
+ *
+ * Peran Sales dulu melihat ANGKA SELURUH PERUSAHAAN: total piutang, total
+ * penjualan bulan ini, seluruh daftar quotation dan invoice, laporan
+ * penjualan, kartu piutang. Bukan hanya yang ia kerjakan sendiri. Seorang
+ * sales baru masuk kerja langsung mengetahui omzet dan piutang perusahaan.
+ *
+ * Dikembalikan sebagai POTONGAN `where`, bukan sebagai pemeriksaan setelah
+ * data terambil. Penyaring yang dipasang di kueri tidak bisa lupa dipakai
+ * oleh penjumlahan di bawahnya — sedangkan pemeriksaan setelahnya hanya
+ * menyembunyikan baris, dan totalnya terlanjur dihitung dari semuanya.
+ *
+ * Finance dan admin tidak disaring: mengurus uang perusahaan memang
+ * pekerjaan mereka.
+ */
+export type SaringMilik = { created_by?: bigint };
+
+export function hanyaMiliknya(sesi: Sesi): SaringMilik {
+  if (sesi.peran === "sales") return { created_by: BigInt(sesi.id) };
+  return {};
+}
+
 /** Versi untuk server action: melempar, bukan mengalihkan halaman. */
 export async function pastikanPeran(...diizinkan: Peran[]): Promise<Sesi> {
   const sesi = await penggunaAktif();

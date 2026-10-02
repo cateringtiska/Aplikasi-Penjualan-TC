@@ -11,7 +11,7 @@ import { Halaman } from "@/components/halaman";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { d, labelStatusInvoice, romawi, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Detail invoice" };
@@ -22,8 +22,8 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
 
   const { id } = await params;
 
-  const t = await prisma.invoices.findUnique({
-    where: { id: BigInt(id) },
+  const t = await prisma.invoices.findFirst({
+    where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
     include: {
       customers: true,
       quotations: { select: { id: true, quotation_number: true } },

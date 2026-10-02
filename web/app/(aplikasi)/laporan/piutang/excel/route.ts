@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { penggunaAktif } from "@/lib/auth";
+import { hanyaMiliknya } from "@/lib/rbac";
 import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   const cari = request.nextUrl.searchParams.get("cari")?.trim() ?? "";
-  const { daftar, umur, totalSemua } = await ambilPiutang(cari);
+  const { daftar, umur, totalSemua } = await ambilPiutang(cari, hanyaMiliknya(sesi));
 
   const buku = new ExcelJS.Workbook();
   buku.creator = "Penjualan TC";

@@ -14,7 +14,7 @@ import {
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { ambilLaporan, bacaSaring } from "@/lib/laporan-penjualan";
@@ -26,11 +26,11 @@ export const dynamic = "force-dynamic";
 export default async function HalamanLaporanPenjualan({
   searchParams,
 }: PageProps<"/laporan/penjualan">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const params = await searchParams;
   const saring = bacaSaring(params);
-  const { baris, pelanggan, ringkasan } = await ambilLaporan(saring);
+  const { baris, pelanggan, ringkasan } = await ambilLaporan(saring, hanyaMiliknya(sesi));
 
   const kueri = new URLSearchParams(
     Object.entries(saring).filter(([, v]) => v) as [string, string][],

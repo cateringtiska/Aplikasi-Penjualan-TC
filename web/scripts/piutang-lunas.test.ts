@@ -80,7 +80,7 @@ describe("ambilPiutang — customer yang sudah lunas", () => {
     const nama = `${TANDA} Lunas`;
     const id = await buatCustomer(nama, "1100000", "1100000", "paid");
 
-    const { daftar, lunas } = await ambilPiutang(nama);
+    const { daftar, lunas } = await ambilPiutang(nama, {});
 
     // Tidak boleh mengotori daftar umur: ia tidak punya keterlambatan.
     expect(daftar).toHaveLength(0);
@@ -97,7 +97,7 @@ describe("ambilPiutang — customer yang sudah lunas", () => {
     const nama = `${TANDA} Kurang Seribu`;
     await buatCustomer(nama, "1100000", "1099000", "partial");
 
-    const { daftar, lunas } = await ambilPiutang(nama);
+    const { daftar, lunas } = await ambilPiutang(nama, {});
 
     expect(daftar).toHaveLength(1);
     expect(daftar[0].total.toFixed(0)).toBe("1000");
@@ -119,7 +119,7 @@ describe("ambilPiutang — customer yang sudah lunas", () => {
     });
     jejak.push(pelanggan.id);
 
-    const { daftar, lunas } = await ambilPiutang(nama);
+    const { daftar, lunas } = await ambilPiutang(nama, {});
 
     expect(daftar).toHaveLength(0);
     // "Sudah lunas" untuk orang yang belum pernah ditagih adalah kalimat yang

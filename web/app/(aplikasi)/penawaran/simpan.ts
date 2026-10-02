@@ -13,7 +13,7 @@ import {
 import { tulisBiayaTambahanPenawaran } from "@/lib/biaya-tambahan";
 import { nomorPenawaranBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
 
 export async function simpanPenawaran(
   _sebelumnya: KeadaanDokumen,
@@ -41,8 +41,10 @@ export async function simpanPenawaran(
       let idPenawaran: bigint;
 
       if (f.id) {
-        const ada = await tx.quotations.findUnique({
-          where: { id: BigInt(f.id) },
+        // Penyaring kepemilikan ikut ke dalam pencarian: formulir mengirim
+        // nomor dokumennya, dan nomor bisa diganti sendiri sebelum dikirim.
+        const ada = await tx.quotations.findFirst({
+          where: { id: BigInt(f.id), ...hanyaMiliknya(sesi) },
           select: { status: true },
         });
         if (!ada) throw new Error("Quotation tidak ditemukan.");

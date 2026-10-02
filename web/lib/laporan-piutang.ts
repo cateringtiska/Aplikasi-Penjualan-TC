@@ -4,6 +4,7 @@ import { differenceInCalendarDays } from "date-fns";
 import type { Decimal } from "decimal.js";
 
 import { prisma } from "./prisma";
+import type { SaringMilik } from "./rbac";
 import { d } from "./uang";
 
 /* ==========================================================================
@@ -65,12 +66,13 @@ export type HasilPiutang = {
   lunas: CustomerLunas[];
 };
 
-export async function ambilPiutang(kunci: string): Promise<HasilPiutang> {
+export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<HasilPiutang> {
   const hariIni = new Date();
   hariIni.setHours(0, 0, 0, 0);
 
   const tagihan = await prisma.invoices.findMany({
     where: {
+      ...milik,
       status: { in: ["unpaid", "partial", "overdue"] },
       ...(kunci ? { customers: { name: { contains: kunci, mode: "insensitive" } } } : {}),
     },

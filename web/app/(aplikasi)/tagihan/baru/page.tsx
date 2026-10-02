@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { FormDokumen, type IsiAwal } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { hariIni, ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../data";
 import { simpanTagihan } from "../simpan";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Invoice baru" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/tagihan/baru">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const { dari } = await searchParams;
   const idPenawaran = typeof dari === "string" ? dari : "";
@@ -54,8 +54,8 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
   let asal: { nomor: string } | null = null;
 
   if (idPenawaran) {
-    const p = await prisma.quotations.findUnique({
-      where: { id: BigInt(idPenawaran) },
+    const p = await prisma.quotations.findFirst({
+      where: { id: BigInt(idPenawaran), ...hanyaMiliknya(sesi) },
       include: {
         invoices: { take: 1, select: { id: true } },
         quotation_charges: { orderBy: { id: "asc" } },

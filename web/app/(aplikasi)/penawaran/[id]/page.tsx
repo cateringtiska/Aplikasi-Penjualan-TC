@@ -11,7 +11,7 @@ import { Halaman } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { AksiStatusPenawaran } from "./aksi-status";
 import { romawi, rupiah } from "@/lib/uang";
@@ -30,8 +30,8 @@ export default async function HalamanDetailPenawaran({
 
   const { id } = await params;
 
-  const p = await prisma.quotations.findUnique({
-    where: { id: BigInt(id) },
+  const p = await prisma.quotations.findFirst({
+    where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
     include: {
       customers: true,
       // Di skema, satu penawaran bisa punya banyak tagihan. Dalam praktiknya

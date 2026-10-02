@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { DokumenCetak } from "@/components/dokumen-cetak";
 import { tautanTandaTangan } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,8 @@ export async function generateMetadata({
   params,
 }: PageProps<"/tagihan/[id]/cetak">): Promise<Metadata> {
   const { id } = await params;
+  // Judul tab saja. Halamannya sendiri yang menyaring; kalau dokumennya
+  // bukan miliknya, yang terbuka tetap halaman "tidak ditemukan".
   const t = await prisma.invoices.findUnique({
     where: { id: BigInt(id) },
     select: { invoice_number: true },
@@ -20,13 +22,13 @@ export async function generateMetadata({
 }
 
 export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/cetak">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const { id } = await params;
 
   const [t, perusahaan] = await Promise.all([
-    prisma.invoices.findUnique({
-      where: { id: BigInt(id) },
+    prisma.invoices.findFirst({
+      where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
       include: {
         customers: true,
         invoice_charges: { orderBy: { id: "asc" } },

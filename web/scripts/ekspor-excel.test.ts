@@ -82,7 +82,7 @@ describe("unduhan kartu piutang", () => {
 
   it("mencocokkan jumlah barisnya dengan isi database", async () => {
     const { ambilPiutang } = await import("../lib/laporan-piutang");
-    const { daftar, totalSemua } = await ambilPiutang("");
+    const { daftar, totalSemua } = await ambilPiutang("", {});
 
     const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
     const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(

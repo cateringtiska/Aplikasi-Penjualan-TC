@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { simpanPenawaran } from "../../simpan";
@@ -15,13 +15,13 @@ export const dynamic = "force-dynamic";
 export default async function HalamanUbahPenawaran({
   params,
 }: PageProps<"/penawaran/[id]/ubah">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const { id } = await params;
 
   const [penawaran, { pelanggan, produk }] = await Promise.all([
-    prisma.quotations.findUnique({
-      where: { id: BigInt(id) },
+    prisma.quotations.findFirst({
+      where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
       include: {
         quotation_charges: { orderBy: { id: "asc" } },
         quotation_items: {

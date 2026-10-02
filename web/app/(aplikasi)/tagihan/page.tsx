@@ -16,7 +16,7 @@ import { Pencarian } from "@/components/pencarian";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
 import { tandaiJatuhTempo } from "./actions";
@@ -45,6 +45,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
 
   const daftar = await prisma.invoices.findMany({
     where: {
+      ...hanyaMiliknya(sesi),
       ...(saring ? { status: saring } : {}),
       ...(kunci
         ? {

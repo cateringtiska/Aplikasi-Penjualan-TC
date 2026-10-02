@@ -16,7 +16,7 @@ import { Pencarian } from "@/components/pencarian";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { tandaiKadaluarsa } from "./actions";
@@ -35,7 +35,7 @@ const STATUS = [
 ];
 
 export default async function HalamanPenawaran({ searchParams }: PageProps<"/penawaran">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   // Menandai yang masa berlakunya lewat sebelum daftar digambar, supaya
   // status di layar tidak pernah bertentangan dengan tanggalnya.
@@ -47,6 +47,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
 
   const daftar = await prisma.quotations.findMany({
     where: {
+      ...hanyaMiliknya(sesi),
       ...(saring ? { status: saring } : {}),
       ...(kunci
         ? {

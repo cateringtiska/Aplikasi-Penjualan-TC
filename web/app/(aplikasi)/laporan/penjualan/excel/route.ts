@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { penggunaAktif } from "@/lib/auth";
+import { hanyaMiliknya } from "@/lib/rbac";
 
 import { ambilLaporan, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const saring = bacaSaring(params);
-  const { baris, ringkasan } = await ambilLaporan(saring);
+  const { baris, ringkasan } = await ambilLaporan(saring, hanyaMiliknya(sesi));
 
   const buku = new ExcelJS.Workbook();
   buku.creator = "Penjualan TC";

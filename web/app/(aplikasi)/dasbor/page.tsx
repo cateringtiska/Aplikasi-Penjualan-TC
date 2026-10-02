@@ -6,6 +6,7 @@ import Link from "next/link";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
+import { hanyaMiliknya, wajibSesi } from "@/lib/rbac";
 
 import { tandaiJatuhTempo } from "../tagihan/actions";
 import { d, rupiah } from "@/lib/uang";
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 const BELUM_LUNAS = ["unpaid", "partial", "overdue"];
 
 export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor">) {
+  const sesi = await wajibSesi();
   const { akses } = await searchParams;
   const ditolak = akses === "ditolak";
 
@@ -37,32 +39,40 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   // adalah angka yang membuat orang berhenti menagih.
   await tandaiJatuhTempo();
 
+  // Sales hanya melihat angkanya sendiri. Disaring DI KUERI, bukan setelah
+  // datanya terambil: kartu-kartu di bawah adalah penjumlahan, dan
+  // penjumlahan yang terlanjur menghitung semuanya tidak bisa disembunyikan
+  // lagi oleh penyaringan di tampilan.
+  const milik = hanyaMiliknya(sesi);
+
   const [piutang, bulanIni, penawaranMenunggu, jatuhTempo, penawaranTerbaru, tagihanTerbaru] =
     await Promise.all([
       // Sisa piutang = jumlah grand total dikurangi jumlah yang sudah dibayar.
       // Keduanya penjumlahan biasa, jadi boleh dihitung terpisah lalu dikurangi.
       prisma.invoices.aggregate({
-        where: { status: { in: BELUM_LUNAS } },
+        where: { ...milik, status: { in: BELUM_LUNAS } },
         _sum: { grand_total: true, paid_amount: true },
         _count: true,
       }),
       prisma.invoices.aggregate({
         where: {
+          ...milik,
           invoice_date: { gte: awalBulan, lt: awalBulanDepan },
           status: { not: "cancelled" },
         },
         _sum: { grand_total: true },
         _count: true,
       }),
-      prisma.quotations.count({ where: { status: { in: ["draft", "sent"] } } }),
+      prisma.quotations.count({ where: { ...milik, status: { in: ["draft", "sent"] } } }),
       // Dihitung dari due_date, bukan dari kolom status. Kolom status adalah
       // salinan yang perlu disegarkan; tanggal jatuh tempo adalah sumbernya.
       // Kalau panggilan penyegaran di atas suatu saat hilang, angka ini tetap
       // benar.
       prisma.invoices.count({
-        where: { status: { in: BELUM_LUNAS }, due_date: { lt: awalHariIni } },
+        where: { ...milik, status: { in: BELUM_LUNAS }, due_date: { lt: awalHariIni } },
       }),
       prisma.quotations.findMany({
+        where: milik,
         take: 5,
         orderBy: { id: "desc" },
         select: {
@@ -75,6 +85,7 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
         },
       }),
       prisma.invoices.findMany({
+        where: milik,
         take: 5,
         orderBy: { id: "desc" },
         select: {

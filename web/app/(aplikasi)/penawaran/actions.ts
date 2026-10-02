@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
 
 /* ==========================================================================
    PERUBAHAN STATUS PENAWARAN
@@ -25,10 +25,13 @@ const BOLEH_DIUBAH: Record<string, string[]> = {
 };
 
 export async function ubahStatusPenawaran(id: string, tujuan: string): Promise<void> {
-  await pastikanPeran("sales", "finance");
+  const sesi = await pastikanPeran("sales", "finance");
 
-  const penawaran = await prisma.quotations.findUnique({
-    where: { id: BigInt(id) },
+  // Penyaringnya ikut ke dalam pencarian, bukan diperiksa sesudahnya. Sales
+  // tidak pernah melihat quotation orang lain di layar, tetapi tindakan ini
+  // dipanggil dengan nomor — dan nomor bisa diketik sendiri.
+  const penawaran = await prisma.quotations.findFirst({
+    where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
     select: { status: true },
   });
   if (!penawaran) throw new Error("Quotation tidak ditemukan.");
@@ -47,10 +50,10 @@ export async function ubahStatusPenawaran(id: string, tujuan: string): Promise<v
 }
 
 export async function hapusPenawaran(id: string): Promise<void> {
-  await pastikanPeran("sales", "finance");
+  const sesi = await pastikanPeran("sales", "finance");
 
-  const penawaran = await prisma.quotations.findUnique({
-    where: { id: BigInt(id) },
+  const penawaran = await prisma.quotations.findFirst({
+    where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
     select: { status: true, invoices: { take: 1, select: { id: true } } },
   });
   if (!penawaran) return;

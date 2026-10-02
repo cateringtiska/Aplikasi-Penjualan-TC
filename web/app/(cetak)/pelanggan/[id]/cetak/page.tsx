@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { ambilKartuPiutang } from "@/lib/kartu-piutang";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Kartu Piutang" };
@@ -22,12 +22,12 @@ export const dynamic = "force-dynamic";
 export default async function CetakKartuPiutang({
   params,
 }: PageProps<"/pelanggan/[id]/cetak">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const { id } = await params;
 
   const [kartu, perusahaan] = await Promise.all([
-    ambilKartuPiutang(id),
+    ambilKartuPiutang(id, hanyaMiliknya(sesi)),
     prisma.company_settings.findFirst({
       select: { company_name: true, logo_path: true },
     }),

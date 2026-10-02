@@ -114,7 +114,7 @@ describe("ambilKartuPiutang", () => {
       ],
     });
 
-    const kartu = await ambilKartuPiutang(pelanggan.id.toString());
+    const kartu = await ambilKartuPiutang(pelanggan.id.toString(), {});
     expect(kartu).not.toBeNull();
     const { baris, totalInvoice, totalBayar, sisa } = kartu!;
 
@@ -142,6 +142,6 @@ describe("ambilKartuPiutang", () => {
   });
 
   it("mengembalikan null untuk customer yang tidak ada", async () => {
-    expect(await ambilKartuPiutang("999999999")).toBeNull();
+    expect(await ambilKartuPiutang("999999999", {})).toBeNull();
   });
 });

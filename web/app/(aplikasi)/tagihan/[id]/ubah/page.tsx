@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { simpanTagihan } from "../../simpan";
@@ -13,13 +13,13 @@ export const metadata: Metadata = { title: "Ubah invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan/[id]/ubah">) {
-  await wajibPeran("sales", "finance");
+  const sesi = await wajibPeran("sales", "finance");
 
   const { id } = await params;
 
   const [tagihan, { pelanggan, produk }] = await Promise.all([
-    prisma.invoices.findUnique({
-      where: { id: BigInt(id) },
+    prisma.invoices.findFirst({
+      where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
       include: {
         invoice_charges: { orderBy: { id: "asc" } },
         invoice_items: {

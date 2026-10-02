@@ -18,7 +18,7 @@ import {
   simpanDenganKodeUnik,
 } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
 import { hitungStatusInvoice, type StatusInvoice } from "@/lib/uang";
 
 // `klien` wajib diisi klien transaksi: lihat catatan di lib/nomor.ts.
@@ -51,8 +51,10 @@ export async function simpanTagihan(
       let idTagihan: bigint;
 
       if (f.id) {
-        const ada = await tx.invoices.findUnique({
-          where: { id: BigInt(f.id) },
+        // Penyaring kepemilikan ikut ke dalam pencarian: formulir mengirim
+        // nomor dokumennya, dan nomor bisa diganti sendiri sebelum dikirim.
+        const ada = await tx.invoices.findFirst({
+          where: { id: BigInt(f.id), ...hanyaMiliknya(sesi) },
           select: { status: true, paid_amount: true, due_date: true },
         });
         if (!ada) throw new Error("Invoice tidak ditemukan.");
