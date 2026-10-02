@@ -65,7 +65,15 @@ export type BarisForm = {
   is_compliment: boolean;
   charge_service: boolean;
   charge_pb1: boolean;
-  children: { kunci: string; item_name: string; unit: string; qty: string; price: string }[];
+  children: {
+    kunci: string;
+    item_name: string;
+    /** Kosong berarti mengikuti hari induknya. */
+    day: string;
+    unit: string;
+    qty: string;
+    price: string;
+  }[];
 };
 
 /**
@@ -206,6 +214,7 @@ export function FormDokumen({
           charge_service: b.charge_service,
           charge_pb1: b.charge_pb1,
           children: b.children.map((a) => ({
+            day: uraikanRupiah(a.day) ?? uraikanRupiah(b.day) ?? 1,
             qty: uraikanRupiah(a.qty) ?? 0,
             price: uraikanRupiah(a.price) ?? 0,
           })),
@@ -278,6 +287,7 @@ export function FormDokumen({
       children: b.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit || null,
+        day: a.day,
         qty: a.qty,
         price: a.price,
       })),
@@ -942,7 +952,7 @@ function BarisItem({
             onUbah({
               children: [
                 ...baris.children,
-                { kunci: crypto.randomUUID(), item_name: "", unit: "", qty: "", price: "" },
+                { kunci: crypto.randomUUID(), item_name: "", day: "", unit: "", qty: "", price: "" },
               ],
             })
           }
@@ -966,6 +976,15 @@ function BarisItem({
               {/* Jumlah dan harga boleh dikosongkan: sub-item yang sekadar
                   merinci isi paket tidak punya angkanya sendiri. Yang diisi
                   akan ikut dijumlahkan ke subtotal dokumen. */}
+              <Input
+                value={anak.day}
+                onChange={(e) => ubahAnak(j, { day: e.target.value })}
+                inputMode="numeric"
+                placeholder={baris.day || "Hari"}
+                aria-label={`Jumlah hari sub-item ${j + 1} pada baris ${nomor}`}
+                className="angka h-8 w-16 text-sm tabular-nums"
+                title="Kosong berarti mengikuti hari baris induknya"
+              />
               <Input
                 value={anak.qty}
                 onChange={(e) => ubahAnak(j, { qty: e.target.value })}
@@ -991,7 +1010,9 @@ function BarisItem({
               />
               <span className="angka w-28 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                 {rupiah(
-                  (uraikanRupiah(anak.qty) ?? d(0)).times(uraikanRupiah(anak.price) ?? d(0)),
+                  (uraikanRupiah(anak.day) ?? uraikanRupiah(baris.day) ?? d(1))
+                    .times(uraikanRupiah(anak.qty) ?? d(0))
+                    .times(uraikanRupiah(anak.price) ?? d(0)),
                 )}
               </span>
               <Button

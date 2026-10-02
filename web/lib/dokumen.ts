@@ -24,6 +24,7 @@ export type KeadaanDokumen = {
 
 const barisAnak = z.object({
   item_name: z.string().trim().max(255),
+  day: z.string().optional(),
   unit: z.string().trim().max(255).nullable().optional(),
   qty: z.string().optional(),
   price: z.string().optional(),
@@ -82,6 +83,7 @@ export type IsiDokumenTervalidasi = z.infer<typeof skemaDokumen>;
 export type AnakSiap = {
   item_name: string;
   unit: string | null;
+  dayD: Decimal;
   qtyD: Decimal;
   priceD: Decimal;
 };
@@ -296,6 +298,27 @@ export function siapkanDokumen(
           keadaan: { galat: { items: `Baris ${i + 1} sub-item ${j + 1}: harga tidak boleh minus.` } },
         };
       }
+
+      // Hari sub-item yang DIBIARKAN KOSONG berarti "sama seperti induknya",
+      // bukan satu. Satu stall yang disajikan tiga hari berarti seluruh
+      // isinya tiga hari; memaksanya diketik ulang di setiap sub-item hanya
+      // membuka peluang keduanya menyimpang.
+      const teksHariAnak = String(anak.day ?? "").trim();
+      if (teksHariAnak !== "") {
+        const hariAnak = uraikanRupiah(teksHariAnak);
+        if (hariAnak === null) {
+          return {
+            ok: false,
+            keadaan: { galat: { items: `Baris ${i + 1} sub-item ${j + 1}: jumlah hari tidak terbaca.` } },
+          };
+        }
+        if (hariAnak.lt(1)) {
+          return {
+            ok: false,
+            keadaan: { galat: { items: `Baris ${i + 1} sub-item ${j + 1}: jumlah hari minimal 1.` } },
+          };
+        }
+      }
     }
 
     // Judul kelompok DISIMPAN bernilai nol, bukan sekadar disembunyikan saat
@@ -309,6 +332,8 @@ export function siapkanDokumen(
       anakSiap: baris.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit ?? null,
+        // Kosong berarti mengikuti induknya.
+        dayD: uraikanRupiah(String(a.day ?? "").trim()) ?? hari,
         qtyD: uraikanRupiah(a.qty ?? "") ?? d(0),
         priceD: uraikanRupiah(a.price ?? "") ?? d(0),
       })),
@@ -417,7 +442,7 @@ export function siapkanDokumen(
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
-      children: b.anakSiap.map((a) => ({ day: b.dayD, qty: a.qtyD, price: a.priceD })),
+      children: b.anakSiap.map((a) => ({ day: a.dayD, qty: a.qtyD, price: a.priceD })),
     })),
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
@@ -507,11 +532,11 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
         // menghitung. Baris yang tersimpan berhari 1 sementara nilainya
         // sudah dikali tiga adalah baris yang angkanya tidak menjelaskan
         // nilainya sendiri.
-        day: b.dayD.toFixed(2),
+        day: a.dayD.toFixed(2),
         qty: a.qtyD.toFixed(2),
         price: a.priceD.toFixed(2),
-        // Compliment DAN hari sama-sama menurun dari induknya.
-        subtotal: (b.is_compliment ? d(0) : b.dayD.times(a.qtyD).times(a.priceD)).toFixed(2),
+        // Compliment menurun dari induknya; hari sudah diselesaikan di atas.
+        subtotal: (b.is_compliment ? d(0) : a.dayD.times(a.qtyD).times(a.priceD)).toFixed(2),
       })),
   }));
 }

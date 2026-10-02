@@ -31,7 +31,7 @@ export default async function HalamanUbahPenawaran({
           orderBy: { id: "asc" },
           include: {
             other_quotation_items: { orderBy: { id: "asc" },
-              select: { item_name: true, unit: true, qty: true, price: true },
+              select: { item_name: true, unit: true, day: true, qty: true, price: true },
              },
           },
         },
@@ -108,6 +108,10 @@ export default async function HalamanUbahPenawaran({
               kunci: `${b.id}-${i}`,
               item_name: a.item_name,
               unit: a.unit ?? "",
+              // Sama dengan induknya berarti DIBIARKAN KOSONG, supaya tetap
+              // mewarisi. Menampilkannya sebagai angka membuat orang mengira
+              // ia terpisah dari induknya.
+              day: Number(a.day) === Number(b.day) ? "" : Number(a.day).toString(),
               qty: a.qty && Number(a.qty) > 0 ? Number(a.qty).toString() : "",
               price: a.price && Number(a.price) > 0 ? Number(a.price).toString() : "",
             })),

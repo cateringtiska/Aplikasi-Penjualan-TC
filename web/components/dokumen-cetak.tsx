@@ -30,6 +30,7 @@ export type BarisCetak = {
     id: string;
     item_name: string;
     unit: string | null;
+    day: string;
     qty: string;
     price: string;
     subtotal: string;
@@ -271,7 +272,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                     <Td>
                       <span className="ml-3">{a.item_name}</span>
                     </Td>
-                    <Td>{Number(b.day).toLocaleString("id-ID")}</Td>
+                    <Td>{Number(a.day).toLocaleString("id-ID")}</Td>
                     <Td>{Number(a.qty).toLocaleString("id-ID")}</Td>
                     <Td>{a.unit ?? ""}</Td>
                     <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.price)}</Td>

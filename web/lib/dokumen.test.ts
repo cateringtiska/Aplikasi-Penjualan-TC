@@ -519,3 +519,86 @@ describe("kolom hari", () => {
     expect(hasil.kolom.subtotal).toBe("4147500.00");
   });
 });
+
+/* ==========================================================================
+   HARI PADA SUB-ITEM
+
+   Diminta pemiliknya setelah kolom hari ada di baris induk. Yang menentukan
+   bentuknya: hari sub-item yang DIBIARKAN KOSONG berarti "sama seperti
+   induknya", bukan satu. Kalau kosong berarti satu, satu stall tiga hari
+   mendadak hanya menagih sehari untuk seluruh isinya — sementara baris
+   induknya tetap menyebut tiga hari, jadi dokumennya membantah dirinya
+   sendiri.
+   ========================================================================== */
+
+describe("hari pada sub-item", () => {
+  const stall = (anak: Record<string, unknown>[]) => ({
+    items: [
+      { item_name: "Aneka Stall", day: "3", qty: "0", price: "", children: anak },
+    ],
+  });
+
+  it("KOSONG berarti mengikuti induknya", () => {
+    const hasil = coba(stall([{ item_name: "Bakwan Malang", qty: "35", price: "39500" }]));
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.items[0].anakSiap[0].dayD.toString()).toBe("3");
+    expect(hasil.kolom.subtotal).toBe("4147500.00"); // 3 x 35 x 39.500
+  });
+
+  it("boleh berbeda dari induknya", () => {
+    // Satu menu yang hanya disajikan hari pertama dari tiga hari acara.
+    const hasil = coba(
+      stall([
+        { item_name: "Bakwan Malang", qty: "35", price: "39500" },
+        { item_name: "Tumpeng pembuka", day: "1", qty: "1", price: "500000" },
+      ]),
+    );
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.items[0].anakSiap[0].dayD.toString()).toBe("3");
+    expect(hasil.items[0].anakSiap[1].dayD.toString()).toBe("1");
+
+    // 3 x 35 x 39.500 + 1 x 1 x 500.000
+    expect(hasil.kolom.subtotal).toBe("4647500.00");
+  });
+
+  it("harinya ikut tersimpan di baris sub-itemnya", () => {
+    const hasil = coba(
+      stall([{ item_name: "Tumpeng pembuka", day: "1", qty: "1", price: "500000" }]),
+    );
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    const { anak } = barisUntukDisimpan(hasil.items)[0];
+    expect(anak[0].day).toBe("1.00");
+    expect(anak[0].subtotal).toBe("500000.00");
+  });
+
+  it("MENOLAK hari sub-item yang nol atau tidak terbaca", () => {
+    for (const buruk of ["0", "-1", "dua"]) {
+      const hasil = coba(
+        stall([{ item_name: "Bakwan Malang", day: buruk, qty: "35", price: "39500" }]),
+      );
+      expect(hasil.ok, `"${buruk}" seharusnya ditolak`).toBe(false);
+      if (!hasil.ok) expect(hasil.keadaan.galat?.items).toMatch(/sub-item 1/i);
+    }
+  });
+
+  it("sub-item tanpa angka tidak terpengaruh hari induknya", () => {
+    // Daftar isi paket: tidak berharga, jadi tetap nol berapa pun harinya.
+    const hasil = coba({
+      items: [
+        {
+          item_name: "Lunch Box",
+          day: "3",
+          qty: "130",
+          price: "58500",
+          children: [{ item_name: "Nasi Putih" }, { item_name: "Kerupuk" }],
+        },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("22815000.00"); // 3 x 130 x 58.500
+  });
+});

@@ -56,7 +56,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
         include: {
           other_invoice_items: {
             orderBy: { id: "asc" },
-            select: { id: true, item_name: true, unit: true, qty: true, price: true, subtotal: true },
+            select: { id: true, item_name: true, unit: true, day: true, qty: true, price: true, subtotal: true },
           },
         },
       },
@@ -252,7 +252,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                             </Td>
                             <Td className="pl-7">{a.item_name}</Td>
                             <Td className="angka text-right tabular-nums text-muted-foreground">
-                              {Number(b.day).toLocaleString("id-ID")}
+                              {Number(a.day).toLocaleString("id-ID")}
                             </Td>
                             <Td className="angka text-right tabular-nums text-muted-foreground">
                               {Number(a.qty).toLocaleString("id-ID")} {a.unit ?? ""}
