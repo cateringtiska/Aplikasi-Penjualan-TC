@@ -175,7 +175,11 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                     // berharga tetap menumpang sebagai rincian isi paket.
                     const berharga = b.other_invoice_items.filter((a) => Number(a.subtotal) > 0);
                     const rincian = b.other_invoice_items.filter((a) => Number(a.subtotal) <= 0);
-                    const judulKelompok = berharga.length > 0;
+                    // Dua bentuk judul: yang anaknya berharga, dan yang memang
+                    // tanpa angka dari atas sampai bawah. Keduanya tampil
+                    // dengan kolom angka kosong, sama seperti di cetakannya.
+                    const judulKelompok =
+                      berharga.length > 0 || (Number(b.qty) === 0 && Number(b.price) === 0);
 
                     return (
                       <Fragment key={b.id.toString()}>

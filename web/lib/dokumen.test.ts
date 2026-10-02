@@ -211,18 +211,86 @@ describe("kolom angka yang dibiarkan kosong", () => {
     if (hasil.ok) return;
     expect(hasil.keadaan.galat?.items).toMatch(/tidak boleh minus/i);
   });
+});
 
-  it("menuntun ke sub-item ketika jumlahnya nol tanpa sub-item berharga", () => {
-    // Kalimat lamanya menyuruh orang mengosongkan jumlah dan harga induknya
-    // sendiri — aturan yang sudah tidak berlaku sejak judul kelompok
-    // ditentukan oleh anaknya.
+/* ==========================================================================
+   JUDUL YANG TIDAK PUNYA ANGKA SAMA SEKALI
+
+   Bentuk kedua dari judul kelompok, dilaporkan pemiliknya dari invoice
+   sungguhan: "STALL/ GUBUKAN (10.30 WIB ready to serve) - Menu dari Luar",
+   dengan empat sub-item yang semuanya hanya nama — Toge Goreng, Sate
+   Cungkring, Bakso, Asinan Bogor Gedong Dalem. Tidak ada satu angka pun.
+
+   Aturan sebelumnya hanya mengenali judul dari sub-item yang BERHARGA, jadi
+   baris ini ditolak dan disuruh "isi dulu jumlah dan harga pada sub-itemnya"
+   — padahal memang tidak ada yang ditagihkan di situ.
+
+   Yang tetap harus ditolak adalah keadaan yang merugikan: harga terisi,
+   jumlah nol. Baris itu tidak akan menagih apa pun padahal jelas dimaksudkan
+   menagih, dan totalnya tetap terlihat wajar.
+   ========================================================================== */
+
+describe("judul tanpa angka", () => {
+  it("menerima judul yang sub-itemnya hanya daftar nama", () => {
     const hasil = coba({
-      items: [{ item_name: "Aneka Stall", qty: "0", price: "", children: [] }],
+      items: [
+        { item_name: "Nasi box", qty: "35", price: "78500", children: [] },
+        {
+          item_name: "STALL/ GUBUKAN (10.30 WIB ready to serve) - Menu dari Luar",
+          qty: "0",
+          price: "",
+          children: [
+            { item_name: "Toge Goreng" },
+            { item_name: "Sate Cungkring" },
+            { item_name: "Bakso" },
+            { item_name: "Asinan Bogor Gedong Dalem" },
+          ],
+        },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+
+    // Barisnya tidak menambah apa pun: subtotal tetap 35 x 78.500.
+    expect(hasil.kolom.subtotal).toBe("2747500.00");
+    expect(hasil.items[1].qtyD.toString()).toBe("0");
+    expect(hasil.items[1].priceD.toString()).toBe("0");
+  });
+
+  it("menerima baris judul polos tanpa sub-item sama sekali", () => {
+    // Bentuk yang dipakai di dokumen aslinya: "MEAL ARRANGEMENT",
+    // "MESJID ISTIQLAL - Jakarta Pusat", "10.00 WIB ready to serve".
+    const hasil = coba({
+      items: [
+        { item_name: "MEAL ARRANGEMENT", qty: "", price: "", children: [] },
+        { item_name: "Nasi box", qty: "35", price: "78500", children: [] },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("2747500.00");
+  });
+
+  it("TETAP MENOLAK harga yang terisi dengan jumlah nol", () => {
+    // Inilah salah ketik yang merugikan, dan penjagaannya tidak boleh ikut
+    // hilang: customer tidak jadi ditagih untuk sesuatu yang jelas hendak
+    // ditagihkan, sementara totalnya tetap terlihat wajar.
+    const hasil = coba({
+      items: [{ item_name: "Nasi box", qty: "0", price: "78500", children: [] }],
     });
 
     expect(hasil.ok).toBe(false);
     if (hasil.ok) return;
-    expect(hasil.keadaan.galat?.items).toMatch(/sub-item/i);
-    expect(hasil.keadaan.galat?.items).not.toMatch(/berharga 0/i);
+    expect(hasil.keadaan.galat?.items).toMatch(/tidak akan menagih apa pun/i);
+  });
+
+  it("menolak jumlah minus dengan menyebut minus", () => {
+    const hasil = coba({
+      items: [{ item_name: "Nasi box", qty: "-5", price: "78500", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/jumlah tidak boleh minus/i);
   });
 });

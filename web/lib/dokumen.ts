@@ -188,15 +188,29 @@ export function siapkanDokumen(
     const qty = uraikanRupiah(baris.qty);
     const price = uraikanRupiah(baris.price);
 
-    // Sebuah baris induk menjadi JUDUL KELOMPOK begitu salah satu
-    // sub-itemnya berharga — bentuk "ANEKA STALL" pada dokumen katering.
-    // Isian qty dan harga induknya tidak perlu dikosongkan sendiri; ia
-    // diabaikan, dan itu diputuskan oleh anaknya.
-    const kepalaKelompok = baris.children.some((a) => {
+    // DUA BENTUK JUDUL, keduanya ada di dokumen katering sungguhan:
+    //
+    //   ANEKA STALL          sub-itemnya membawa angkanya sendiri
+    //   STALL/ GUBUKAN       tidak ada angka sama sekali, hanya daftar isi;
+    //                        nilainya nol, atau ditagihkan di tempat lain
+    //
+    // Keduanya dikenali tanpa menuntut orang mengingat aturan: yang pertama
+    // dari anaknya, yang kedua dari tidak adanya angka pada barisnya.
+    const anakBerharga = baris.children.some((a) => {
       const q = uraikanRupiah(a.qty ?? "");
       const h = uraikanRupiah(a.price ?? "");
       return q !== null && h !== null && q.times(h).gt(0);
     });
+
+    // Baris tanpa jumlah DAN tanpa harga tidak mungkin salah ketik yang
+    // merugikan: salah ketik yang merugikan adalah harga yang terisi tetapi
+    // jumlahnya nol — customer tidak jadi ditagih untuk sesuatu yang memang
+    // hendak ditagihkan. Baris yang kedua kolomnya nol tidak pernah hendak
+    // menagih apa pun, jadi ia judul.
+    const tanpaAngka =
+      (qty === null || qty.isZero()) && (price === null || price.isZero());
+
+    const kepalaKelompok = anakBerharga || tanpaAngka;
 
     // ISIAN KOSONG BERARTI NOL, bukan galat. Pada judul kelompok, kolom
     // harga memang ditinggal kosong — angkanya ada di sub-itemnya. Sebelum
@@ -222,12 +236,19 @@ export function siapkanDokumen(
         keadaan: { galat: { items: `Baris ${i + 1}: jumlah tidak terbaca. Isi angka saja, contoh: 35.` } },
       };
     }
+    if (qty !== null && qty.isNegative()) {
+      return { ok: false, keadaan: { galat: { items: `Baris ${i + 1}: jumlah tidak boleh minus.` } } };
+    }
+
+    // Yang tersisa untuk ditolak hanyalah keadaan yang benar-benar
+    // merugikan: harganya terisi, tetapi jumlahnya nol. Baris itu tidak akan
+    // menagih apa pun, padahal jelas dimaksudkan menagih.
     if (!kepalaKelompok && (qty === null || qty.lte(0))) {
       return {
         ok: false,
         keadaan: {
           galat: {
-            items: `Baris ${i + 1}: jumlah harus lebih dari nol. Kalau baris ini judul kelompok, isi dulu jumlah dan harga pada sub-itemnya.`,
+            items: `Baris ${i + 1}: harganya terisi tetapi jumlahnya nol, jadi baris ini tidak akan menagih apa pun. Isi jumlahnya — atau kosongkan harganya kalau baris ini memang hanya judul.`,
           },
         },
       };

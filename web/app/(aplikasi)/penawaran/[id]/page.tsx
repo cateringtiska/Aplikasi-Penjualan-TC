@@ -165,7 +165,11 @@ export default async function HalamanDetailPenawaran({
                     const rincian = b.other_quotation_items.filter(
                       (a) => Number(a.subtotal) <= 0,
                     );
-                    const judulKelompok = berharga.length > 0;
+                    // Dua bentuk judul: yang anaknya berharga, dan yang memang
+                    // tanpa angka dari atas sampai bawah. Keduanya tampil
+                    // dengan kolom angka kosong, sama seperti di cetakannya.
+                    const judulKelompok =
+                      berharga.length > 0 || (Number(b.qty) === 0 && Number(b.price) === 0);
 
                     return (
                       <Fragment key={b.id.toString()}>
