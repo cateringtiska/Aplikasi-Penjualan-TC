@@ -16,9 +16,10 @@ import { d, type NilaiUang } from "./uang";
        inilah satu-satunya keadaan yang menghasilkan piutang. Menagih
        sesuatu yang belum diserahkan bukan piutang.
 
-     BELUM TERJADI, dibayar SEBAGIAN     -> UANG MUKA
-       Yang dicatat sebagai uang muka adalah uang yang BENAR-BENAR MASUK.
-       Sisanya belum dibayar dan belum pula menjadi piutang.
+     BELUM TERJADI, dibayar SEBAGIAN     -> UANG MUKA + PROYEKSI
+       Uang muka mencatat uang yang BENAR-BENAR MASUK. Nilai penjualannya —
+       seluruhnya, bukan sisanya — tetap masuk proyeksi, karena belum satu
+       rupiah pun boleh diakui sebagai penjualan.
 
      BELUM TERJADI, sudah LUNAS          -> PENDAPATAN DITERIMA DI MUKA
        Seluruh nilainya sudah di tangan, tetapi belum boleh diakui sebagai
@@ -31,11 +32,22 @@ import { d, type NilaiUang } from "./uang";
    UANG MUKA DAN DITERIMA DI MUKA SENGAJA DIPISAH. Keduanya sama-sama uang
    yang belum boleh diakui, tetapi kewajibannya berbeda: yang lunas sudah
    tidak perlu ditagih lagi, yang baru panjar masih menyisakan tagihan yang
-   harus ditagih sebelum acaranya berjalan. Menggabungkannya menyembunyikan
-   perbedaan itu.
+   harus ditagih sebelum acaranya berjalan.
 
-   KELIMA ANGKANYA SELALU BERJUMLAH SAMA dengan nilai dokumennya, berapa pun
-   keadaannya. Itu yang membuat laporannya tidak bisa kehilangan angka.
+   UANG MUKA TUMPANG TINDIH DENGAN PROYEKSI, DAN ITU DISENGAJA. Keduanya
+   menjawab pertanyaan yang berbeda:
+
+     proyeksi   berapa NILAI PENJUALAN yang belum boleh diakui
+     uang muka  berapa UANGNYA yang sudah ada di tangan
+
+   Invoice 42,9 juta untuk acara bulan depan yang sudah dipanjar 10 juta
+   adalah 42,9 juta proyeksi DAN 10 juta uang muka. Keduanya benar, dan
+   keduanya TIDAK BOLEH DIJUMLAHKAN — penjumlahan itu menghitung panjarnya
+   dua kali.
+
+   Yang berjumlah sama dengan seluruh nilai dokumen adalah DIAKUI +
+   DITERIMA DI MUKA + PROYEKSI. Itu yang membuat laporannya tidak bisa
+   kehilangan angka.
    ========================================================================== */
 
 export type KeadaanPengakuan = "diakui" | "uang_muka" | "diterima_di_muka" | "proyeksi";
@@ -54,10 +66,11 @@ export type HasilPengakuan = {
   diakui: Decimal;
   /** Piutang sungguhan — hanya dari acara yang sudah terjadi. */
   piutang: Decimal;
-  /** Panjar yang sudah masuk untuk acara yang belum terjadi dan belum lunas. */
+  /**
+   * Panjar yang sudah masuk untuk acara yang belum terjadi dan belum lunas.
+   * TUMPANG TINDIH dengan proyeksi — jangan dijumlahkan dengannya.
+   */
   uangMuka: Decimal;
-  /** Sisa tagihan pada dokumen beruang muka. Bukan piutang, belum pula penjualan. */
-  sisaUangMuka: Decimal;
   /** Nilai penuh dokumen yang sudah LUNAS tetapi acaranya belum terjadi. */
   diterimaDiMuka: Decimal;
   /** Nilai dokumen yang belum dibayar sama sekali dan acaranya belum terjadi. */
@@ -111,7 +124,6 @@ export function pengakuanDokumen(
     diakui: NOL,
     piutang: NOL,
     uangMuka: NOL,
-    sisaUangMuka: NOL,
     diterimaDiMuka: NOL,
     proyeksi: NOL,
   };
@@ -139,20 +151,22 @@ export function pengakuanDokumen(
     };
   }
 
+  // Nilai penjualannya SELURUHNYA masuk proyeksi, bukan sisanya: belum satu
+  // rupiah pun boleh diakui sebagai penjualan selama acaranya belum terjadi.
   return {
     ...kosong,
     keadaan: "uang_muka",
     sudahTerjadi: false,
     uangMuka: dibayar,
-    sisaUangMuka: total.minus(dibayar),
+    proyeksi: total,
   };
 }
 
 export type RingkasanPengakuan = {
   diakui: Decimal;
   piutang: Decimal;
+  /** Tumpang tindih dengan proyeksi. Jangan dijumlahkan dengannya. */
   uangMuka: Decimal;
-  sisaUangMuka: Decimal;
   diterimaDiMuka: Decimal;
   proyeksi: Decimal;
 };
@@ -168,19 +182,11 @@ export function ringkasPengakuan(
         diakui: jumlah.diakui.plus(p.diakui),
         piutang: jumlah.piutang.plus(p.piutang),
         uangMuka: jumlah.uangMuka.plus(p.uangMuka),
-        sisaUangMuka: jumlah.sisaUangMuka.plus(p.sisaUangMuka),
         diterimaDiMuka: jumlah.diterimaDiMuka.plus(p.diterimaDiMuka),
         proyeksi: jumlah.proyeksi.plus(p.proyeksi),
       };
     },
-    {
-      diakui: NOL,
-      piutang: NOL,
-      uangMuka: NOL,
-      sisaUangMuka: NOL,
-      diterimaDiMuka: NOL,
-      proyeksi: NOL,
-    },
+    { diakui: NOL, piutang: NOL, uangMuka: NOL, diterimaDiMuka: NOL, proyeksi: NOL },
   );
 }
 

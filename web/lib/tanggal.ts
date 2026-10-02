@@ -94,3 +94,37 @@ export function ringkasTanggalAcara(daftar: Date[]): string | null {
 export function jumlahHariAcara(daftar: Date[]): number {
   return rapikanTanggal(daftar).length;
 }
+
+/**
+ * Tanggal acara sebuah dokumen, dari mana pun ia tersimpan.
+ *
+ * Dokumen yang dibuat SEBELUM tanggal acara menjadi daftar hanya punya satu
+ * kolom tanggal dan satu kolom jumlah hari. Membaca daftarnya saja membuat
+ * dokumen-dokumen itu terbaca TANPA TANGGAL ACARA — dan karena tanpa
+ * tanggal berarti "dianggap sudah terjadi", seluruhnya menumpuk di piutang
+ * sementara penjualan bulan ini terbaca nol.
+ *
+ * Itu persis yang terjadi: empat belas dari lima belas invoice menyimpan
+ * tanggalnya hanya di kolom lama, dan dashboard menyebut "0 acara sudah
+ * terjadi" pada hari yang justru ada acaranya.
+ *
+ * Satu pintu untuk seluruh pembacaan tanggal acara, supaya tidak ada tempat
+ * yang membaca setengahnya saja.
+ */
+export function tanggalAcaraDokumen(
+  daftar: { event_date: Date }[],
+  cadanganTanggal: Date | null,
+  cadanganHari: number | null,
+): Date[] {
+  if (daftar.length > 0) return rapikanTanggal(daftar.map((b) => b.event_date));
+  if (!cadanganTanggal) return [];
+
+  // "Jumlah hari" pada dokumen lama berarti sekian hari berurutan sejak
+  // tanggalnya. Dibaca apa adanya, bukan ditebak.
+  const hari = Math.max(1, Math.min(cadanganHari ?? 1, 31));
+  return Array.from({ length: hari }, (_, i) => {
+    const t = new Date(cadanganTanggal);
+    t.setUTCDate(t.getUTCDate() + i);
+    return t;
+  });
+}

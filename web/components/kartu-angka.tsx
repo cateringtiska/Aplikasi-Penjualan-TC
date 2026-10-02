@@ -19,9 +19,16 @@
    merah ketika hasilnya RUGI. Di sana warna memang menyatakan keadaan,
    karena rugi adalah satu-satunya angka di papan ini yang maknanya berbalik.
 
-   Enam warna disusun dengan lightness dan chroma sekelas, hanya hue-nya yang
-   berbeda — supaya tidak ada satu kartu pun yang berteriak lebih keras dari
-   tetangganya. Semuanya punya pasangan untuk mode gelap.
+   Tujuh warna disusun dengan lightness dan chroma sekelas, hanya hue-nya
+   yang berbeda — supaya tidak ada satu kartu pun yang berteriak lebih keras
+   dari tetangganya. Semuanya punya pasangan untuk mode gelap.
+
+   KUNING, ORANYE, DAN MERAH BERDEKATAN HUE-NYA, dan memang begitu adanya:
+   ketiganya satu tangga di papan umur piutang, tempat warnanya menanjak
+   mengikuti keterlambatan. Tetapi pada papan yang artinya TIDAK bertangga,
+   menaruh ketiganya bersamaan membuat kartu yang maknanya jauh berbeda
+   terlihat mirip — itu yang dilaporkan pemiliknya tentang dashboard. Di
+   papan seperti itu pakailah warna yang hue-nya berjauhan.
 
    SATU TEMPAT YANG SENGAJA TIDAK MEMAKAI INI: baris ringkasan di kaki
    formulir pembayaran. Bentuknya daftar mendatar yang menempel di bawah
@@ -29,7 +36,14 @@
    kebutuhan yang berbeda ke dalam satu bentuk.
    ========================================================================== */
 
-export type WarnaKartu = "hijau" | "kuning" | "oranye" | "merah" | "biru" | "ungu";
+export type WarnaKartu =
+  | "hijau"
+  | "kuning"
+  | "oranye"
+  | "merah"
+  | "biru"
+  | "ungu"
+  | "toska";
 
 const WARNA: Record<WarnaKartu, { angka: string; latar: string; keterangan: string }> = {
   hijau: { angka: "text-lunas", latar: "bg-lunas-halus", keterangan: "text-lunas/80" },
@@ -42,6 +56,7 @@ const WARNA: Record<WarnaKartu, { angka: string; latar: string; keterangan: stri
   merah: { angka: "text-tempo", latar: "bg-tempo-halus", keterangan: "text-tempo/80" },
   biru: { angka: "text-biru", latar: "bg-biru-halus", keterangan: "text-biru/80" },
   ungu: { angka: "text-ungu", latar: "bg-ungu-halus", keterangan: "text-ungu/80" },
+  toska: { angka: "text-toska", latar: "bg-toska-halus", keterangan: "text-toska/80" },
 };
 
 /**

@@ -73,6 +73,8 @@
   --color-biru-halus: var(--biru-halus);
   --color-ungu: var(--ungu);
   --color-ungu-halus: var(--ungu-halus);
+  --color-toska: var(--toska);
+  --color-toska-halus: var(--toska-halus);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -127,6 +129,8 @@
   --biru-halus: oklch(0.957 0.026 248);
   --ungu: oklch(0.515 0.125 300);
   --ungu-halus: oklch(0.957 0.026 300);
+  --toska: oklch(0.515 0.105 205);
+  --toska-halus: oklch(0.957 0.024 205);
 
   --chart-1: oklch(0.215 0.01 250);
   --chart-2: oklch(0.42 0.012 250);
@@ -184,6 +188,8 @@
   --biru-halus: oklch(0.272 0.045 248);
   --ungu: oklch(0.735 0.115 300);
   --ungu-halus: oklch(0.275 0.045 300);
+  --toska: oklch(0.735 0.105 205);
+  --toska-halus: oklch(0.275 0.04 205);
 
   --chart-1: oklch(0.93 0.004 250);
   --chart-2: oklch(0.775 0.008 250);

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { pengakuanDokumen, ringkasPengakuan } from "@/lib/pengakuan";
+import { tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import type { SaringMilik } from "@/lib/rbac";
 import { d, labelStatusInvoice } from "@/lib/uang";
@@ -56,6 +57,9 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
         status: true,
         event_type: true,
         customers: { select: { name: true } },
+        // Kolom lamanya ikut diambil — lihat catatan di tanggalAcaraDokumen().
+        event_date: true,
+        event_days: true,
         invoice_event_dates: { select: { event_date: true } },
       },
     }),
@@ -81,7 +85,7 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     aktif.map((t) => ({
       grand_total: t.grand_total,
       paid_amount: t.paid_amount,
-      tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+      tanggalAcara: tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
     })),
   );
 
@@ -100,7 +104,7 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     pengakuan: pengakuanDokumen({
       grand_total: t.grand_total,
       paid_amount: t.paid_amount,
-      tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+      tanggalAcara: tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
     }).keadaan,
   }));
 
@@ -119,7 +123,6 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
       // Ketiganya selalu berjumlah sama dengan nilaiTagihan.
       penjualanDiakui: pengakuan.diakui,
       uangMuka: pengakuan.uangMuka,
-      sisaUangMuka: pengakuan.sisaUangMuka,
       diterimaDiMuka: pengakuan.diterimaDiMuka,
       proyeksiPenjualan: pengakuan.proyeksi,
 

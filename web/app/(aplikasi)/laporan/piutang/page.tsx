@@ -78,10 +78,10 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
             terjadi
           </p>
           <p className="mt-1 text-muted-foreground">
-            Uang muka masuk {rupiah(belumTerjadi.uangMuka)} · lunas di muka{" "}
-            {rupiah(belumTerjadi.diterimaDiMuka)} · belum dibayar{" "}
-            {rupiah(belumTerjadi.sisaUangMuka.plus(belumTerjadi.proyeksi))}. Yang belum dibayar
-            masuk piutang begitu acaranya lewat.
+            Proyeksi penjualan {rupiah(belumTerjadi.proyeksi)} · lunas di muka{" "}
+            {rupiah(belumTerjadi.diterimaDiMuka)}. Dari proyeksi itu,{" "}
+            {rupiah(belumTerjadi.uangMuka)} sudah masuk sebagai uang muka. Sisanya menjadi
+            piutang begitu acaranya lewat.
           </p>
         </div>
       ) : null}
@@ -146,7 +146,8 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
               <tr className="border-b bg-muted/40">
                 <Th>Customer</Th>
                 <Th className="hidden w-28 sm:table-cell">Invoice</Th>
-                <Th className="hidden w-40 md:table-cell">Jatuh tempo tertua</Th>
+                <Th className="hidden w-36 md:table-cell">Tanggal invoice</Th>
+                <Th className="hidden w-36 md:table-cell">Jatuh tempo</Th>
                 <Th className="w-32 text-right">Terlambat</Th>
                 <Th className="w-40 text-right">Sisa piutang</Th>
               </tr>
@@ -165,6 +166,9 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                   </Td>
                   <Td className="hidden text-muted-foreground sm:table-cell">
                     {p.jumlahTagihan} lembar
+                  </Td>
+                  <Td className="hidden text-muted-foreground md:table-cell">
+                    {format(p.tanggalTertua, "d MMM yyyy", { locale: localeId })}
                   </Td>
                   <Td className="hidden text-muted-foreground md:table-cell">
                     {format(p.tempoTertua, "d MMM yyyy", { locale: localeId })}

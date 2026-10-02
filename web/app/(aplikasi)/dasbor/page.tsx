@@ -6,6 +6,7 @@ import Link from "next/link";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { pengakuanDokumen } from "@/lib/pengakuan";
+import { tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibSesi } from "@/lib/rbac";
 
@@ -55,6 +56,11 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           grand_total: true,
           paid_amount: true,
           due_date: true,
+          // Kolom lamanya ikut diambil: empat belas dari lima belas invoice
+          // menyimpan tanggal acaranya HANYA di situ. Lihat catatan di
+          // tanggalAcaraDokumen().
+          event_date: true,
+          event_days: true,
           invoice_event_dates: { select: { event_date: true } },
         },
       }),
@@ -87,20 +93,15 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
       }),
     ]);
 
-  const pengakuan = semuaTagihan.map((t) => ({
-    due_date: t.due_date,
-    hasil: pengakuanDokumen(
-      {
-        grand_total: t.grand_total,
-        paid_amount: t.paid_amount,
-        tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
-      },
-      sekarang,
-    ),
-    acaraTerakhir: t.invoice_event_dates
-      .map((x) => x.event_date)
-      .reduce<Date | null>((a, b) => (a === null || b > a ? b : a), null),
-  }));
+  const pengakuan = semuaTagihan.map((t) => {
+    const tanggalAcara = tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days);
+
+    return {
+      due_date: t.due_date,
+      hasil: pengakuanDokumen({ grand_total: t.grand_total, paid_amount: t.paid_amount, tanggalAcara }, sekarang),
+      acaraTerakhir: tanggalAcara.reduce<Date | null>((a, b) => (a === null || b > a ? b : a), null),
+    };
+  });
 
   const totalPiutang = pengakuan.reduce((j, x) => j.plus(x.hasil.piutang), d(0));
   const totalUangMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.uangMuka), d(0));
@@ -174,19 +175,19 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           label="Uang muka"
           nilai={rupiah(totalUangMuka)}
           keterangan={`${jumlahUangMuka} invoice dipanjar, belum lunas`}
-          warna="biru"
+          warna="toska"
         />
         <KartuAngka
           label="Diterima di muka"
           nilai={rupiah(totalDiMuka)}
           keterangan={`${jumlahDiMuka} invoice lunas, acaranya belum terjadi`}
-          warna="ungu"
+          warna="biru"
         />
         <KartuAngka
           label="Proyeksi penjualan"
           nilai={rupiah(totalProyeksi)}
           keterangan={`${jumlahProyeksi} dokumen · ${penawaranMenunggu} quotation menunggu`}
-          warna="oranye"
+          warna="ungu"
         />
         <KartuAngka
           label="Jatuh tempo"

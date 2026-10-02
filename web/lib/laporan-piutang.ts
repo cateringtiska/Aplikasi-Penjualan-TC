@@ -4,6 +4,7 @@ import { differenceInCalendarDays } from "date-fns";
 import type { Decimal } from "decimal.js";
 
 import { pengakuanDokumen } from "./pengakuan";
+import { tanggalAcaraDokumen } from "./tanggal";
 import { prisma } from "./prisma";
 import type { SaringMilik } from "./rbac";
 import { d } from "./uang";
@@ -39,6 +40,8 @@ export type BarisPiutang = {
   idPelanggan: string;
   jumlahTagihan: number;
   total: Decimal;
+  /** Tanggal invoice PALING TUA yang masih menyisakan piutang. */
+  tanggalTertua: Date;
   tempoTertua: Date;
   hariTerlambat: number;
 };
@@ -65,10 +68,8 @@ export type HasilPiutang = {
    */
   belumTerjadi: {
     jumlahInvoice: number;
-    /** Panjar yang sudah masuk pada dokumen yang belum lunas. */
+    /** Panjar yang sudah masuk. Tumpang tindih dengan proyeksi. */
     uangMuka: Decimal;
-    /** Sisa tagihan pada dokumen beruang muka. */
-    sisaUangMuka: Decimal;
     /** Nilai penuh dokumen yang sudah lunas di muka. */
     diterimaDiMuka: Decimal;
     /** Nilai dokumen yang belum dibayar sama sekali. */
@@ -104,11 +105,15 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     select: {
       id: true,
       invoice_number: true,
+      invoice_date: true,
       due_date: true,
       grand_total: true,
       paid_amount: true,
       customer_id: true,
       customers: { select: { id: true, name: true, customer_code: true } },
+      // Kolom lamanya ikut diambil — lihat catatan di tanggalAcaraDokumen().
+      event_date: true,
+      event_days: true,
       invoice_event_dates: { select: { event_date: true } },
     },
   });
@@ -127,7 +132,6 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
   const belumTerjadi = {
     jumlahInvoice: 0,
     uangMuka: d(0),
-    sisaUangMuka: d(0),
     diterimaDiMuka: d(0),
     proyeksi: d(0),
   };
@@ -140,7 +144,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       {
         grand_total: t.grand_total,
         paid_amount: t.paid_amount,
-        tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+        tanggalAcara: tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
       },
       hariIni,
     );
@@ -148,7 +152,6 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     if (!pengakuan.sudahTerjadi) {
       belumTerjadi.jumlahInvoice += 1;
       belumTerjadi.uangMuka = belumTerjadi.uangMuka.plus(pengakuan.uangMuka);
-      belumTerjadi.sisaUangMuka = belumTerjadi.sisaUangMuka.plus(pengakuan.sisaUangMuka);
       belumTerjadi.diterimaDiMuka = belumTerjadi.diterimaDiMuka.plus(pengakuan.diterimaDiMuka);
       belumTerjadi.proyeksi = belumTerjadi.proyeksi.plus(pengakuan.proyeksi);
       continue;
@@ -168,6 +171,11 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     if (ada) {
       ada.jumlahTagihan += 1;
       ada.total = ada.total.plus(sisa);
+      // Tanggal invoice dan jatuh tempo dilacak TERPISAH. Invoice tertua
+      // belum tentu yang jatuh temponya paling dulu — tempo bisa berbeda
+      // per invoice, dan menurunkan keduanya dari satu baris yang sama akan
+      // menampilkan pasangan tanggal yang tidak pernah ada.
+      if (t.invoice_date < ada.tanggalTertua) ada.tanggalTertua = t.invoice_date;
       if (t.due_date < ada.tempoTertua) {
         ada.tempoTertua = t.due_date;
         ada.hariTerlambat = Math.max(0, terlambat);
@@ -179,6 +187,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
         idPelanggan: id,
         jumlahTagihan: 1,
         total: sisa,
+        tanggalTertua: t.invoice_date,
         tempoTertua: t.due_date,
         hariTerlambat: Math.max(0, terlambat),
       });

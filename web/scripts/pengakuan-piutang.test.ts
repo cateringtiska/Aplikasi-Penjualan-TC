@@ -108,19 +108,20 @@ describe("laporan piutang", () => {
 
     expect(hasil.belumTerjadi.jumlahInvoice).toBe(2);
     expect(hasil.belumTerjadi.uangMuka.toString()).toBe("5000000");
-    expect(hasil.belumTerjadi.sisaUangMuka.toString()).toBe("25000000");
-    // Hanya yang belum dibayar SAMA SEKALI yang menjadi proyeksi.
-    expect(hasil.belumTerjadi.proyeksi.toString()).toBe("20000000");
+    // Nilai PENUH keduanya: 20 juta yang belum dibayar sama sekali, dan
+    // 30 juta yang baru dipanjar. Panjarnya tidak dikurangkan — ia ukuran
+    // yang berbeda, dan mengurangkannya akan menyembunyikan nilai
+    // penjualan yang sebenarnya belum diakui.
+    expect(hasil.belumTerjadi.proyeksi.toString()).toBe("50000000");
   });
 
   it("tidak ada satu rupiah pun yang hilang", async () => {
     const hasil = await ambilPiutang(TANDA, {});
 
     // Piutang + diterima di muka + proyeksi + yang sudah dibayar untuk acara
-    // yang sudah terjadi = seluruh nilai ketiga invoicenya.
+    // yang sudah terjadi = seluruh nilai ketiga invoicenya. Uang muka SENGAJA
+    // tidak ikut: ia tumpang tindih dengan proyeksi.
     const jumlah = hasil.totalSemua
-      .plus(hasil.belumTerjadi.uangMuka)
-      .plus(hasil.belumTerjadi.sisaUangMuka)
       .plus(hasil.belumTerjadi.diterimaDiMuka)
       .plus(hasil.belumTerjadi.proyeksi)
       .plus(4_000_000);
@@ -175,5 +176,87 @@ describe("uang muka dibedakan dari pendapatan diterima di muka", () => {
     // Tidak ikut ke uang muka maupun proyeksi, dan tidak menambah piutang.
     expect(hasil.belumTerjadi.uangMuka.toString()).toBe("5000000");
     expect(hasil.totalSemua.toString()).toBe("26000000");
+  });
+});
+
+/* ==========================================================================
+   DOKUMEN YANG TANGGALNYA HANYA DI KOLOM LAMA
+
+   Empat belas dari lima belas invoice sungguhan menyimpan tanggal acaranya
+   HANYA di kolom `event_date`, bukan di tabel tanggal yang baru. Laporan
+   yang membaca tabelnya saja akan membaca seluruhnya sebagai "tanpa tanggal
+   acara" — dan karena tanpa tanggal berarti dianggap sudah terjadi,
+   semuanya menumpuk di piutang sementara penjualan bulan ini terbaca nol.
+
+   Itu persis yang dilaporkan pemiliknya: dashboard menyebut "0 acara sudah
+   terjadi" pada hari yang justru ada acaranya.
+   ========================================================================== */
+
+describe("tanggal acara di kolom lama", () => {
+  it("tetap dibaca, walaupun tabel tanggalnya kosong", async () => {
+    const cap = `${Date.now().toString().slice(-6)}L`;
+    // Diukur sebagai SELISIH, bukan angka mutlak: tes di atas sengaja
+    // mengubah data, dan angka mutlak akan mengunci urutannya.
+    const sebelum = await ambilPiutang(TANDA, {});
+
+    // Tidak ada satu pun baris di invoice_event_dates — persis seperti
+    // seluruh invoice yang terbit sebelum tanggal acara menjadi daftar.
+    await prisma.invoices.create({
+      data: {
+        invoice_number: `UJP-KOLOMLAMA-${cap}`,
+        customer_id: jejak.pelanggan!,
+        invoice_date: hari(-30),
+        due_date: hari(-5),
+        subtotal: "9000000",
+        grand_total: "9000000",
+        paid_amount: "0",
+        status: "unpaid",
+        event_date: hari(60),
+        event_days: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const hasil = await ambilPiutang(TANDA, {});
+
+    // Acaranya dua bulan lagi, jadi seluruh nilainya masuk proyeksi dan
+    // TIDAK satu rupiah pun masuk piutang.
+    expect(hasil.belumTerjadi.proyeksi.minus(sebelum.belumTerjadi.proyeksi).toString()).toBe(
+      "9000000",
+    );
+    expect(hasil.totalSemua.toString()).toBe(sebelum.totalSemua.toString());
+  });
+
+  it("membaca jumlah hari sebagai tanggal berurutan", async () => {
+    const cap = `${Date.now().toString().slice(-6)}M`;
+    const sebelum = await ambilPiutang(TANDA, {});
+
+    // Acara mulai KEMARIN selama tiga hari: hari terakhirnya masih besok,
+    // jadi acaranya belum selesai. Membaca tanggalnya saja tanpa jumlah
+    // harinya akan menyatakannya sudah selesai sejak kemarin.
+    await prisma.invoices.create({
+      data: {
+        invoice_number: `UJP-TIGAHARI-${cap}`,
+        customer_id: jejak.pelanggan!,
+        invoice_date: hari(-30),
+        due_date: hari(-5),
+        subtotal: "3000000",
+        grand_total: "3000000",
+        paid_amount: "0",
+        status: "unpaid",
+        event_date: hari(-1),
+        event_days: 3,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const hasil = await ambilPiutang(TANDA, {});
+
+    expect(hasil.belumTerjadi.proyeksi.minus(sebelum.belumTerjadi.proyeksi).toString()).toBe(
+      "3000000",
+    );
+    expect(hasil.totalSemua.toString()).toBe(sebelum.totalSemua.toString());
   });
 });
