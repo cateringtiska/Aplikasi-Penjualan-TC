@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
+import { pengakuanDokumen } from "@/lib/pengakuan";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibSesi } from "@/lib/rbac";
 
@@ -16,8 +17,6 @@ export const metadata: Metadata = { title: "Dashboard" };
 // Angka piutang harus selalu menunjukkan keadaan sekarang, bukan hasil
 // simpanan beberapa menit lalu.
 export const dynamic = "force-dynamic";
-
-const BELUM_LUNAS = ["unpaid", "partial", "overdue"];
 
 export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor">) {
   const sesi = await wajibSesi();
@@ -45,32 +44,21 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   // lagi oleh penyaringan di tampilan.
   const milik = hanyaMiliknya(sesi);
 
-  const [piutang, bulanIni, penawaranMenunggu, jatuhTempo, penawaranTerbaru, tagihanTerbaru] =
+  const [semuaTagihan, penawaranMenunggu, penawaranTerbaru, tagihanTerbaru] =
     await Promise.all([
-      // Sisa piutang = jumlah grand total dikurangi jumlah yang sudah dibayar.
-      // Keduanya penjumlahan biasa, jadi boleh dihitung terpisah lalu dikurangi.
-      prisma.invoices.aggregate({
-        where: { ...milik, status: { in: BELUM_LUNAS } },
-        _sum: { grand_total: true, paid_amount: true },
-        _count: true,
-      }),
-      prisma.invoices.aggregate({
-        where: {
-          ...milik,
-          invoice_date: { gte: awalBulan, lt: awalBulanDepan },
-          status: { not: "cancelled" },
+      // Diambil barisnya, BUKAN dijumlahkan di database. Penjualan diakui
+      // ketika acaranya sudah terjadi, dan itu keputusan per dokumen yang
+      // tidak bisa dinyatakan sebagai satu penjumlahan SQL.
+      prisma.invoices.findMany({
+        where: { ...milik, status: { not: "cancelled" } },
+        select: {
+          grand_total: true,
+          paid_amount: true,
+          due_date: true,
+          invoice_event_dates: { select: { event_date: true } },
         },
-        _sum: { grand_total: true },
-        _count: true,
       }),
       prisma.quotations.count({ where: { ...milik, status: { in: ["draft", "sent"] } } }),
-      // Dihitung dari due_date, bukan dari kolom status. Kolom status adalah
-      // salinan yang perlu disegarkan; tanggal jatuh tempo adalah sumbernya.
-      // Kalau panggilan penyegaran di atas suatu saat hilang, angka ini tetap
-      // benar.
-      prisma.invoices.count({
-        where: { ...milik, status: { in: BELUM_LUNAS }, due_date: { lt: awalHariIni } },
-      }),
       prisma.quotations.findMany({
         where: milik,
         take: 5,
@@ -99,7 +87,43 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
       }),
     ]);
 
-  const totalPiutang = d(piutang._sum.grand_total).minus(d(piutang._sum.paid_amount));
+  const pengakuan = semuaTagihan.map((t) => ({
+    due_date: t.due_date,
+    hasil: pengakuanDokumen(
+      {
+        grand_total: t.grand_total,
+        paid_amount: t.paid_amount,
+        tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+      },
+      sekarang,
+    ),
+    acaraTerakhir: t.invoice_event_dates
+      .map((x) => x.event_date)
+      .reduce<Date | null>((a, b) => (a === null || b > a ? b : a), null),
+  }));
+
+  const totalPiutang = pengakuan.reduce((j, x) => j.plus(x.hasil.piutang), d(0));
+  const totalDiMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.ditangguhkan), d(0));
+  const totalProyeksi = pengakuan.reduce((j, x) => j.plus(x.hasil.proyeksi), d(0));
+
+  const jumlahBelumLunas = pengakuan.filter((x) => x.hasil.piutang.gt(0)).length;
+
+  // "Bulan ini" kini berarti ACARANYA terjadi bulan ini, bukan invoicenya
+  // terbit bulan ini. Itulah bulan penjualannya benar-benar diakui.
+  const diakuiBulanIni = pengakuan.filter(
+    (x) =>
+      x.hasil.sudahTerjadi &&
+      x.acaraTerakhir !== null &&
+      x.acaraTerakhir >= awalBulan &&
+      x.acaraTerakhir < awalBulanDepan,
+  );
+  const nilaiBulanIni = diakuiBulanIni.reduce((j, x) => j.plus(x.hasil.diakui), d(0));
+
+  // Jatuh tempo dihitung dari due_date, bukan dari kolom status: kolom status
+  // adalah salinan yang perlu disegarkan, tanggalnya adalah sumbernya.
+  const jatuhTempo = pengakuan.filter(
+    (x) => x.hasil.piutang.gt(0) && x.due_date < awalHariIni,
+  ).length;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
@@ -131,21 +155,33 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
         <KartuAngka
           label="Piutang berjalan"
           nilai={rupiah(totalPiutang)}
-          keterangan={`${piutang._count} invoice belum lunas`}
+          keterangan={`${jumlahBelumLunas} invoice, acaranya sudah terjadi`}
           warna="kuning"
           menonjol
         />
         <KartuAngka
-          label="Penjualan bulan ini"
-          nilai={rupiah(bulanIni._sum.grand_total)}
-          keterangan={`${bulanIni._count} invoice terbit`}
+          label="Penjualan diakui bulan ini"
+          nilai={rupiah(nilaiBulanIni)}
+          keterangan={`${diakuiBulanIni.length} acara sudah terjadi`}
           warna="hijau"
+        />
+        <KartuAngka
+          label="Diterima di muka"
+          nilai={rupiah(totalDiMuka)}
+          keterangan="sudah dibayar, acaranya belum terjadi"
+          warna="biru"
+        />
+        <KartuAngka
+          label="Proyeksi penjualan"
+          nilai={rupiah(totalProyeksi)}
+          keterangan="belum dibayar, acaranya belum terjadi"
+          warna="ungu"
         />
         <KartuAngka
           label="Quotation menunggu"
           nilai={String(penawaranMenunggu)}
           keterangan={penawaranMenunggu > 0 ? "belum dijawab customer" : "tidak ada"}
-          warna="biru"
+          warna="oranye"
         />
         <KartuAngka
           label="Jatuh tempo"

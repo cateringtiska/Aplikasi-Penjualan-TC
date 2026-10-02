@@ -1,5 +1,6 @@
 import "server-only";
 
+import { pengakuanDokumen, ringkasPengakuan } from "@/lib/pengakuan";
 import { prisma } from "@/lib/prisma";
 import type { SaringMilik } from "@/lib/rbac";
 import { d, labelStatusInvoice } from "@/lib/uang";
@@ -55,6 +56,7 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
         status: true,
         event_type: true,
         customers: { select: { name: true } },
+        invoice_event_dates: { select: { event_date: true } },
       },
     }),
     prisma.quotations.findMany({
@@ -73,6 +75,16 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
 
   const aktif = tagihan.filter((t) => t.status !== "cancelled");
 
+  // Penjualan diakui ketika ACARANYA sudah terjadi, bukan ketika invoicenya
+  // terbit. Lihat catatan panjang di lib/pengakuan.ts.
+  const pengakuan = ringkasPengakuan(
+    aktif.map((t) => ({
+      grand_total: t.grand_total,
+      paid_amount: t.paid_amount,
+      tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+    })),
+  );
+
   const baris = tagihan.map((t) => ({
     id: t.id.toString(),
     nomor: t.invoice_number,
@@ -85,6 +97,11 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     sisa: d(t.grand_total).minus(d(t.paid_amount)).toString(),
     status: t.status,
     statusLabel: labelStatusInvoice(t.status, t.paid_amount.toString()),
+    pengakuan: pengakuanDokumen({
+      grand_total: t.grand_total,
+      paid_amount: t.paid_amount,
+      tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+    }).keadaan,
   }));
 
   return {
@@ -98,10 +115,13 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
       jumlahTagihan: aktif.length,
       nilaiTagihan: aktif.reduce((j, t) => j.plus(d(t.grand_total)), d(0)),
       totalTerbayar: aktif.reduce((j, t) => j.plus(d(t.paid_amount)), d(0)),
-      totalPiutang: aktif.reduce(
-        (j, t) => j.plus(d(t.grand_total).minus(d(t.paid_amount))),
-        d(0),
-      ),
+
+      // Ketiganya selalu berjumlah sama dengan nilaiTagihan.
+      penjualanDiakui: pengakuan.diakui,
+      diterimaDiMuka: pengakuan.ditangguhkan,
+      proyeksiPenjualan: pengakuan.proyeksi,
+
+      totalPiutang: pengakuan.piutang,
       jumlahJatuhTempo: aktif.filter((t) => t.status === "overdue").length,
     },
   };

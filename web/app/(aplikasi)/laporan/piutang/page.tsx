@@ -35,7 +35,10 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
-  const { daftar, umur, totalSemua, lunas } = await ambilPiutang(kunci, hanyaMiliknya(sesi));
+  const { daftar, umur, totalSemua, belumTerjadi, lunas } = await ambilPiutang(
+    kunci,
+    hanyaMiliknya(sesi),
+  );
 
   return (
     <Halaman>
@@ -63,6 +66,23 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
           />
         ))}
       </PapanAngka>
+
+      {/* Invoice yang acaranya belum terjadi TIDAK ikut ke piutang mana pun —
+          menagih sesuatu yang belum diserahkan bukan piutang. Tetapi uangnya
+          tetap harus ditagih, jadi angkanya disebutkan di sini. Tanpa ini,
+          invoice yang baru terbit terlihat seperti hilang dari aplikasi. */}
+      {belumTerjadi.jumlahInvoice > 0 ? (
+        <div className="mb-6 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+          <p className="font-medium">
+            {belumTerjadi.jumlahInvoice} invoice belum masuk piutang karena acaranya belum
+            terjadi
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Sudah dibayar di muka {rupiah(belumTerjadi.ditangguhkan)} · belum dibayar{" "}
+            {rupiah(belumTerjadi.proyeksi)}. Keduanya masuk piutang begitu acaranya lewat.
+          </p>
+        </div>
+      ) : null}
 
       <div className="pb-4">
         <Pencarian placeholder="Cari nama customer…" />

@@ -3,6 +3,7 @@ import "server-only";
 import { differenceInCalendarDays } from "date-fns";
 import type { Decimal } from "decimal.js";
 
+import { pengakuanDokumen } from "./pengakuan";
 import { prisma } from "./prisma";
 import type { SaringMilik } from "./rbac";
 import { d } from "./uang";
@@ -56,6 +57,18 @@ export type HasilPiutang = {
   umur: Record<KunciKelompok, Decimal>;
   totalSemua: Decimal;
   /**
+   * Nilai yang BELUM menjadi piutang karena acaranya belum terjadi.
+   *
+   * Tidak ikut dijumlahkan ke piutang mana pun, tetapi tetap ditampilkan:
+   * uangnya tetap harus ditagih, dan menghilangkannya dari layar membuat
+   * orang mengira invoicenya tidak tercatat.
+   */
+  belumTerjadi: {
+    jumlahInvoice: number;
+    ditangguhkan: Decimal;
+    proyeksi: Decimal;
+  };
+  /**
    * Diisi HANYA ketika daftar piutangnya kosong.
    *
    * Mencari nama customer yang ternyata sudah lunas menghasilkan halaman
@@ -85,6 +98,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       paid_amount: true,
       customer_id: true,
       customers: { select: { id: true, name: true, customer_code: true } },
+      invoice_event_dates: { select: { event_date: true } },
     },
   });
 
@@ -99,8 +113,29 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     h60: d(0),
   };
 
+  const belumTerjadi = { jumlahInvoice: 0, ditangguhkan: d(0), proyeksi: d(0) };
+
   for (const t of tagihan) {
-    const sisa = d(t.grand_total).minus(d(t.paid_amount));
+    // PIUTANG HANYA DARI ACARA YANG SUDAH TERJADI. Menagih sesuatu yang
+    // belum diserahkan bukan piutang, dan memasukkannya ke sini membuat umur
+    // piutang terbaca jauh lebih buruk daripada keadaan sebenarnya.
+    const pengakuan = pengakuanDokumen(
+      {
+        grand_total: t.grand_total,
+        paid_amount: t.paid_amount,
+        tanggalAcara: t.invoice_event_dates.map((x) => x.event_date),
+      },
+      hariIni,
+    );
+
+    if (!pengakuan.sudahTerjadi) {
+      belumTerjadi.jumlahInvoice += 1;
+      belumTerjadi.ditangguhkan = belumTerjadi.ditangguhkan.plus(pengakuan.ditangguhkan);
+      belumTerjadi.proyeksi = belumTerjadi.proyeksi.plus(pengakuan.proyeksi);
+      continue;
+    }
+
+    const sisa = pengakuan.piutang;
     if (sisa.lte(0)) continue;
 
     const terlambat = differenceInCalendarDays(hariIni, t.due_date);
@@ -138,7 +173,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
   // jadi tidak membebani pemakaian sehari-hari.
   const lunas = daftar.length === 0 ? await customerYangSudahLunas(kunci) : [];
 
-  return { daftar, umur, totalSemua, lunas };
+  return { daftar, umur, totalSemua, belumTerjadi, lunas };
 }
 
 async function customerYangSudahLunas(kunci: string): Promise<CustomerLunas[]> {

@@ -71,17 +71,23 @@ export default async function HalamanLaporanPenjualan({
 
       <PapanAngka className="mb-4">
         <KartuAngka
-          label="Nilai invoice"
-          warna="biru"
-          nilai={rupiah(ringkasan.nilaiTagihan)}
-          keterangan={`${ringkasan.jumlahTagihan} invoice`}
+          label="Penjualan diakui"
+          warna="hijau"
+          nilai={rupiah(ringkasan.penjualanDiakui)}
+          keterangan={`dari ${ringkasan.jumlahTagihan} invoice senilai ${rupiah(ringkasan.nilaiTagihan)}`}
           menonjol
         />
         <KartuAngka
-          label="Sudah dibayar"
-          nilai={rupiah(ringkasan.totalTerbayar)}
-          keterangan="uang yang sudah masuk"
-          warna="hijau"
+          label="Diterima di muka"
+          nilai={rupiah(ringkasan.diterimaDiMuka)}
+          keterangan="sudah dibayar, acaranya belum terjadi"
+          warna="biru"
+        />
+        <KartuAngka
+          label="Proyeksi penjualan"
+          nilai={rupiah(ringkasan.proyeksiPenjualan)}
+          keterangan="belum dibayar, acaranya belum terjadi"
+          warna="oranye"
         />
         <KartuAngka
           label="Piutang"
