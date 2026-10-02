@@ -122,6 +122,8 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
           bank_name: perusahaan?.bank_name ?? null,
           bank_account_number: perusahaan?.bank_account_number ?? null,
           bank_account_holder: perusahaan?.bank_account_holder ?? null,
+          bank_code: perusahaan?.bank_code ?? null,
+          swift_code: perusahaan?.swift_code ?? null,
         },
       }}
     />

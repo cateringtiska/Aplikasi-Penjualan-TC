@@ -21,6 +21,8 @@ const skema = z.object({
   bank_name: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_number: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_holder: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
+  bank_code: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
+  swift_code: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   payment_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_SYARAT).nullable()),
   quotation_terms_default: z.preprocess(kosongJadiNull, z.string().trim().max(BATAS_SYARAT).nullable()),
 });

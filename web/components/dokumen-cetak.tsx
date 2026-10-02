@@ -44,6 +44,8 @@ export type Perusahaan = {
   bank_name: string | null;
   bank_account_number: string | null;
   bank_account_holder: string | null;
+  bank_code: string | null;
+  swift_code: string | null;
 };
 
 export type IsiDokumen = {
@@ -311,12 +313,40 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
         </div>
       ) : null}
 
+      {/* Keterangan pembayaran. Dikotaki dan diberi latar abu-abu supaya
+          tidak terlewat: inilah satu-satunya bagian dokumen yang harus
+          dibaca dan disalin dengan tepat oleh penerimanya. Bagian yang
+          harus disalin benar — bank, nomor, dan nama pemiliknya — dicetak
+          MERAH, dan setiap barisnya tetap terbaca utuh tanpa warna, untuk
+          yang mencetak hitam putih. */}
       {isi.perusahaan.bank_name ? (
-        <div className="mt-3.5 text-center text-[10px]">
-          Pembayaran via transfer ke Rekening: <b>{isi.perusahaan.bank_name}</b>
-          <br />
-          Nomor Rekening: <b>{isi.perusahaan.bank_account_number}</b> a.n.{" "}
-          <b>{isi.perusahaan.bank_account_holder}</b>
+        <div className="mt-3.5 break-inside-avoid border border-black bg-[#d9d9d9] px-2 py-1.5 text-center text-[10px] leading-[1.45] font-bold">
+          <div>
+            Pembayaran via transfer ke Rekening BARU:{" "}
+            <span className="text-[#e00000]">{isi.perusahaan.bank_name}</span>
+          </div>
+
+          {isi.perusahaan.bank_account_number ? (
+            <div>
+              Account number:{" "}
+              <span className="text-[#e00000]">{isi.perusahaan.bank_account_number}</span>
+              {isi.perusahaan.bank_account_holder ? (
+                <>
+                  {" "}
+                  atas nama pemilik rekening:{" "}
+                  <span className="text-[#e00000]">{isi.perusahaan.bank_account_holder}</span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          {isi.perusahaan.bank_code || isi.perusahaan.swift_code ? (
+            <div>
+              {isi.perusahaan.bank_code ? <>Bank Code: {isi.perusahaan.bank_code}</> : null}
+              {isi.perusahaan.bank_code && isi.perusahaan.swift_code ? "; " : null}
+              {isi.perusahaan.swift_code ? <>Swift Code: {isi.perusahaan.swift_code}</> : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

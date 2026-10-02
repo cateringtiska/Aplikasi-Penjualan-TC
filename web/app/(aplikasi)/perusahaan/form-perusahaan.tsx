@@ -18,6 +18,8 @@ export type IsiPerusahaan = {
   bank_name: string;
   bank_account_number: string;
   bank_account_holder: string;
+  bank_code: string;
+  swift_code: string;
   payment_terms_default: string;
   quotation_terms_default: string;
   logo_path: string | null;
@@ -95,7 +97,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
               id="bank_name"
               name="bank_name"
               defaultValue={isi.bank_name}
-              placeholder="Bank BCA"
+              placeholder="BCA [Bank Central Asia] - KCP Monginsidi"
             />
           </Bidang>
           <Bidang label="Nomor rekening" nama="bank_account_number">
@@ -103,7 +105,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
               id="bank_account_number"
               name="bank_account_number"
               defaultValue={isi.bank_account_number}
-              placeholder="1234567890"
+              placeholder="210 - 999 - 8880"
               className="angka tabular-nums"
             />
           </Bidang>
@@ -114,8 +116,33 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
             id="bank_account_holder"
             name="bank_account_holder"
             defaultValue={isi.bank_account_holder}
+            placeholder="PT. TISKA CIPTA IMAJI"
           />
         </Bidang>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Bidang label="Kode bank" nama="bank_code">
+            <Input
+              id="bank_code"
+              name="bank_code"
+              defaultValue={isi.bank_code}
+              placeholder="014 - 0397 (KPO)"
+            />
+          </Bidang>
+          <Bidang label="Swift code" nama="swift_code">
+            <Input
+              id="swift_code"
+              name="swift_code"
+              defaultValue={isi.swift_code}
+              placeholder="CENAIDJA"
+            />
+          </Bidang>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Ditulis apa adanya di dokumen, termasuk spasi dan tanda hubungnya — jadi
+          ketik persis seperti yang ingin tercetak.
+        </p>
       </Bagian>
 
       <Bagian

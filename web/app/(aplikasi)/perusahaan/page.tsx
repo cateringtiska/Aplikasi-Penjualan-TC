@@ -29,6 +29,8 @@ export default async function HalamanPerusahaan() {
           bank_name: p?.bank_name ?? "",
           bank_account_number: p?.bank_account_number ?? "",
           bank_account_holder: p?.bank_account_holder ?? "",
+          bank_code: p?.bank_code ?? "",
+          swift_code: p?.swift_code ?? "",
           payment_terms_default: p?.payment_terms_default ?? "",
           quotation_terms_default: p?.quotation_terms_default ?? "",
           logo_path: p?.logo_path ?? null,
