@@ -15,7 +15,7 @@ import { rupiah } from "@/lib/uang";
 import { AksiBaris } from "./aksi-baris";
 import { DialogProduk } from "./dialog-produk";
 
-export const metadata: Metadata = { title: "Produk" };
+export const metadata: Metadata = { title: "Product" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanProduk({ searchParams }: PageProps<"/produk">) {
@@ -52,7 +52,7 @@ export default async function HalamanProduk({ searchParams }: PageProps<"/produk
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Produk"
+        judul="Product"
         keterangan="Katalog barang dan jasa beserta harga standarnya."
         aksi={<DialogProduk />}
       />
@@ -64,11 +64,11 @@ export default async function HalamanProduk({ searchParams }: PageProps<"/produk
       <BingkaiTabel>
         {daftar.length === 0 ? (
           <KeadaanKosong
-            judul={kunci ? "Tidak ada yang cocok" : "Belum ada produk"}
+            judul={kunci ? "Tidak ada yang cocok" : "Belum ada product"}
             keterangan={
               kunci
-                ? `Tidak ditemukan produk untuk "${kunci}".`
-                : "Tambahkan produk supaya harganya terisi otomatis saat membuat quotation."
+                ? `Tidak ditemukan product untuk "${kunci}".`
+                : "Tambahkan product supaya harganya terisi otomatis saat membuat quotation."
             }
             aksi={kunci ? undefined : <DialogProduk />}
           />
@@ -136,7 +136,7 @@ export default async function HalamanProduk({ searchParams }: PageProps<"/produk
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} produk{kunci ? " cocok" : ""} · {jumlahAktif} aktif
+          {daftar.length} product{kunci ? " cocok" : ""} · {jumlahAktif} aktif
         </RingkasanTabel>
       ) : null}
     </Halaman>

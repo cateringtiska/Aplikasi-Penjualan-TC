@@ -7,7 +7,7 @@ import { wajibPeran } from "@/lib/rbac";
 
 import { FormPerusahaan } from "./form-perusahaan";
 
-export const metadata: Metadata = { title: "Pengaturan perusahaan" };
+export const metadata: Metadata = { title: "Pengaturan company" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanPerusahaan() {
@@ -18,7 +18,7 @@ export default async function HalamanPerusahaan() {
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Pengaturan perusahaan"
+        judul="Pengaturan company"
         keterangan="Identitas, rekening, dan teks standar yang ikut tercetak di dokumen."
       />
 

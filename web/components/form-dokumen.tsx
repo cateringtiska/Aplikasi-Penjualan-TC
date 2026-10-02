@@ -752,7 +752,7 @@ function BarisItem({
             aria-label={`Ambil dari katalog untuk baris ${nomor}`}
             className="mb-2 h-8 w-full rounded-md border bg-transparent px-2 text-xs text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
           >
-            <option value="">— Ambil dari katalog produk —</option>
+            <option value="">— Ambil dari katalog product —</option>
             {produk.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nama}

@@ -25,7 +25,7 @@ export async function batalkanTagihan(id: string): Promise<void> {
 
   if (Number(tagihan.paid_amount) > 0) {
     throw new Error(
-      "Invoice yang sudah menerima pembayaran tidak bisa dibatalkan. Hapus pembayarannya lebih dulu.",
+      "Invoice yang sudah menerima payment tidak bisa dibatalkan. Hapus payment-nya lebih dulu.",
     );
   }
 
@@ -52,7 +52,7 @@ export async function hapusTagihan(id: string): Promise<void> {
   if (!tagihan) return;
 
   if (Number(tagihan.paid_amount) > 0 || tagihan.payment_details.length > 0) {
-    throw new Error("Invoice ini sudah punya catatan pembayaran, jadi tidak bisa dihapus.");
+    throw new Error("Invoice ini sudah punya catatan payment, jadi tidak bisa dihapus.");
   }
   if (tagihan.invoice_margins?.status === "final") {
     throw new Error("Margin invoice ini sudah difinalisasi, jadi tidak bisa dihapus.");

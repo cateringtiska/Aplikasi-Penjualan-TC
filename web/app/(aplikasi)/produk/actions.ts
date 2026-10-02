@@ -81,7 +81,7 @@ export async function simpanProduk(
   }
 
   revalidatePath("/produk");
-  return { sukses: true, pesan: id ? "Data produk diperbarui." : "Produk baru ditambahkan." };
+  return { sukses: true, pesan: id ? "Data product diperbarui." : "Product baru ditambahkan." };
 }
 
 export async function ubahStatusProduk(id: string): Promise<void> {

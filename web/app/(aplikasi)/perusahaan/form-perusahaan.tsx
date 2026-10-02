@@ -45,7 +45,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
       ) : null}
 
       <Bagian judul="Identitas" keterangan="Tampil di kepala dokumen quotation dan invoice.">
-        <Bidang label="Nama perusahaan" nama="company_name" galat={keadaan.galat?.company_name} wajib>
+        <Bidang label="Nama company" nama="company_name" galat={keadaan.galat?.company_name} wajib>
           <Input
             id="company_name"
             name="company_name"

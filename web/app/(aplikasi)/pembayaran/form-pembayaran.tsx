@@ -324,7 +324,7 @@ export function FormPembayaran({
                   Menyimpan…
                 </>
               ) : (
-                "Simpan pembayaran"
+                "Simpan payment"
               )}
             </Button>
           </div>

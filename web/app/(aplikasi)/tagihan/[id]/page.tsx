@@ -306,9 +306,9 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
             ) : null}
           </Kotak>
 
-          <Kotak judul="Riwayat pembayaran">
+          <Kotak judul="Riwayat payment">
             {t.payment_details.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada pembayaran masuk.</p>
+              <p className="text-sm text-muted-foreground">Belum ada payment masuk.</p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {t.payment_details.map((p) => (

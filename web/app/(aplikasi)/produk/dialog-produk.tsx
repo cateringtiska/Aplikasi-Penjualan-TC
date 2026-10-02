@@ -72,7 +72,7 @@ export function DialogProduk({
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{sedangUbah ? "Ubah produk" : "Produk baru"}</DialogTitle>
+          <DialogTitle>{sedangUbah ? "Ubah product" : "Product baru"}</DialogTitle>
           <DialogDescription>
             {sedangUbah
               ? `Kode ${produk!.product_code} tidak bisa diubah.`
@@ -89,7 +89,7 @@ export function DialogProduk({
             </p>
           ) : null}
 
-          <Bidang label="Nama produk" nama="name" galat={keadaan.galat?.name} wajib>
+          <Bidang label="Nama product" nama="name" galat={keadaan.galat?.name} wajib>
             <Input
               id="name"
               name="name"
@@ -102,7 +102,7 @@ export function DialogProduk({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Bidang label="Jenis" nama="type" galat={keadaan.galat?.type} wajib>
-              <div className="flex gap-2" role="radiogroup" aria-label="Jenis produk">
+              <div className="flex gap-2" role="radiogroup" aria-label="Jenis product">
                 {(["barang", "jasa"] as const).map((jenis) => (
                   <label
                     key={jenis}

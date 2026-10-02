@@ -89,7 +89,7 @@ export default async function HalamanKartuCustomer({
         {baris.length === 0 ? (
           <KeadaanKosong
             judul="Belum ada mutasi"
-            keterangan="Customer ini belum punya invoice maupun pembayaran."
+            keterangan="Customer ini belum punya invoice maupun payment."
           />
         ) : (
           <div className="overflow-x-auto">

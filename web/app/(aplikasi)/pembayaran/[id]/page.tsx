@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
-export const metadata: Metadata = { title: "Detail pembayaran" };
+export const metadata: Metadata = { title: "Detail payment" };
 export const dynamic = "force-dynamic";
 
 const LABEL_METODE: Record<string, string> = {

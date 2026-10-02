@@ -80,7 +80,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                 {kunci ? `Tidak ada sisa piutang atas nama "${kunci}".` : "Tidak ada piutang."}
               </p>
               <p className="mx-auto mt-1 max-w-md text-center text-sm text-muted-foreground">
-                Bukan berarti pembayarannya tidak tercatat — justru sebaliknya. Yang berikut ini
+                Bukan berarti payment-nya tidak tercatat — justru sebaliknya. Yang berikut ini
                 sudah lunas seluruhnya, jadi ia keluar dari daftar umur piutang.
               </p>
 

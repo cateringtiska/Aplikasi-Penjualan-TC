@@ -30,7 +30,7 @@ export const MENU: KelompokMenu[] = [
     butir: [
       { label: "Quotation", href: "/penawaran", peran: ["sales", "finance"] },
       { label: "Invoice", href: "/tagihan", peran: ["sales", "finance"] },
-      { label: "Pembayaran", href: "/pembayaran", peran: ["finance"] },
+      { label: "Payment", href: "/pembayaran", peran: ["finance"] },
     ],
   },
   {
@@ -45,14 +45,14 @@ export const MENU: KelompokMenu[] = [
     judul: "Data Induk",
     butir: [
       { label: "Customer", href: "/pelanggan", peran: ["sales", "finance"] },
-      { label: "Produk", href: "/produk", peran: ["sales", "finance"] },
+      { label: "Product", href: "/produk", peran: ["sales", "finance"] },
     ],
   },
   {
     judul: "Pengaturan",
     butir: [
       { label: "User", href: "/pengguna", peran: [] },
-      { label: "Perusahaan", href: "/perusahaan", peran: [] },
+      { label: "Company", href: "/perusahaan", peran: [] },
     ],
   },
 ];

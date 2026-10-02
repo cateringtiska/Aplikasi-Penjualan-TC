@@ -7,7 +7,7 @@ import { wajibPeran } from "@/lib/rbac";
 
 import { FormPembayaran, type BarisTagihan } from "../form-pembayaran";
 
-export const metadata: Metadata = { title: "Catat pembayaran" };
+export const metadata: Metadata = { title: "Catat payment" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanPembayaranBaru({
@@ -68,7 +68,7 @@ export default async function HalamanPembayaranBaru({
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Catat pembayaran"
+        judul="Catat payment"
         keterangan="Satu setoran boleh menutup beberapa invoice sekaligus."
       />
 

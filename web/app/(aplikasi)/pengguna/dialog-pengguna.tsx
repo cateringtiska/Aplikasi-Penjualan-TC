@@ -32,17 +32,17 @@ const PERAN = [
   {
     nilai: "admin",
     label: "Admin",
-    jelas: "Semua halaman, plus User dan Pengaturan perusahaan.",
+    jelas: "Semua halaman, plus User dan Pengaturan company.",
   },
   {
     nilai: "sales",
     label: "Sales",
-    jelas: "Quotation, invoice, customer, produk, laporan penjualan dan piutang.",
+    jelas: "Quotation, invoice, customer, product, laporan penjualan dan piutang.",
   },
   {
     nilai: "finance",
     label: "Finance",
-    jelas: "Semua milik Sales, ditambah pembayaran dan laporan margin.",
+    jelas: "Semua milik Sales, ditambah payment dan laporan margin.",
   },
 ];
 

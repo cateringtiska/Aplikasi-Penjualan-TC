@@ -63,7 +63,7 @@ export async function simpanTagihan(
         }
         if (Number(ada.paid_amount) > 0) {
           throw new Error(
-            "Invoice ini sudah menerima pembayaran, jadi rinciannya tidak bisa diubah. Batalkan pembayarannya lebih dulu.",
+            "Invoice ini sudah menerima payment, jadi rinciannya tidak bisa diubah. Batalkan payment-nya lebih dulu.",
           );
         }
 

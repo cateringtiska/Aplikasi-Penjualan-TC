@@ -165,7 +165,7 @@ export async function simpanPembayaran(
       return pembayaran.id.toString();
     });
   } catch (galat) {
-    return pesanGagal(galat, "Pembayaran gagal disimpan. Tidak ada data yang berubah.");
+    return pesanGagal(galat, "Payment gagal disimpan. Tidak ada data yang berubah.");
   }
 
   revalidatePath("/pembayaran");

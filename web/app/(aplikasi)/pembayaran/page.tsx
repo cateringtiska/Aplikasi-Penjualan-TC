@@ -19,7 +19,7 @@ import { d, rupiah } from "@/lib/uang";
 
 import { AksiBaris } from "./aksi-baris";
 
-export const metadata: Metadata = { title: "Pembayaran" };
+export const metadata: Metadata = { title: "Payment" };
 export const dynamic = "force-dynamic";
 
 const LABEL_METODE: Record<string, string> = {
@@ -63,7 +63,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
   return (
     <Halaman>
       <KepalaHalaman
-        judul="Pembayaran"
+        judul="Payment"
         keterangan="Setoran yang masuk dari customer beserta alokasinya ke invoice."
         aksi={
           <Button size="sm" render={<Link href="/pembayaran/baru" />}>
@@ -80,11 +80,11 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
       <BingkaiTabel>
         {daftar.length === 0 ? (
           <KeadaanKosong
-            judul={kunci ? "Tidak ada yang cocok" : "Belum ada pembayaran"}
+            judul={kunci ? "Tidak ada yang cocok" : "Belum ada payment"}
             keterangan={
               kunci
-                ? `Tidak ditemukan pembayaran untuk "${kunci}".`
-                : "Pembayaran dicatat dari halaman invoice atau lewat tombol di atas."
+                ? `Tidak ditemukan payment untuk "${kunci}".`
+                : "Payment dicatat dari halaman invoice atau lewat tombol di atas."
             }
             aksi={
               kunci ? undefined : (
@@ -146,7 +146,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} pembayaran · total {rupiah(total)}
+          {daftar.length} payment · total {rupiah(total)}
         </RingkasanTabel>
       ) : null}
     </Halaman>
