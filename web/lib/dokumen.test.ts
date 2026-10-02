@@ -146,3 +146,83 @@ describe("biaya tambahan", () => {
     expect(hasil.tambahan[0].amount.toString()).toBe("0");
   });
 });
+
+/* ==========================================================================
+   KOLOM ANGKA YANG DIBIARKAN KOSONG
+
+   Dilaporkan pemiliknya dari invoice sungguhan. Baris "PROPS VIP DECORATION
+   - Set-up VIP Table" adalah judul kelompok: jumlah 0, kolom harga dibiarkan
+   KOSONG, dan sub-item "Goblet (Gelas Kaki)" membawa angkanya (33 x 10.000).
+
+   Penyimpanannya ditolak dengan kalimat "Baris 6: harga tidak boleh minus."
+   Tidak ada angka minus di mana pun pada formulirnya. Kolom kosong terbaca
+   sebagai "tidak terbaca", dan satu-satunya kalimat galat yang tersedia
+   untuk keadaan itu menyebut minus — jadi orang mencari angka minus yang
+   tidak pernah ada, pada baris yang justru memang seharusnya kosong.
+
+   Dua hal yang dikunci: kolom kosong berarti NOL, dan kalimat galat harus
+   menyebutkan keadaan yang sebenarnya.
+   ========================================================================== */
+
+describe("kolom angka yang dibiarkan kosong", () => {
+  it("menerima judul kelompok yang kolom harganya kosong", () => {
+    const hasil = coba({
+      items: [
+        {
+          item_name: "PROPS VIP DECORATION - Set-up VIP Table",
+          qty: "0",
+          price: "",
+          children: [{ item_name: "Goblet (Gelas Kaki)", unit: "Pcs", qty: "33", price: "10000" }],
+        },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("330000.00");
+    expect(hasil.kolom.grand_total).toBe("330000.00");
+  });
+
+  it("memperlakukan harga kosong sebagai nol pada baris biasa", () => {
+    const hasil = coba({
+      items: [{ item_name: "Tenda", qty: "2", price: "", children: [] }],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("0.00");
+  });
+
+  it("TIDAK menyebut minus untuk harga yang sekadar tidak terbaca", () => {
+    const hasil = coba({
+      items: [{ item_name: "Tenda", qty: "2", price: "dua ratus ribu", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/tidak terbaca/i);
+    expect(hasil.keadaan.galat?.items).not.toMatch(/minus/i);
+  });
+
+  it("tetap menolak harga yang benar-benar minus", () => {
+    const hasil = coba({
+      items: [{ item_name: "Tenda", qty: "2", price: "-5000", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/tidak boleh minus/i);
+  });
+
+  it("menuntun ke sub-item ketika jumlahnya nol tanpa sub-item berharga", () => {
+    // Kalimat lamanya menyuruh orang mengosongkan jumlah dan harga induknya
+    // sendiri — aturan yang sudah tidak berlaku sejak judul kelompok
+    // ditentukan oleh anaknya.
+    const hasil = coba({
+      items: [{ item_name: "Aneka Stall", qty: "0", price: "", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/sub-item/i);
+    expect(hasil.keadaan.galat?.items).not.toMatch(/berharga 0/i);
+  });
+});

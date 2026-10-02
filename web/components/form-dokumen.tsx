@@ -448,7 +448,7 @@ export function FormDokumen({
       {/* ---------- Item ---------- */}
       <Bagian
         judul={`Rincian ${istilah.kata}`}
-        keterangan="Paket induk boleh punya sub-item yang tidak berharga — dipakai untuk merinci isi menu."
+        keterangan="Sub-item tanpa harga merinci isi paket. Begitu sub-itemnya diberi jumlah dan harga, baris induknya jadi judul kelompok dan kolom angkanya boleh dikosongkan."
       >
         {keadaan.galat?.items ? (
           <p role="alert" className="text-sm text-destructive">

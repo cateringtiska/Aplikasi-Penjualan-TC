@@ -198,18 +198,39 @@ export function siapkanDokumen(
       return q !== null && h !== null && q.times(h).gt(0);
     });
 
+    // ISIAN KOSONG BERARTI NOL, bukan galat. Pada judul kelompok, kolom
+    // harga memang ditinggal kosong — angkanya ada di sub-itemnya. Sebelum
+    // ini, kolom kosong terbaca sebagai "tidak terbaca" lalu dilaporkan
+    // sebagai harga minus, dan orang mencari angka minus yang tidak pernah
+    // ada di formulirnya.
+    const qtyKosong = String(baris.qty ?? "").trim() === "";
+    const hargaKosong = String(baris.price ?? "").trim() === "";
+
+    if (!hargaKosong && price === null) {
+      return {
+        ok: false,
+        keadaan: { galat: { items: `Baris ${i + 1}: harga tidak terbaca. Isi angka saja, contoh: 250.000.` } },
+      };
+    }
+    if (price !== null && price.isNegative()) {
+      return { ok: false, keadaan: { galat: { items: `Baris ${i + 1}: harga tidak boleh minus.` } } };
+    }
+
+    if (!qtyKosong && qty === null) {
+      return {
+        ok: false,
+        keadaan: { galat: { items: `Baris ${i + 1}: jumlah tidak terbaca. Isi angka saja, contoh: 35.` } },
+      };
+    }
     if (!kepalaKelompok && (qty === null || qty.lte(0))) {
       return {
         ok: false,
         keadaan: {
           galat: {
-            items: `Baris ${i + 1}: jumlah harus lebih dari nol — kecuali baris ini judul kelompok, yang harus berjumlah 0, berharga 0, dan punya sub-item.`,
+            items: `Baris ${i + 1}: jumlah harus lebih dari nol. Kalau baris ini judul kelompok, isi dulu jumlah dan harga pada sub-itemnya.`,
           },
         },
       };
-    }
-    if (price === null || price.isNegative()) {
-      return { ok: false, keadaan: { galat: { items: `Baris ${i + 1}: harga tidak boleh minus.` } } };
     }
 
     for (const [j, anak] of baris.children.entries()) {
@@ -236,7 +257,7 @@ export function siapkanDokumen(
     items.push({
       ...baris,
       qtyD: kepalaKelompok ? d(0) : (qty ?? d(0)),
-      priceD: kepalaKelompok ? d(0) : price,
+      priceD: kepalaKelompok ? d(0) : (price ?? d(0)),
       anakSiap: baris.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit ?? null,
