@@ -6,7 +6,7 @@ import Link from "next/link";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { pengakuanDokumen } from "@/lib/pengakuan";
-import { tanggalAcaraDokumen } from "@/lib/tanggal";
+import { ringkasTanggalAcara, tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibSesi } from "@/lib/rbac";
 
@@ -73,6 +73,9 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           id: true,
           quotation_number: true,
           quotation_date: true,
+          event_date: true,
+          event_days: true,
+          quotation_event_dates: { select: { event_date: true } },
           grand_total: true,
           status: true,
           customers: { select: { name: true } },
@@ -86,6 +89,9 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           id: true,
           invoice_number: true,
           invoice_date: true,
+          event_date: true,
+          event_days: true,
+          invoice_event_dates: { select: { event_date: true } },
           grand_total: true,
           status: true,
           customers: { select: { name: true } },
@@ -210,6 +216,9 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
                   nomor={p.quotation_number}
                   nama={p.customers.name}
                   tanggal={p.quotation_date}
+                  acara={ringkasTanggalAcara(
+                    tanggalAcaraDokumen(p.quotation_event_dates, p.event_date, p.event_days),
+                  )}
                   nilai={p.grand_total}
                   lencana={<StatusPenawaran status={p.status} />}
                 />
@@ -230,6 +239,9 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
                   nomor={t.invoice_number}
                   nama={t.customers.name}
                   tanggal={t.invoice_date}
+                  acara={ringkasTanggalAcara(
+                    tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
+                  )}
                   nilai={t.grand_total}
                   lencana={<StatusTagihan status={t.status} />}
                 />
@@ -273,6 +285,7 @@ function Baris({
   nomor,
   nama,
   tanggal,
+  acara,
   nilai,
   lencana,
 }: {
@@ -280,6 +293,8 @@ function Baris({
   nomor: string;
   nama: string;
   tanggal: Date;
+  /** Ringkasan tanggal acaranya, atau null kalau dokumennya tanpa acara. */
+  acara: string | null;
   nilai: unknown;
   lencana: React.ReactNode;
 }) {
@@ -291,9 +306,19 @@ function Baris({
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[0.8125rem] font-medium">{nama}</span>
-          <span className="nomor-dokumen mt-0.5 block text-muted-foreground">
+          <span className="nomor-dokumen mt-0.5 block truncate text-muted-foreground">
             {nomor} · {format(tanggal, "d MMM yyyy", { locale: localeId })}
           </span>
+          {/* Tanggal ACARA, bukan tanggal dokumennya. Seluruh kartu di atas
+              digolongkan menurut tanggal acara, dan daftar yang hanya
+              menyebut tanggal dokumen membuat orang mengira kartunya salah —
+              itu yang ditanyakan pemiliknya tentang invoice yang tanggalnya
+              2 Oktober tetapi acaranya 3 Oktober. */}
+          {acara ? (
+            <span className="mt-0.5 block truncate text-[0.6875rem] text-muted-foreground">
+              Acara {acara}
+            </span>
+          ) : null}
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
           <span className="angka text-[0.8125rem] font-medium tabular-nums">
