@@ -107,9 +107,10 @@ describe("laporan piutang", () => {
     const hasil = await ambilPiutang(TANDA, {});
 
     expect(hasil.belumTerjadi.jumlahInvoice).toBe(2);
-    expect(hasil.belumTerjadi.ditangguhkan.toString()).toBe("5000000");
-    // 20 juta + (30 juta - 5 juta panjar)
-    expect(hasil.belumTerjadi.proyeksi.toString()).toBe("45000000");
+    expect(hasil.belumTerjadi.uangMuka.toString()).toBe("5000000");
+    expect(hasil.belumTerjadi.sisaUangMuka.toString()).toBe("25000000");
+    // Hanya yang belum dibayar SAMA SEKALI yang menjadi proyeksi.
+    expect(hasil.belumTerjadi.proyeksi.toString()).toBe("20000000");
   });
 
   it("tidak ada satu rupiah pun yang hilang", async () => {
@@ -118,7 +119,9 @@ describe("laporan piutang", () => {
     // Piutang + diterima di muka + proyeksi + yang sudah dibayar untuk acara
     // yang sudah terjadi = seluruh nilai ketiga invoicenya.
     const jumlah = hasil.totalSemua
-      .plus(hasil.belumTerjadi.ditangguhkan)
+      .plus(hasil.belumTerjadi.uangMuka)
+      .plus(hasil.belumTerjadi.sisaUangMuka)
+      .plus(hasil.belumTerjadi.diterimaDiMuka)
       .plus(hasil.belumTerjadi.proyeksi)
       .plus(4_000_000);
 
@@ -137,5 +140,40 @@ describe("laporan piutang", () => {
 
     expect(hasil.totalSemua.toString()).toBe("26000000"); // 6 juta + 20 juta
     expect(hasil.belumTerjadi.jumlahInvoice).toBe(1);
+  });
+});
+
+describe("uang muka dibedakan dari pendapatan diterima di muka", () => {
+  it("invoice yang LUNAS sebelum acaranya terjadi masuk keranjang tersendiri", async () => {
+    // Keduanya sama-sama uang yang belum boleh diakui, tetapi kewajibannya
+    // berbeda: yang lunas sudah tidak perlu ditagih lagi, yang baru panjar
+    // masih menyisakan tagihan sebelum acaranya berjalan.
+    const cap = Date.now().toString().slice(-6);
+
+    await prisma.invoices.create({
+      data: {
+        invoice_number: `UJP-LUNASMUKA-${cap}`,
+        customer_id: jejak.pelanggan!,
+        invoice_date: hari(-30),
+        due_date: hari(-5),
+        subtotal: "7000000",
+        grand_total: "7000000",
+        paid_amount: "7000000",
+        status: "paid",
+        created_at: new Date(),
+        updated_at: new Date(),
+        invoice_event_dates: {
+          create: [{ event_date: hari(45), created_at: new Date(), updated_at: new Date() }],
+        },
+      },
+    });
+
+    const hasil = await ambilPiutang(TANDA, {});
+
+    expect(hasil.belumTerjadi.diterimaDiMuka.toString()).toBe("7000000");
+
+    // Tidak ikut ke uang muka maupun proyeksi, dan tidak menambah piutang.
+    expect(hasil.belumTerjadi.uangMuka.toString()).toBe("5000000");
+    expect(hasil.totalSemua.toString()).toBe("26000000");
   });
 });

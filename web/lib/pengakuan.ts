@@ -9,32 +9,36 @@ import { d, type NilaiUang } from "./uang";
    yang baru terjadi pada hari acaranya; sebelum itu belum ada apa pun yang
    diserahkan, jadi belum ada penjualan.
 
-   Satu dokumen jatuh ke salah satu dari tiga keadaan:
+   Empat keadaan, persis seperti yang ditetapkan pemiliknya:
 
-     ACARANYA SUDAH TERJADI
-       Seluruh nilainya menjadi PENJUALAN DIAKUI, dan yang belum dibayar
-       menjadi PIUTANG. Inilah satu-satunya keadaan yang menghasilkan
-       piutang — menagih sesuatu yang belum diserahkan bukan piutang.
+     ACARA SUDAH SELESAI                 -> PENJUALAN
+       Seluruh nilainya diakui. Yang belum dibayar menjadi PIUTANG — dan
+       inilah satu-satunya keadaan yang menghasilkan piutang. Menagih
+       sesuatu yang belum diserahkan bukan piutang.
 
-     ACARANYA BELUM TERJADI, uangnya sudah masuk
-       Yang sudah diterima menjadi PENDAPATAN DITERIMA DI MUKA. Ia utang,
-       bukan penghasilan: kalau acaranya batal, uang itu harus dikembalikan.
+     BELUM TERJADI, dibayar SEBAGIAN     -> UANG MUKA
+       Yang dicatat sebagai uang muka adalah uang yang BENAR-BENAR MASUK.
+       Sisanya belum dibayar dan belum pula menjadi piutang.
 
-     ACARANYA BELUM TERJADI, uangnya belum masuk
-       Sisanya menjadi PROYEKSI PENJUALAN. Belum ada apa pun yang terjadi,
-       dan belum ada uang yang diterima.
+     BELUM TERJADI, sudah LUNAS          -> PENDAPATAN DITERIMA DI MUKA
+       Seluruh nilainya sudah di tangan, tetapi belum boleh diakui sebagai
+       penghasilan: kalau acaranya batal, uang itu harus dikembalikan.
 
-   SATU DOKUMEN BISA MASUK DUA KERANJANG. Invoice 100 juta untuk acara bulan
-   depan yang sudah dibayar muka 10 juta adalah 10 juta pendapatan diterima
-   di muka DAN 90 juta proyeksi. Memasukkan seluruh 100 juta ke pendapatan
-   diterima di muka akan mengakui uang yang belum diterima siapa pun —
-   padahal nama pos itu sendiri berarti uang yang sudah diterima.
+     BELUM TERJADI, belum dibayar        -> PROYEKSI PENJUALAN
+       Dokumennya sudah dibuat, tetapi belum ada apa pun yang terjadi dan
+       belum ada uang yang masuk.
 
-   Ketiganya selalu berjumlah sama dengan nilai dokumennya, berapa pun
+   UANG MUKA DAN DITERIMA DI MUKA SENGAJA DIPISAH. Keduanya sama-sama uang
+   yang belum boleh diakui, tetapi kewajibannya berbeda: yang lunas sudah
+   tidak perlu ditagih lagi, yang baru panjar masih menyisakan tagihan yang
+   harus ditagih sebelum acaranya berjalan. Menggabungkannya menyembunyikan
+   perbedaan itu.
+
+   KELIMA ANGKANYA SELALU BERJUMLAH SAMA dengan nilai dokumennya, berapa pun
    keadaannya. Itu yang membuat laporannya tidak bisa kehilangan angka.
    ========================================================================== */
 
-export type KeadaanPengakuan = "diakui" | "ditangguhkan" | "proyeksi";
+export type KeadaanPengakuan = "diakui" | "uang_muka" | "diterima_di_muka" | "proyeksi";
 
 export type DokumenPengakuan = {
   grand_total: NilaiUang;
@@ -50,13 +54,19 @@ export type HasilPengakuan = {
   diakui: Decimal;
   /** Piutang sungguhan — hanya dari acara yang sudah terjadi. */
   piutang: Decimal;
-  /** Uang yang sudah diterima untuk acara yang belum terjadi. */
-  ditangguhkan: Decimal;
-  /** Nilai yang belum diterima untuk acara yang belum terjadi. */
+  /** Panjar yang sudah masuk untuk acara yang belum terjadi dan belum lunas. */
+  uangMuka: Decimal;
+  /** Sisa tagihan pada dokumen beruang muka. Bukan piutang, belum pula penjualan. */
+  sisaUangMuka: Decimal;
+  /** Nilai penuh dokumen yang sudah LUNAS tetapi acaranya belum terjadi. */
+  diterimaDiMuka: Decimal;
+  /** Nilai dokumen yang belum dibayar sama sekali dan acaranya belum terjadi. */
   proyeksi: Decimal;
 };
 
-/** Awal hari ini, supaya acara hari ini tidak terbaca "belum terjadi". */
+const NOL = new Decimal(0);
+
+/** Awal hari, supaya acara hari ini tidak terbaca "belum terjadi". */
 function awalHari(waktu: Date): Date {
   const t = new Date(waktu);
   t.setHours(0, 0, 0, 0);
@@ -92,39 +102,58 @@ export function pengakuanDokumen(
   sekarang = new Date(),
 ): HasilPengakuan {
   const total = d(dokumen.grand_total);
-  const dibayar = d(dokumen.paid_amount);
+  // Dibatasi nilai dokumennya: pembayaran berlebih tidak boleh menghasilkan
+  // sisa yang minus.
+  const dibayar = Decimal.min(d(dokumen.paid_amount), total);
   const sudahTerjadi = acaraSudahTerjadi(dokumen.tanggalAcara, sekarang);
+
+  const kosong = {
+    diakui: NOL,
+    piutang: NOL,
+    uangMuka: NOL,
+    sisaUangMuka: NOL,
+    diterimaDiMuka: NOL,
+    proyeksi: NOL,
+  };
 
   if (sudahTerjadi) {
     return {
+      ...kosong,
       keadaan: "diakui",
       sudahTerjadi: true,
       diakui: total,
-      // Dibatasi nol: pembayaran berlebih bukan piutang minus.
-      piutang: Decimal.max(total.minus(dibayar), 0),
-      ditangguhkan: new Decimal(0),
-      proyeksi: new Decimal(0),
+      piutang: total.minus(dibayar),
     };
   }
 
-  // Yang sudah diterima tidak boleh melebihi nilai dokumennya; sisanya nol,
-  // bukan proyeksi minus.
-  const ditangguhkan = Decimal.min(dibayar, total);
+  if (dibayar.lte(0)) {
+    return { ...kosong, keadaan: "proyeksi", sudahTerjadi: false, proyeksi: total };
+  }
+
+  if (dibayar.gte(total)) {
+    return {
+      ...kosong,
+      keadaan: "diterima_di_muka",
+      sudahTerjadi: false,
+      diterimaDiMuka: total,
+    };
+  }
 
   return {
-    keadaan: ditangguhkan.gt(0) ? "ditangguhkan" : "proyeksi",
+    ...kosong,
+    keadaan: "uang_muka",
     sudahTerjadi: false,
-    diakui: new Decimal(0),
-    piutang: new Decimal(0),
-    ditangguhkan,
-    proyeksi: Decimal.max(total.minus(ditangguhkan), 0),
+    uangMuka: dibayar,
+    sisaUangMuka: total.minus(dibayar),
   };
 }
 
 export type RingkasanPengakuan = {
   diakui: Decimal;
   piutang: Decimal;
-  ditangguhkan: Decimal;
+  uangMuka: Decimal;
+  sisaUangMuka: Decimal;
+  diterimaDiMuka: Decimal;
   proyeksi: Decimal;
 };
 
@@ -138,16 +167,26 @@ export function ringkasPengakuan(
       return {
         diakui: jumlah.diakui.plus(p.diakui),
         piutang: jumlah.piutang.plus(p.piutang),
-        ditangguhkan: jumlah.ditangguhkan.plus(p.ditangguhkan),
+        uangMuka: jumlah.uangMuka.plus(p.uangMuka),
+        sisaUangMuka: jumlah.sisaUangMuka.plus(p.sisaUangMuka),
+        diterimaDiMuka: jumlah.diterimaDiMuka.plus(p.diterimaDiMuka),
         proyeksi: jumlah.proyeksi.plus(p.proyeksi),
       };
     },
-    { diakui: new Decimal(0), piutang: new Decimal(0), ditangguhkan: new Decimal(0), proyeksi: new Decimal(0) },
+    {
+      diakui: NOL,
+      piutang: NOL,
+      uangMuka: NOL,
+      sisaUangMuka: NOL,
+      diterimaDiMuka: NOL,
+      proyeksi: NOL,
+    },
   );
 }
 
 export const LABEL_PENGAKUAN: Record<KeadaanPengakuan, string> = {
-  diakui: "Diakui",
-  ditangguhkan: "Diterima di muka",
+  diakui: "Penjualan",
+  uang_muka: "Uang muka",
+  diterima_di_muka: "Diterima di muka",
   proyeksi: "Proyeksi",
 };

@@ -103,8 +103,13 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   }));
 
   const totalPiutang = pengakuan.reduce((j, x) => j.plus(x.hasil.piutang), d(0));
-  const totalDiMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.ditangguhkan), d(0));
+  const totalUangMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.uangMuka), d(0));
+  const totalDiMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.diterimaDiMuka), d(0));
   const totalProyeksi = pengakuan.reduce((j, x) => j.plus(x.hasil.proyeksi), d(0));
+
+  const jumlahUangMuka = pengakuan.filter((x) => x.hasil.keadaan === "uang_muka").length;
+  const jumlahDiMuka = pengakuan.filter((x) => x.hasil.keadaan === "diterima_di_muka").length;
+  const jumlahProyeksi = pengakuan.filter((x) => x.hasil.keadaan === "proyeksi").length;
 
   const jumlahBelumLunas = pengakuan.filter((x) => x.hasil.piutang.gt(0)).length;
 
@@ -166,21 +171,21 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           warna="hijau"
         />
         <KartuAngka
+          label="Uang muka"
+          nilai={rupiah(totalUangMuka)}
+          keterangan={`${jumlahUangMuka} invoice dipanjar, belum lunas`}
+          warna="biru"
+        />
+        <KartuAngka
           label="Diterima di muka"
           nilai={rupiah(totalDiMuka)}
-          keterangan="sudah dibayar, acaranya belum terjadi"
-          warna="biru"
+          keterangan={`${jumlahDiMuka} invoice lunas, acaranya belum terjadi`}
+          warna="ungu"
         />
         <KartuAngka
           label="Proyeksi penjualan"
           nilai={rupiah(totalProyeksi)}
-          keterangan="belum dibayar, acaranya belum terjadi"
-          warna="ungu"
-        />
-        <KartuAngka
-          label="Quotation menunggu"
-          nilai={String(penawaranMenunggu)}
-          keterangan={penawaranMenunggu > 0 ? "belum dijawab customer" : "tidak ada"}
+          keterangan={`${jumlahProyeksi} dokumen · ${penawaranMenunggu} quotation menunggu`}
           warna="oranye"
         />
         <KartuAngka

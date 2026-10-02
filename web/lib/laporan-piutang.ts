@@ -65,7 +65,13 @@ export type HasilPiutang = {
    */
   belumTerjadi: {
     jumlahInvoice: number;
-    ditangguhkan: Decimal;
+    /** Panjar yang sudah masuk pada dokumen yang belum lunas. */
+    uangMuka: Decimal;
+    /** Sisa tagihan pada dokumen beruang muka. */
+    sisaUangMuka: Decimal;
+    /** Nilai penuh dokumen yang sudah lunas di muka. */
+    diterimaDiMuka: Decimal;
+    /** Nilai dokumen yang belum dibayar sama sekali. */
     proyeksi: Decimal;
   };
   /**
@@ -86,7 +92,12 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
   const tagihan = await prisma.invoices.findMany({
     where: {
       ...milik,
-      status: { in: ["unpaid", "partial", "overdue"] },
+      // SELURUH invoice yang tidak dibatalkan, bukan hanya yang belum lunas.
+      // Invoice yang sudah DILUNASI sebelum acaranya terjadi berstatus
+      // "paid", dan menyaringnya di sini membuat pendapatan diterima di muka
+      // selalu terbaca nol. Yang sudah tidak menyisakan apa pun tetap
+      // dilewati di bawah.
+      status: { not: "cancelled" },
       ...(kunci ? { customers: { name: { contains: kunci, mode: "insensitive" } } } : {}),
     },
     orderBy: { due_date: "asc" },
@@ -113,7 +124,13 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     h60: d(0),
   };
 
-  const belumTerjadi = { jumlahInvoice: 0, ditangguhkan: d(0), proyeksi: d(0) };
+  const belumTerjadi = {
+    jumlahInvoice: 0,
+    uangMuka: d(0),
+    sisaUangMuka: d(0),
+    diterimaDiMuka: d(0),
+    proyeksi: d(0),
+  };
 
   for (const t of tagihan) {
     // PIUTANG HANYA DARI ACARA YANG SUDAH TERJADI. Menagih sesuatu yang
@@ -130,7 +147,9 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
 
     if (!pengakuan.sudahTerjadi) {
       belumTerjadi.jumlahInvoice += 1;
-      belumTerjadi.ditangguhkan = belumTerjadi.ditangguhkan.plus(pengakuan.ditangguhkan);
+      belumTerjadi.uangMuka = belumTerjadi.uangMuka.plus(pengakuan.uangMuka);
+      belumTerjadi.sisaUangMuka = belumTerjadi.sisaUangMuka.plus(pengakuan.sisaUangMuka);
+      belumTerjadi.diterimaDiMuka = belumTerjadi.diterimaDiMuka.plus(pengakuan.diterimaDiMuka);
       belumTerjadi.proyeksi = belumTerjadi.proyeksi.plus(pengakuan.proyeksi);
       continue;
     }

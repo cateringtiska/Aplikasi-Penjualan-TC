@@ -52,47 +52,68 @@ describe("pengakuanDokumen", () => {
     expect(p.keadaan).toBe("diakui");
     expect(p.diakui.toString()).toBe("10000000");
     expect(p.piutang.toString()).toBe("6000000");
-    expect(p.ditangguhkan.toString()).toBe("0");
+    expect(p.uangMuka.toString()).toBe("0");
+    expect(p.diterimaDiMuka.toString()).toBe("0");
     expect(p.proyeksi.toString()).toBe("0");
   });
 
-  it("acara yang BELUM terjadi TIDAK menghasilkan piutang", () => {
+  it("acara yang BELUM terjadi TIDAK PERNAH menghasilkan piutang", () => {
     // Inti aturannya. Menagih sesuatu yang belum diserahkan bukan piutang,
     // dan memasukkannya ke piutang membuat umur piutang terbaca lebih buruk
     // daripada keadaan sebenarnya.
+    for (const dibayar of ["0", "3000000", "10000000"]) {
+      const p = pengakuanDokumen(dok("10000000", dibayar, [tgl("2026-11-01")]), HARI_INI);
+      expect(p.piutang.toString(), `dibayar ${dibayar}`).toBe("0");
+      expect(p.diakui.toString(), `dibayar ${dibayar}`).toBe("0");
+    }
+  });
+
+  it("belum terjadi dan belum dibayar sama sekali: PROYEKSI", () => {
     const p = pengakuanDokumen(dok("10000000", "0", [tgl("2026-11-01")]), HARI_INI);
 
-    expect(p.piutang.toString()).toBe("0");
-    expect(p.diakui.toString()).toBe("0");
     expect(p.keadaan).toBe("proyeksi");
     expect(p.proyeksi.toString()).toBe("10000000");
   });
 
-  it("SATU DOKUMEN BISA MASUK DUA KERANJANG", () => {
-    // Invoice 100 juta untuk acara bulan depan, dibayar muka 10 juta.
-    // Memasukkan seluruh 100 juta ke pendapatan diterima di muka akan
-    // mengakui uang yang belum diterima siapa pun.
+  it("belum terjadi dan dibayar SEBAGIAN: UANG MUKA sebesar yang masuk", () => {
+    // Yang dicatat sebagai uang muka adalah uang yang benar-benar masuk.
+    // Mencatat seluruh 100 juta sebagai uang muka akan mengakui uang yang
+    // belum diterima siapa pun.
     const p = pengakuanDokumen(dok("100000000", "10000000", [tgl("2026-11-01")]), HARI_INI);
 
-    expect(p.keadaan).toBe("ditangguhkan");
-    expect(p.ditangguhkan.toString()).toBe("10000000");
-    expect(p.proyeksi.toString()).toBe("90000000");
-    expect(p.piutang.toString()).toBe("0");
-    expect(p.diakui.toString()).toBe("0");
-  });
-
-  it("acara belum terjadi dan lunas: seluruhnya diterima di muka", () => {
-    const p = pengakuanDokumen(dok("10000000", "10000000", [tgl("2026-11-01")]), HARI_INI);
-
-    expect(p.ditangguhkan.toString()).toBe("10000000");
+    expect(p.keadaan).toBe("uang_muka");
+    expect(p.uangMuka.toString()).toBe("10000000");
+    expect(p.sisaUangMuka.toString()).toBe("90000000");
+    expect(p.diterimaDiMuka.toString()).toBe("0");
     expect(p.proyeksi.toString()).toBe("0");
   });
 
-  it("keempat angkanya SELALU berjumlah sama dengan nilai dokumennya", () => {
+  it("belum terjadi dan sudah LUNAS: PENDAPATAN DITERIMA DI MUKA", () => {
+    // Dibedakan dari uang muka dengan sengaja: yang lunas sudah tidak perlu
+    // ditagih lagi, yang baru panjar masih menyisakan tagihan.
+    const p = pengakuanDokumen(dok("10000000", "10000000", [tgl("2026-11-01")]), HARI_INI);
+
+    expect(p.keadaan).toBe("diterima_di_muka");
+    expect(p.diterimaDiMuka.toString()).toBe("10000000");
+    expect(p.uangMuka.toString()).toBe("0");
+    expect(p.sisaUangMuka.toString()).toBe("0");
+  });
+
+  it("SATU RUPIAH dari lunas sudah cukup membedakan keduanya", () => {
+    const kurangSerupiah = pengakuanDokumen(dok("10000000", "9999999", [tgl("2026-11-01")]), HARI_INI);
+    expect(kurangSerupiah.keadaan).toBe("uang_muka");
+    expect(kurangSerupiah.sisaUangMuka.toString()).toBe("1");
+
+    const pas = pengakuanDokumen(dok("10000000", "10000000", [tgl("2026-11-01")]), HARI_INI);
+    expect(pas.keadaan).toBe("diterima_di_muka");
+  });
+
+  it("kelima angkanya SELALU berjumlah sama dengan nilai dokumennya", () => {
     // Itu yang membuat laporannya tidak bisa kehilangan angka.
     const contoh = [
       dok("10000000", "0", [tgl("2026-10-01")]),
       dok("10000000", "4000000", [tgl("2026-10-01")]),
+      dok("10000000", "10000000", [tgl("2026-10-01")]),
       dok("10000000", "0", [tgl("2026-11-01")]),
       dok("10000000", "3000000", [tgl("2026-11-01")]),
       dok("10000000", "10000000", [tgl("2026-11-01")]),
@@ -101,7 +122,11 @@ describe("pengakuanDokumen", () => {
 
     for (const satu of contoh) {
       const p = pengakuanDokumen(satu, HARI_INI);
-      const jumlah = p.diakui.plus(p.ditangguhkan).plus(p.proyeksi);
+      const jumlah = p.diakui
+        .plus(p.uangMuka)
+        .plus(p.sisaUangMuka)
+        .plus(p.diterimaDiMuka)
+        .plus(p.proyeksi);
       expect(jumlah.toString(), JSON.stringify(satu)).toBe("10000000");
     }
   });
@@ -111,8 +136,9 @@ describe("pengakuanDokumen", () => {
     expect(sudah.piutang.toString()).toBe("0");
 
     const belum = pengakuanDokumen(dok("10000000", "12000000", [tgl("2026-11-01")]), HARI_INI);
-    expect(belum.ditangguhkan.toString()).toBe("10000000");
-    expect(belum.proyeksi.toString()).toBe("0");
+    expect(belum.keadaan).toBe("diterima_di_muka");
+    expect(belum.diterimaDiMuka.toString()).toBe("10000000");
+    expect(belum.sisaUangMuka.toString()).toBe("0");
   });
 });
 
@@ -121,16 +147,19 @@ describe("ringkasPengakuan", () => {
     const hasil = ringkasPengakuan(
       [
         dok("10000000", "4000000", [tgl("2026-10-01")]), // diakui 10jt, piutang 6jt
-        dok("20000000", "5000000", [tgl("2026-12-01")]), // muka 5jt, proyeksi 15jt
-        dok("30000000", "0", [tgl("2026-12-24")]), // proyeksi 30jt
+        dok("20000000", "5000000", [tgl("2026-12-01")]), // uang muka 5jt, sisa 15jt
+        dok("30000000", "30000000", [tgl("2026-12-20")]), // diterima di muka 30jt
+        dok("40000000", "0", [tgl("2026-12-24")]), // proyeksi 40jt
       ],
       HARI_INI,
     );
 
     expect(hasil.diakui.toString()).toBe("10000000");
     expect(hasil.piutang.toString()).toBe("6000000");
-    expect(hasil.ditangguhkan.toString()).toBe("5000000");
-    expect(hasil.proyeksi.toString()).toBe("45000000");
+    expect(hasil.uangMuka.toString()).toBe("5000000");
+    expect(hasil.sisaUangMuka.toString()).toBe("15000000");
+    expect(hasil.diterimaDiMuka.toString()).toBe("30000000");
+    expect(hasil.proyeksi.toString()).toBe("40000000");
   });
 
   it("daftar kosong menghasilkan nol, bukan galat", () => {

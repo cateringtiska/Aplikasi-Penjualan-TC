@@ -118,7 +118,9 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
 
       // Ketiganya selalu berjumlah sama dengan nilaiTagihan.
       penjualanDiakui: pengakuan.diakui,
-      diterimaDiMuka: pengakuan.ditangguhkan,
+      uangMuka: pengakuan.uangMuka,
+      sisaUangMuka: pengakuan.sisaUangMuka,
+      diterimaDiMuka: pengakuan.diterimaDiMuka,
       proyeksiPenjualan: pengakuan.proyeksi,
 
       totalPiutang: pengakuan.piutang,

@@ -78,8 +78,10 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
             terjadi
           </p>
           <p className="mt-1 text-muted-foreground">
-            Sudah dibayar di muka {rupiah(belumTerjadi.ditangguhkan)} · belum dibayar{" "}
-            {rupiah(belumTerjadi.proyeksi)}. Keduanya masuk piutang begitu acaranya lewat.
+            Uang muka masuk {rupiah(belumTerjadi.uangMuka)} · lunas di muka{" "}
+            {rupiah(belumTerjadi.diterimaDiMuka)} · belum dibayar{" "}
+            {rupiah(belumTerjadi.sisaUangMuka.plus(belumTerjadi.proyeksi))}. Yang belum dibayar
+            masuk piutang begitu acaranya lewat.
           </p>
         </div>
       ) : null}
