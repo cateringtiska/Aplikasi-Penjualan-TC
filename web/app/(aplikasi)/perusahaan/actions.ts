@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { BATAS_SYARAT } from "@/lib/batas";
-import { hapusGambar, unggahGambar } from "@/lib/penyimpanan";
+import {
+  hapusGambar,
+  hapusTandaTangan,
+  unggahGambar,
+  unggahTandaTangan,
+} from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
 
@@ -51,17 +56,20 @@ export async function simpanPerusahaan(
 
   // Gambar diunggah lebih dulu. Kalau salah satunya gagal, pengaturan teks
   // pun tidak jadi disimpan — supaya keadaan yang tersimpan tidak setengah.
-  for (const [medan, kolom, awalan] of [
-    ["logo", "logo_path", "logo"],
-    ["signature", "signature_path", "tanda-tangan"],
-  ] as const) {
-    const berkas = data.get(medan);
-    if (!(berkas instanceof File) || berkas.size === 0) continue;
+  const berkasLogo = data.get("logo");
+  if (berkasLogo instanceof File && berkasLogo.size > 0) {
+    const unggah = await unggahGambar(berkasLogo, "logo");
+    if (!unggah.ok) return { galat: { logo: unggah.pesan } };
+    perubahan.logo_path = unggah.tautan;
+  }
 
-    const unggah = await unggahGambar(berkas, awalan);
-    if (!unggah.ok) return { galat: { [medan]: unggah.pesan } };
-
-    perubahan[kolom] = unggah.tautan;
+  // Tanda tangan masuk ke bucket TERTUTUP, dan yang disimpan adalah jalur
+  // berkasnya — bukan tautan. Lihat catatan di lib/penyimpanan.ts.
+  const berkasTtd = data.get("signature");
+  if (berkasTtd instanceof File && berkasTtd.size > 0) {
+    const unggah = await unggahTandaTangan(berkasTtd);
+    if (!unggah.ok) return { galat: { signature: unggah.pesan } };
+    perubahan.signature_path = unggah.jalur;
   }
 
   try {
@@ -85,7 +93,7 @@ export async function simpanPerusahaan(
     await hapusGambar(sekarang?.logo_path ?? null);
   }
   if (perubahan.signature_path && sekarang?.signature_path !== perubahan.signature_path) {
-    await hapusGambar(sekarang?.signature_path ?? null);
+    await hapusTandaTangan(sekarang?.signature_path ?? null);
   }
 
   revalidatePath("/perusahaan");

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Halaman, KepalaHalaman } from "@/components/halaman";
+import { tautanTandaTangan } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 
@@ -31,7 +32,9 @@ export default async function HalamanPerusahaan() {
           payment_terms_default: p?.payment_terms_default ?? "",
           quotation_terms_default: p?.quotation_terms_default ?? "",
           logo_path: p?.logo_path ?? null,
-          signature_path: p?.signature_path ?? null,
+          // Pratinjau di layar juga memakai tautan bertanda waktu — tidak ada
+          // alamat tetap yang bisa disalin dari halaman pengaturan.
+          signature_path: await tautanTandaTangan(p?.signature_path ?? null),
         }}
       />
     </Halaman>

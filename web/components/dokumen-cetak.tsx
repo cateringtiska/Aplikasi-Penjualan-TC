@@ -37,7 +37,8 @@ export type BarisCetak = {
 export type Perusahaan = {
   company_name: string;
   logo_path: string | null;
-  signature_path: string | null;
+  /** Sudah berupa tautan siap pakai: tanda tangan ditandatangani di server. */
+  signature_url: string | null;
   signature_name: string | null;
   bank_name: string | null;
   bank_account_number: string | null;
@@ -105,7 +106,7 @@ function tautanGambar(jalur: string | null): string | null {
 
 export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
   const logo = tautanGambar(isi.perusahaan.logo_path);
-  const ttd = tautanGambar(isi.perusahaan.signature_path);
+  const ttd = isi.perusahaan.signature_url;
   const adaAcara = Boolean(isi.acara.tanggal || isi.acara.venue || isi.acara.tamu);
 
   return (

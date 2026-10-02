@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DokumenCetak } from "@/components/dokumen-cetak";
+import { tautanTandaTangan } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
 import { wajibPeran } from "@/lib/rbac";
 
@@ -115,7 +116,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
         perusahaan: {
           company_name: perusahaan?.company_name ?? "Perusahaan",
           logo_path: perusahaan?.logo_path ?? null,
-          signature_path: perusahaan?.signature_path ?? null,
+          signature_url: await tautanTandaTangan(perusahaan?.signature_path ?? null),
           signature_name: perusahaan?.signature_name ?? null,
           bank_name: perusahaan?.bank_name ?? null,
           bank_account_number: perusahaan?.bank_account_number ?? null,
