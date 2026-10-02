@@ -375,3 +375,76 @@ describe("potongan dan pembulatan", () => {
     expect(hasil.keadaan.galat?.biaya_tambahan).toMatch(/-65\.000/);
   });
 });
+
+/* ==========================================================================
+   TANGGAL ACARA LEBIH DARI SATU
+
+   Jumlah hari DIHITUNG dari banyaknya tanggal, tidak diketik. Diketik
+   terpisah, keduanya bisa berbeda — dan dokumen yang menyebut "3 hari"
+   dengan dua tanggal tercetak tidak akan ditegur siapa pun.
+
+   Tanggalnya dirakit sebagai tengah malam UTC. Kolomnya bertipe DATE; tengah
+   malam SETEMPAT di zona timur tersimpan mundur sehari, dokumennya tetap
+   terbit, dan hari yang salah itu baru ketahuan saat orang katering datang.
+   ========================================================================== */
+
+describe("tanggal acara", () => {
+  it("menghitung jumlah hari dari banyaknya tanggal", () => {
+    const hasil = coba({ event_dates: ["2026-05-10", "2026-05-12", "2026-05-15"] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.event_days).toBe(3);
+  });
+
+  it("menyimpan tanggal PALING AWAL di kolom tanggal acara", () => {
+    // Dikirim tidak urut; daftar quotation memakai kolom ini untuk mengurut.
+    const hasil = coba({ event_dates: ["2026-05-15", "2026-05-10", "2026-05-12"] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.event_date?.toISOString().slice(0, 10)).toBe("2026-05-10");
+  });
+
+  it("TIDAK menggeser tanggal sehari, di zona waktu mana pun", () => {
+    const hasil = coba({ event_dates: ["2026-05-10"] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    const t = hasil.tanggalAcara[0];
+
+    // Diperiksa per bagian UTC, bukan lewat toISOString saja: ini yang gagal
+    // kalau tanggalnya dirakit sebagai tengah malam setempat.
+    expect([t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()]).toEqual([2026, 5, 10]);
+    expect(t.getUTCHours()).toBe(0);
+  });
+
+  it("membuang tanggal kembar sebelum menghitung harinya", () => {
+    const hasil = coba({ event_dates: ["2026-05-10", "2026-05-10", "2026-05-11"] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.event_days).toBe(2);
+    expect(hasil.tanggalAcara).toHaveLength(2);
+  });
+
+  it("mengabaikan baris tanggal yang dibiarkan kosong", () => {
+    const hasil = coba({ event_dates: ["2026-05-10", "", "  "] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.event_days).toBe(1);
+  });
+
+  it("dokumen tanpa tanggal acara tetap boleh disimpan", () => {
+    const hasil = coba({ event_dates: [] });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.event_date).toBeNull();
+    expect(hasil.kolom.event_days).toBeNull();
+  });
+
+  it("MENOLAK bentuk tanggal yang bukan tahun-bulan-hari", () => {
+    // new Date("2026") menghasilkan 1 Januari tanpa mengeluh sedikit pun.
+    for (const buruk of ["2026", "10/05/2026", "besok"]) {
+      const hasil = coba({ event_dates: [buruk] });
+      expect(hasil.ok, `"${buruk}" seharusnya ditolak`).toBe(false);
+      if (!hasil.ok) expect(hasil.keadaan.galat?.event_dates).toMatch(/tidak terbaca/i);
+    }
+  });
+});

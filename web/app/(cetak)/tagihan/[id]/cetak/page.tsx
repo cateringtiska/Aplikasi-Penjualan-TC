@@ -32,6 +32,7 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
       include: {
         customers: true,
         invoice_charges: { orderBy: { id: "asc" } },
+        invoice_event_dates: { orderBy: { event_date: "asc" } },
         invoice_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -70,8 +71,7 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
         kontak: { nama: t.contact_person, telepon: t.contact_phone },
 
         acara: {
-          tanggal: t.event_date,
-          hari: t.event_days,
+          tanggal: t.invoice_event_dates.map((b) => b.event_date),
           tamu: t.guest_count,
           planner: t.fnb_planner,
           jam: t.event_time,

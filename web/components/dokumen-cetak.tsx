@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
 import { format } from "date-fns";
+import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
 import { romawi, rupiah } from "@/lib/uang";
 
@@ -57,8 +58,8 @@ export type IsiDokumen = {
   kontak: { nama: string | null; telepon: string | null };
 
   acara: {
-    tanggal: Date | null;
-    hari: number | null;
+    /** Seluruh tanggal acara, sudah terurut. Boleh kosong. */
+    tanggal: Date[];
     tamu: number | null;
     planner: string | null;
     jam: string | null;
@@ -107,7 +108,12 @@ function tautanGambar(jalur: string | null): string | null {
 export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
   const logo = tautanGambar(isi.perusahaan.logo_path);
   const ttd = isi.perusahaan.signature_url;
-  const adaAcara = Boolean(isi.acara.tanggal || isi.acara.venue || isi.acara.tamu);
+  // Diringkas sekali di sini, dipakai dua kali di bawah: tanggalnya dan
+  // jumlah harinya harus berasal dari daftar yang sama persis.
+  const tanggalAcara = ringkasTanggalAcara(isi.acara.tanggal);
+  const hariAcara = jumlahHariAcara(isi.acara.tanggal);
+
+  const adaAcara = Boolean(tanggalAcara || isi.acara.venue || isi.acara.tamu);
 
   return (
     <div className="text-[11px] leading-snug text-black">
@@ -163,11 +169,10 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           <tbody>
             <tr>
               <TdKepala>
-                <b>Tanggal Acara:</b>{" "}
-                {isi.acara.tanggal ? format(isi.acara.tanggal, "dd/MM/yyyy") : "-"}
+                <b>Tanggal Acara:</b> {tanggalAcara ?? "-"}
               </TdKepala>
               <TdKepala>
-                <b>Jumlah Hari:</b> {isi.acara.hari ?? "-"}
+                <b>Jumlah Hari:</b> {hariAcara > 0 ? hariAcara : "-"}
               </TdKepala>
               <TdKepala>
                 <b>Jumlah Tamu:</b> {isi.acara.tamu ?? "-"}

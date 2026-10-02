@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { FormDokumen } from "@/components/form-dokumen";
+import { FormDokumen, tanggalKosong } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../../data";
+import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
 import { simpanTagihan } from "../../simpan";
 
 export const metadata: Metadata = { title: "Ubah invoice" };
@@ -22,6 +23,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
       where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
       include: {
         invoice_charges: { orderBy: { id: "asc" } },
+        invoice_event_dates: { orderBy: { event_date: "asc" } },
         invoice_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -63,8 +65,11 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
           contact_phone: tagihan.contact_phone ?? "",
           tanggal: tanggalUntukInput(tagihan.invoice_date),
           tanggal_akhir: tanggalUntukInput(tagihan.due_date),
-          event_date: tanggalUntukInput(tagihan.event_date),
-          event_days: tagihan.event_days?.toString() ?? "",
+          event_dates: tanggalAcaraUntukFormulir(
+            tagihan.invoice_event_dates,
+            tagihan.event_date,
+            tagihan.event_days,
+          ).map((s) => tanggalKosong(s)),
           event_type: tagihan.event_type ?? "",
           event_time: tagihan.event_time ?? "",
           guest_count: tagihan.guest_count?.toString() ?? "",

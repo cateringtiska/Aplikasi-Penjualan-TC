@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { FormDokumen, type IsiAwal } from "@/components/form-dokumen";
+import { FormDokumen, type IsiAwal, tanggalKosong } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
-import { hariIni, ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../data";
+import { hariIni, ISTILAH_TAGIHAN, pilihanForm } from "../data";
+import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
 import { simpanTagihan } from "../simpan";
 
 export const metadata: Metadata = { title: "Invoice baru" };
@@ -32,8 +33,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     contact_phone: "",
     tanggal: hariIni(),
     tanggal_akhir: hariIni(14),
-    event_date: "",
-    event_days: "",
+    event_dates: [],
     event_type: "",
     event_time: "",
     guest_count: "",
@@ -59,6 +59,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       include: {
         invoices: { take: 1, select: { id: true } },
         quotation_charges: { orderBy: { id: "asc" } },
+        quotation_event_dates: { orderBy: { event_date: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -84,8 +85,11 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       customer_id: p.customer_id.toString(),
       contact_person: p.contact_person ?? "",
       contact_phone: p.contact_phone ?? "",
-      event_date: tanggalUntukInput(p.event_date),
-      event_days: p.event_days?.toString() ?? "",
+      event_dates: tanggalAcaraUntukFormulir(
+        p.quotation_event_dates,
+        p.event_date,
+        p.event_days,
+      ).map((s) => tanggalKosong(s)),
       event_type: p.event_type ?? "",
       event_time: p.event_time ?? "",
       guest_count: p.guest_count?.toString() ?? "",

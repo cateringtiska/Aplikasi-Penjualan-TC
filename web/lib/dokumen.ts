@@ -2,6 +2,7 @@ import type { Decimal } from "decimal.js";
 import { z } from "zod";
 
 import { BATAS_CATATAN, BATAS_SYARAT } from "./batas";
+import { rapikanTanggal } from "./tanggal";
 import { d, hitungTotalDokumen, uraikanRupiah } from "./uang";
 
 /* ==========================================================================
@@ -56,8 +57,10 @@ export const skemaDokumen = z.object({
   contact_phone: z.string().trim().max(255).nullable().optional(),
   tanggal: z.string().min(1, "Tanggal belum diisi."),
   tanggal_akhir: z.string().min(1, "Tanggal belum diisi."),
-  event_date: z.string().nullable().optional(),
-  event_days: z.string().nullable().optional(),
+  // Satu dokumen bisa menanggung acara beberapa hari, dan tanggalnya tidak
+  // selalu berurutan. "Jumlah hari" TIDAK diterima dari formulir — ia
+  // dihitung dari banyaknya tanggal, supaya keduanya tidak bisa berbeda.
+  event_dates: z.array(z.string()).default([]),
   event_type: z.string().trim().max(255).nullable().optional(),
   event_time: z.string().trim().max(255).nullable().optional(),
   guest_count: z.string().nullable().optional(),
@@ -97,6 +100,7 @@ export type HasilSiap =
       f: IsiDokumenTervalidasi;
       items: BarisSiap[];
       tambahan: BarisTambahanSiap[];
+      tanggalAcara: Date[];
       kolom: KolomDokumen;
     }
   | { ok: false; keadaan: KeadaanDokumen };
@@ -288,6 +292,40 @@ export function siapkanDokumen(
     });
   }
 
+  // Tanggal acara. Dikirim sebagai "2026-05-10" oleh pemilih tanggal, dan
+  // dibaca sebagai TENGAH MALAM UTC — bukan tengah malam setempat. Kolomnya
+  // bertipe DATE; tengah malam setempat di zona timur akan tersimpan mundur
+  // satu hari, dan acara yang tercetak bergeser sehari tanpa gejala apa pun.
+  const tanggalAcara: Date[] = [];
+  for (const [i, mentahTanggal] of f.event_dates.entries()) {
+    const teks = String(mentahTanggal ?? "").trim();
+    if (teks === "") continue;
+
+    // Dirakit dari potongannya, BUKAN diserahkan ke new Date(teks).
+    // new Date("2026-05-10") kebetulan menghasilkan tengah malam UTC, tetapi
+    // itu perilaku yang bergantung pada bentuk teksnya: new Date("2026")
+    // menjadi 1 Januari, dan bentuk lain menjadi tengah malam SETEMPAT —
+    // yang di zona timur tersimpan mundur sehari pada kolom bertipe DATE.
+    // Dokumennya tetap terbit, hanya menyebutkan hari yang salah.
+    const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(teks);
+    const tanggal = cocok
+      ? new Date(Date.UTC(Number(cocok[1]), Number(cocok[2]) - 1, Number(cocok[3])))
+      : null;
+
+    if (!tanggal || Number.isNaN(tanggal.getTime())) {
+      return {
+        ok: false,
+        keadaan: { galat: { event_dates: `Tanggal acara ke-${i + 1} tidak terbaca.` } },
+      };
+    }
+    tanggalAcara.push(tanggal);
+  }
+
+  // Diurutkan dan dibuang yang kembar DI SINI, bukan saat ditampilkan.
+  // Tanggal kembar yang lolos akan menghitung jumlah hari lebih banyak
+  // daripada yang benar-benar terjadi, dan angka itu ikut tercetak.
+  const tanggalRapi = rapikanTanggal(tanggalAcara);
+
   const teksDelivery = String(f.delivery_amount ?? "").trim();
   if (teksDelivery !== "" && uraikanRupiah(teksDelivery) === null) {
     return {
@@ -386,12 +424,16 @@ export function siapkanDokumen(
     f,
     items,
     tambahan,
+    tanggalAcara: tanggalRapi,
     kolom: {
       customer_id: BigInt(f.customer_id),
       contact_person: kosongkanStrip(f.contact_person),
       contact_phone: kosongkanStrip(f.contact_phone),
-      event_date: f.event_date ? new Date(f.event_date) : null,
-      event_days: angkaBulat(f.event_days),
+      // Tanggal paling awal tetap disimpan di kolomnya sendiri: daftar
+      // quotation memakainya, dan membiarkannya berarti tidak ada tempat
+      // lain yang perlu ikut berubah.
+      event_date: tanggalRapi[0] ?? null,
+      event_days: tanggalRapi.length > 0 ? tanggalRapi.length : null,
       event_type: kosongkanStrip(f.event_type),
       event_time: kosongkanStrip(f.event_time),
       guest_count: angkaBulat(f.guest_count),

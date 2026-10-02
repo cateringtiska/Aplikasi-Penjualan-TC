@@ -11,6 +11,7 @@ import {
   siapkanDokumen,
 } from "@/lib/dokumen";
 import { tulisBiayaTambahanPenawaran } from "@/lib/biaya-tambahan";
+import { tulisTanggalAcaraPenawaran } from "@/lib/tanggal-acara";
 import { nomorPenawaranBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
@@ -29,7 +30,7 @@ export async function simpanPenawaran(
   const siap = siapkanDokumen(mentah, { labelTanggalAkhir: "Tanggal berlaku" });
   if (!siap.ok) return siap.keadaan;
 
-  const { f, items, tambahan, kolom } = siap;
+  const { f, items, tambahan, tanggalAcara, kolom } = siap;
 
   let idHasil: string;
 
@@ -113,6 +114,7 @@ export async function simpanPenawaran(
       // memuat jumlahnya; kalau barisnya gagal masuk, dokumennya menagih
       // angka yang tidak bisa dijelaskan rinciannya sendiri.
       await tulisBiayaTambahanPenawaran(idPenawaran, tambahan, tx);
+      await tulisTanggalAcaraPenawaran(idPenawaran, tanggalAcara, tx);
 
       return idPenawaran.toString();
     });

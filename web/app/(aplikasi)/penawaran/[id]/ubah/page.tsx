@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { FormDokumen } from "@/components/form-dokumen";
+import { FormDokumen, tanggalKosong } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
+import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
 import { simpanPenawaran } from "../../simpan";
 
 export const metadata: Metadata = { title: "Ubah quotation" };
@@ -24,6 +25,7 @@ export default async function HalamanUbahPenawaran({
       where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
       include: {
         quotation_charges: { orderBy: { id: "asc" } },
+        quotation_event_dates: { orderBy: { event_date: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -65,8 +67,11 @@ export default async function HalamanUbahPenawaran({
           contact_phone: penawaran.contact_phone ?? "",
           tanggal: tanggalUntukInput(penawaran.quotation_date),
           tanggal_akhir: tanggalUntukInput(penawaran.valid_until),
-          event_date: tanggalUntukInput(penawaran.event_date),
-          event_days: penawaran.event_days?.toString() ?? "",
+          event_dates: tanggalAcaraUntukFormulir(
+            penawaran.quotation_event_dates,
+            penawaran.event_date,
+            penawaran.event_days,
+          ).map((s) => tanggalKosong(s)),
           event_type: penawaran.event_type ?? "",
           event_time: penawaran.event_time ?? "",
           guest_count: penawaran.guest_count?.toString() ?? "",

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { jumlahHariAcara } from "@/lib/tanggal";
 import { d, hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
 
 import type { KeadaanDokumen } from "@/lib/dokumen";
@@ -35,8 +36,7 @@ export type IsiAwal = {
   contact_phone: string;
   tanggal: string;
   tanggal_akhir: string;
-  event_date: string;
-  event_days: string;
+  event_dates: BarisTanggalForm[];
   event_type: string;
   event_time: string;
   guest_count: string;
@@ -79,6 +79,13 @@ export type BarisTambahanForm = {
 
 export function tambahanKosong(): BarisTambahanForm {
   return { kunci: crypto.randomUUID(), label: "", amount: "" };
+}
+
+/** Satu tanggal acara. Kuncinya supaya baris tidak berpindah saat dihapus. */
+export type BarisTanggalForm = { kunci: string; tanggal: string };
+
+export function tanggalKosong(tanggal = ""): BarisTanggalForm {
+  return { kunci: crypto.randomUUID(), tanggal };
 }
 
 export function barisKosong(): BarisForm {
@@ -152,6 +159,13 @@ export function FormDokumen({
     }));
   }
 
+  function ubahTanggal(index: number, tanggal: string) {
+    setF((lama) => ({
+      ...lama,
+      event_dates: lama.event_dates.map((b, i) => (i === index ? { ...b, tanggal } : b)),
+    }));
+  }
+
   function ubahTambahan(index: number, perubahan: Partial<BarisTambahanForm>) {
     setF((lama) => ({
       ...lama,
@@ -211,6 +225,18 @@ export function FormDokumen({
     ],
   );
 
+  // Dihitung dengan aturan yang sama persis dengan yang dipakai server,
+  // supaya angka di layar tidak pernah berbeda dari yang tersimpan.
+  const jumlahHari = useMemo(
+    () =>
+      jumlahHariAcara(
+        f.event_dates
+          .map((b) => (b.tanggal ? new Date(b.tanggal) : null))
+          .filter((x): x is Date => x !== null && !Number.isNaN(x.getTime())),
+      ),
+    [f.event_dates],
+  );
+
   const muatan = JSON.stringify({
     id: f.id ?? null,
     customer_id: f.customer_id,
@@ -218,8 +244,7 @@ export function FormDokumen({
     contact_phone: f.contact_phone,
     tanggal: f.tanggal,
     tanggal_akhir: f.tanggal_akhir,
-    event_date: f.event_date || null,
-    event_days: f.event_days || null,
+    event_dates: f.event_dates.map((b) => b.tanggal).filter((s) => s !== ""),
     event_type: f.event_type,
     event_time: f.event_time,
     guest_count: f.guest_count || null,
@@ -379,22 +404,63 @@ export function FormDokumen({
         keterangan="Dicetak di kepala dokumen. Boleh dikosongkan."
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Bidang label="Tanggal acara" nama="event_date">
-            <Input
-              id="event_date"
-              type="date"
-              value={f.event_date}
-              onChange={(e) => ubah("event_date", e.target.value)}
-            />
+          <Bidang
+            label="Tanggal acara"
+            nama="event_dates"
+            galat={keadaan.galat?.event_dates}
+          >
+            <div className="flex flex-col gap-2">
+              {f.event_dates.map((baris, i) => (
+                <div key={baris.kunci} className="flex items-center gap-2">
+                  <Input
+                    id={i === 0 ? "event_dates" : undefined}
+                    type="date"
+                    value={baris.tanggal}
+                    onChange={(e) => ubahTanggal(i, e.target.value)}
+                    aria-label={`Tanggal acara ke-${i + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() =>
+                      ubah("event_dates", f.event_dates.filter((_, y) => y !== i))
+                    }
+                    aria-label={`Hapus tanggal acara ke-${i + 1}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => ubah("event_dates", [...f.event_dates, tanggalKosong()])}
+              >
+                <Plus className="size-4" />
+                Tambah tanggal
+              </Button>
+            </div>
           </Bidang>
+
+          {/* Jumlah hari DIHITUNG, tidak diketik. Diketik terpisah, ia bisa
+              berbeda dari tanggalnya — dan dokumen yang menyebut "3 hari"
+              dengan dua tanggal tercetak tidak akan ditegur siapa pun. */}
           <Bidang label="Jumlah hari" nama="event_days">
-            <Input
-              id="event_days"
-              inputMode="numeric"
-              value={f.event_days}
-              onChange={(e) => ubah("event_days", e.target.value)}
-              placeholder="1"
-            />
+            <p className="flex h-9 items-center text-sm">
+              {jumlahHari > 0 ? (
+                <span>
+                  {jumlahHari} hari{" "}
+                  <span className="text-muted-foreground">· dihitung dari tanggalnya</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Belum ada tanggal</span>
+              )}
+            </p>
           </Bidang>
           <Bidang label="Jam" nama="event_time">
             <Input

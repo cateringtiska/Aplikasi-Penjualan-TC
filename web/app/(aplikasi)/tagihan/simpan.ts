@@ -11,6 +11,7 @@ import {
   siapkanDokumen,
 } from "@/lib/dokumen";
 import { tulisBiayaTambahanTagihan } from "@/lib/biaya-tambahan";
+import { tulisTanggalAcaraTagihan } from "@/lib/tanggal-acara";
 import { salinPerkiraanBiaya } from "@/lib/margin";
 import {
   nomorDokumenBerikutnya,
@@ -39,7 +40,7 @@ export async function simpanTagihan(
   const siap = siapkanDokumen(mentah, { labelTanggalAkhir: "Jatuh tempo" });
   if (!siap.ok) return siap.keadaan;
 
-  const { f, items, tambahan, kolom } = siap;
+  const { f, items, tambahan, tanggalAcara, kolom } = siap;
 
   // Dikirim lewat medan tersembunyi ketika tagihan dibuat dari penawaran.
   const dariPenawaran = String(data.get("dari_penawaran") ?? "").trim();
@@ -137,6 +138,7 @@ export async function simpanTagihan(
       // memuat jumlahnya; kalau barisnya gagal masuk, dokumennya menagih
       // angka yang tidak bisa dijelaskan rinciannya sendiri.
       await tulisBiayaTambahanTagihan(idTagihan, tambahan, tx);
+      await tulisTanggalAcaraTagihan(idTagihan, tanggalAcara, tx);
 
       // Grand total mungkin berubah saat diedit, jadi statusnya dihitung ulang
       // supaya "lunas" dan "jatuh tempo" tetap mencerminkan angka terbaru.

@@ -11,6 +11,7 @@ import { Halaman } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { AksiStatusPenawaran } from "./aksi-status";
@@ -38,6 +39,7 @@ export default async function HalamanDetailPenawaran({
       // hanya satu, jadi cukup ambil yang pertama.
       invoices: { take: 1, select: { id: true, invoice_number: true } },
       quotation_charges: { orderBy: { id: "asc" } },
+      quotation_event_dates: { orderBy: { event_date: "asc" } },
       quotation_items: {
         where: { parent_id: null },
         orderBy: { id: "asc" },
@@ -55,10 +57,14 @@ export default async function HalamanDetailPenawaran({
 
   const tagihan = p.invoices[0] ?? null;
 
+  const hariAcara = jumlahHariAcara(p.quotation_event_dates.map((b) => b.event_date));
+
   const acara = [
     ["Jenis acara", p.event_type],
-    ["Tanggal acara", p.event_date ? format(p.event_date, "d MMMM yyyy", { locale: localeId }) : null],
-    ["Jumlah hari", p.event_days ? `${p.event_days} hari` : null],
+    // Diringkas dengan fungsi yang sama persis dengan yang dipakai dokumen
+    // cetaknya, supaya layar dan cetakan tidak pernah menyebut hari berbeda.
+    ["Tanggal acara", ringkasTanggalAcara(p.quotation_event_dates.map((b) => b.event_date))],
+    ["Jumlah hari", hariAcara > 0 ? `${hariAcara} hari` : null],
     ["Jam", p.event_time],
     ["Jumlah tamu", p.guest_count ? `${p.guest_count} orang` : null],
     ["Venue", p.venue],

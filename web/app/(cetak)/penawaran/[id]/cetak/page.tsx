@@ -33,6 +33,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
       include: {
         customers: true,
         quotation_charges: { orderBy: { id: "asc" } },
+        quotation_event_dates: { orderBy: { event_date: "asc" } },
         quotation_items: {
           where: { parent_id: null },
           orderBy: { id: "asc" },
@@ -71,8 +72,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
         kontak: { nama: p.contact_person, telepon: p.contact_phone },
 
         acara: {
-          tanggal: p.event_date,
-          hari: p.event_days,
+          tanggal: p.quotation_event_dates.map((b) => b.event_date),
           tamu: p.guest_count,
           planner: p.fnb_planner,
           jam: p.event_time,
