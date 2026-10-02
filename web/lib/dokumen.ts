@@ -310,12 +310,20 @@ export function siapkanDokumen(
 
     if (label === "" && teks === "") continue;
 
+    // MINUS DIIZINKAN di sini, tidak seperti pada baris item. Pembulatan
+    // dan diskon adalah baris yang MENGURANGI, dan keduanya memang ditulis
+    // di tempat ini pada dokumen katering: "Rounded -65.000".
+    //
+    // Pada baris item minus tetap ditolak, karena di sana ia selalu salah
+    // ketik — potongan tidak pernah ditulis sebagai harga satuan minus.
     const nilai = teks === "" ? d(0) : uraikanRupiah(teks);
-    if (nilai === null || nilai.isNegative()) {
+    if (nilai === null) {
       return {
         ok: false,
         keadaan: {
-          galat: { biaya_tambahan: `Biaya tambahan ${i + 1}: isi angka saja, dan tidak boleh minus.` },
+          galat: {
+            biaya_tambahan: `Biaya tambahan ${i + 1}: isi angka saja — contoh 350.000, atau -65.000 untuk potongan.`,
+          },
         },
       };
     }
@@ -355,6 +363,23 @@ export function siapkanDokumen(
     delivery_amount: uraikanRupiah(f.delivery_amount) ?? 0,
     biaya_tambahan: tambahan,
   });
+
+  // Sejak potongan diizinkan, total dokumen bisa menjadi MINUS — dan dokumen
+  // bertotal minus berarti perusahaan yang berutang kepada customer. Hampir
+  // selalu itu satu angka nol kelebihan pada baris potongan.
+  //
+  // Dijaga di sini, bukan dengan membatasi besar potongannya: potongan yang
+  // tepat sebesar nilai dokumen itu sah — acara yang digratiskan seluruhnya.
+  if (total.grand_total.isNegative()) {
+    return {
+      ok: false,
+      keadaan: {
+        galat: {
+          biaya_tambahan: `Potongannya melebihi nilai dokumen, jadi totalnya menjadi ${total.grand_total.toFixed(0)}. Periksa lagi angkanya.`,
+        },
+      },
+    };
+  }
 
   return {
     ok: true,

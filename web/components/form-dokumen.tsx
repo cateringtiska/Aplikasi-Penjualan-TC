@@ -555,7 +555,7 @@ export function FormDokumen({
       {/* ---------- Biaya tambahan bernama ---------- */}
       <Bagian
         judul="Biaya tambahan"
-        keterangan="Di luar service charge dan PB1, sama seperti delivery. Namanya bebas — misalnya “Tim Servis utk Menu Buffet (1 orang)”."
+        keterangan="Di luar service charge dan PB1, sama seperti delivery. Namanya bebas — misalnya “Tim Servis utk Menu Buffet (1 orang)”. Isi dengan angka minus untuk potongan atau pembulatan, misalnya -65.000."
       >
         {keadaan.galat?.biaya_tambahan ? (
           <p className="text-sm text-destructive">{keadaan.galat.biaya_tambahan}</p>
@@ -662,7 +662,7 @@ export function FormDokumen({
             {total.delivery_amount.gt(0) ? (
               <Angka label="Delivery" nilai={rupiah(total.delivery_amount)} />
             ) : null}
-            {total.biaya_tambahan_amount.gt(0) ? (
+            {!total.biaya_tambahan_amount.isZero() ? (
               <Angka label="Tambahan" nilai={rupiah(total.biaya_tambahan_amount)} />
             ) : null}
             <Angka label="Total" nilai={rupiah(total.grand_total)} tebal />

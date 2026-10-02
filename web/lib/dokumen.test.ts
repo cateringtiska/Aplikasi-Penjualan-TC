@@ -128,14 +128,6 @@ describe("biaya tambahan", () => {
     expect(hasil.keadaan.galat?.biaya_tambahan).toMatch(/namanya belum diisi/i);
   });
 
-  it("MENOLAK jumlah minus", () => {
-    const hasil = coba({ biaya_tambahan: [{ label: "Potongan", amount: "-500.000" }] });
-
-    expect(hasil.ok).toBe(false);
-    if (hasil.ok) return;
-    expect(hasil.keadaan.galat?.biaya_tambahan).toMatch(/tidak boleh minus/i);
-  });
-
   it("menerima baris bernama yang jumlahnya belum diisi", () => {
     // Namanya sudah diketik, angkanya menyusul. Membuangnya diam-diam akan
     // menghapus ketikan orang tanpa memberitahu.
@@ -292,5 +284,94 @@ describe("judul tanpa angka", () => {
     expect(hasil.ok).toBe(false);
     if (hasil.ok) return;
     expect(hasil.keadaan.galat?.items).toMatch(/jumlah tidak boleh minus/i);
+  });
+});
+
+/* ==========================================================================
+   POTONGAN DAN PEMBULATAN
+
+   Diminta pemiliknya: baris "Rounded -65.000". Pembulatan dan diskon adalah
+   baris yang MENGURANGI, dan di dokumen katering keduanya memang ditulis di
+   bagian biaya tambahan, sesudah service charge dan PB1.
+
+   Minus tetap ditolak pada BARIS ITEM, karena di sana ia selalu salah ketik —
+   potongan tidak pernah ditulis sebagai harga satuan minus.
+
+   Penjagaan yang menggantikannya: total dokumen tidak boleh minus. Dokumen
+   bertotal minus berarti perusahaan yang berutang kepada customer, dan
+   hampir selalu itu satu angka nol kelebihan pada baris potongannya.
+   ========================================================================== */
+
+describe("potongan dan pembulatan", () => {
+  it("menerima biaya tambahan yang minus", () => {
+    const hasil = coba({
+      biaya_tambahan: [
+        { label: "Tim Servis utk Menu Buffet (1 orang)", amount: "350.000" },
+        { label: "Rounded", amount: "-65000" },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+
+    // 2.747.500 + 350.000 - 65.000
+    expect(hasil.kolom.grand_total).toBe("3032500.00");
+    expect(hasil.tambahan[1].amount.toString()).toBe("-65000");
+  });
+
+  it("tidak mengubah PB1 maupun service charge", () => {
+    // Potongan di sini berlaku SESUDAH kedua pungutan. Yang ingin memotong
+    // sebelum pajak harus menurunkan harga itemnya, bukan menambah baris ini.
+    const tanpa = coba({ service_charge_percent: "10", pb1_enabled: true, pb1_percent: "10" });
+    const dengan = coba({
+      service_charge_percent: "10",
+      pb1_enabled: true,
+      pb1_percent: "10",
+      biaya_tambahan: [{ label: "Diskon", amount: "-500000" }],
+    });
+
+    if (!tanpa.ok || !dengan.ok) throw new Error("tidak lolos validasi");
+
+    expect(dengan.kolom.service_charge_amount).toBe(tanpa.kolom.service_charge_amount);
+    expect(dengan.kolom.pb1_amount).toBe(tanpa.kolom.pb1_amount);
+  });
+
+  it("menerima potongan yang tepat menghabiskan nilai dokumen", () => {
+    // Acara yang digratiskan seluruhnya — sah, jadi yang dijaga bukan besar
+    // potongannya melainkan totalnya.
+    const hasil = coba({
+      biaya_tambahan: [{ label: "Compliment penuh", amount: "-2747500" }],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.grand_total).toBe("0.00");
+  });
+
+  it("MENOLAK potongan yang membuat total menjadi minus", () => {
+    // Satu angka nol kelebihan: -650.000 diketik -6.500.000.
+    const hasil = coba({
+      biaya_tambahan: [{ label: "Rounded", amount: "-6500000" }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.biaya_tambahan).toMatch(/melebihi nilai dokumen/i);
+  });
+
+  it("TETAP MENOLAK harga minus pada baris item", () => {
+    const hasil = coba({
+      items: [{ item_name: "Nasi box", qty: "35", price: "-78500", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/harga tidak boleh minus/i);
+  });
+
+  it("menyebutkan contoh minus pada angka yang tidak terbaca", () => {
+    const hasil = coba({ biaya_tambahan: [{ label: "Rounded", amount: "kurangi" }] });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.biaya_tambahan).toMatch(/-65\.000/);
   });
 });
