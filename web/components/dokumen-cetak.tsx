@@ -21,6 +21,7 @@ export type BarisCetak = {
   id: string;
   item_name: string;
   unit: string | null;
+  day: string;
   qty: string;
   price: string;
   subtotal: string;
@@ -201,6 +202,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           <tr className="bg-[#f0f0f0]">
             <Th lebar="5%">No</Th>
             <Th>Deskripsi</Th>
+            <Th lebar="7%">Hari</Th>
             <Th lebar="8%">Qty</Th>
             <Th lebar="10%">Satuan</Th>
             <Th lebar="15%" kanan>
@@ -252,6 +254,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                   </Td>
                   {/* Judul kelompok dibiarkan kosong, bukan diisi angka nol —
                       nol terbaca sebagai harga, kosong terbaca sebagai judul. */}
+                  <Td>{indukBernilai ? Number(b.day).toLocaleString("id-ID") : ""}</Td>
                   <Td>{indukBernilai ? Number(b.qty).toLocaleString("id-ID") : ""}</Td>
                   <Td>{indukBernilai ? (b.unit ?? "") : ""}</Td>
                   <Td kanan>
@@ -268,6 +271,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                     <Td>
                       <span className="ml-3">{a.item_name}</span>
                     </Td>
+                    <Td>{Number(b.day).toLocaleString("id-ID")}</Td>
                     <Td>{Number(a.qty).toLocaleString("id-ID")}</Td>
                     <Td>{a.unit ?? ""}</Td>
                     <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.price)}</Td>
@@ -282,7 +286,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                     perlu mencocokkan pembulatan di dua tempat. */}
                 {perluTotalKelompok(kelompok) ? (
                   <tr className="break-inside-avoid bg-[#f4f4f4] font-bold">
-                    <td className="border border-[#999] px-1.5 py-1" colSpan={5}>
+                    <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
                       Total - {romawi(i + 1)}
                     </td>
                     <td className="border border-[#999] px-1.5 py-1 text-right">
@@ -449,7 +453,7 @@ function Td({ children, kanan }: { children?: React.ReactNode; kanan?: boolean }
 function TrTotal({ label, nilai }: { label: string; nilai: string }) {
   return (
     <tr className="break-inside-avoid bg-[#f9f9f9] font-bold">
-      <td className="border border-[#999] px-1.5 py-1" colSpan={5}>
+      <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
         {label}
       </td>
       <td className="border border-[#999] px-1.5 py-1 text-right">{nilai}</td>

@@ -83,6 +83,7 @@ export default async function CetakPenawaran({ params }: PageProps<"/penawaran/[
         baris: p.quotation_items.map((b) => ({
           id: b.id.toString(),
           item_name: b.item_name,
+          day: b.day.toString(),
           unit: b.unit,
           qty: b.qty.toString(),
           price: b.price.toString(),

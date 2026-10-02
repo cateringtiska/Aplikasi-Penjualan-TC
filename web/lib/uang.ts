@@ -43,6 +43,18 @@ export function bulatkanRupiah(nilai: NilaiUang): Decimal {
    ------------------------------------------------------------------------- */
 
 export type BarisItem = {
+  /**
+   * Berapa HARI baris ini disajikan.
+   *
+   * Dokumen katering menghitung satu baris sebagai HARI x JUMLAH x HARGA.
+   * Acara tiga hari dengan 130 box per hari adalah 390 box — dan menuliskan
+   * 390 pada satu baris menghilangkan keterangan bahwa yang dipesan 130 per
+   * hari selama tiga hari, yang justru itu yang dipakai dapur menyiapkannya.
+   *
+   * Kosong berarti SATU, bukan nol. Itu yang membuat seluruh dokumen yang
+   * sudah terbit menghasilkan angka yang sama persis seperti sebelumnya.
+   */
+  day?: NilaiUang;
   qty: NilaiUang;
   price: NilaiUang;
   /** Item compliment tetap tercetak di dokumen, tetapi dihitung nol. */
@@ -83,6 +95,10 @@ export function ratakanBaris(items: BarisBerAnak[]): BarisItem[] {
       is_compliment: a.is_compliment ?? induk.is_compliment,
       charge_service: a.charge_service ?? induk.charge_service,
       charge_pb1: a.charge_pb1 ?? induk.charge_pb1,
+      // Hari milik KELOMPOKNYA. Satu stall yang disajikan tiga hari berarti
+      // seluruh isinya disajikan tiga hari; meminta angka hari di setiap
+      // sub-item hanya membuka peluang keduanya menyimpang.
+      day: a.day ?? induk.day,
     }));
 
     // Begitu ada sub-item berharga, induknya menjadi JUDUL KELOMPOK dan
@@ -104,10 +120,27 @@ export function punyaAnakBerharga(induk: BarisBerAnak): boolean {
   return (induk.children ?? []).some((a) => d(a.qty).times(d(a.price)).gt(0));
 }
 
+/**
+ * Berapa hari satu baris dihitung.
+ *
+ * Kosong berarti satu. d() sendiri mengubah kosong menjadi NOL, dan nol di
+ * sini akan mengalikan seluruh baris menjadi nol — dokumen tetap terbit,
+ * hanya tidak menagih apa pun.
+ */
+export function hariBaris(item: BarisItem): Decimal {
+  const hari = d(item.day);
+  return hari.isZero() ? new Decimal(1) : hari;
+}
+
+/** Nilai satu baris SEBELUM compliment diperhitungkan: hari x jumlah x harga. */
+function nilaiPenuh(item: BarisItem): Decimal {
+  return hariBaris(item).times(d(item.qty)).times(d(item.price));
+}
+
 /** Nilai satu baris. Compliment selalu nol. */
 export function subtotalBaris(item: BarisItem): Decimal {
   if (item.is_compliment) return new Decimal(0);
-  return d(item.qty).times(d(item.price));
+  return nilaiPenuh(item);
 }
 
 /** Jumlah seluruh baris — inilah "subtotal" dokumen. */
@@ -128,7 +161,7 @@ export function hitungSubtotal(items: BarisItem[]): Decimal {
 export function dasarServiceCharge(items: BarisItem[]): Decimal {
   return items
     .filter((item) => (item.charge_service ?? true) && !item.is_compliment)
-    .reduce((jumlah, item) => jumlah.plus(d(item.qty).times(d(item.price))), new Decimal(0));
+    .reduce((jumlah, item) => jumlah.plus(nilaiPenuh(item)), new Decimal(0));
 }
 
 /**
@@ -146,7 +179,7 @@ export function dasarServiceCharge(items: BarisItem[]): Decimal {
 export function dasarPb1(items: BarisItem[]): Decimal {
   return items
     .filter((item) => (item.charge_pb1 ?? true) && !item.is_compliment)
-    .reduce((jumlah, item) => jumlah.plus(d(item.qty).times(d(item.price))), new Decimal(0));
+    .reduce((jumlah, item) => jumlah.plus(nilaiPenuh(item)), new Decimal(0));
 }
 
 /* -------------------------------------------------------------------------

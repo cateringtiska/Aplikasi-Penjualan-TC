@@ -712,3 +712,101 @@ describe("total per kelompok", () => {
     expect(total.grand_total.toString()).toBe("42900000");
   });
 });
+
+/* ==========================================================================
+   HARI SEBAGAI PENGALI BARIS
+
+   Dokumen katering menghitung satu baris sebagai HARI x JUMLAH x HARGA.
+   Acara tiga hari dengan 130 box per hari adalah 390 box — dan menuliskannya
+   sebagai satu baris berjumlah 390 menghilangkan keterangan bahwa yang
+   dipesan 130 per hari, yang justru itu yang dipakai dapur menyiapkannya.
+
+   Yang paling keras dijaga: KOSONG BERARTI SATU, bukan nol. Kalau kosong
+   terbaca nol, SELURUH dokumen yang sudah terbit mendadak bernilai nol —
+   dan tetap terbit, hanya tidak menagih apa pun.
+   ========================================================================== */
+
+describe("hari sebagai pengali", () => {
+  it("mengalikan hari, jumlah, dan harga", () => {
+    // 3 hari x 130 box x 58.500
+    expect(subtotalBaris({ day: 3, qty: 130, price: 58_500 }).toString()).toBe("22815000");
+  });
+
+  it("KOSONG BERARTI SATU, bukan nol", () => {
+    // Inti penjagaannya. d() mengubah kosong menjadi nol, dan nol di sini
+    // akan menolkan seluruh dokumen yang pernah terbit sebelum kolom ini ada.
+    expect(subtotalBaris({ qty: 130, price: 58_500 }).toString()).toBe("7605000");
+    expect(subtotalBaris({ day: null, qty: 130, price: 58_500 }).toString()).toBe("7605000");
+    expect(subtotalBaris({ day: "", qty: 130, price: 58_500 }).toString()).toBe("7605000");
+    expect(subtotalBaris({ day: 0, qty: 130, price: 58_500 }).toString()).toBe("7605000");
+  });
+
+  it("ikut mengalikan DASAR service charge dan PB1", () => {
+    // Kalau hari hanya dipakai di subtotal, pungutannya akan dihitung dari
+    // satu hari saja — dokumen menagih tiga hari tetapi memungut sehari.
+    const hasil = hitungTotalDokumen({
+      items: [{ day: 3, qty: 100, price: 100_000 }],
+      service_charge_percent: 10,
+      pb1_enabled: true,
+      pb1_percent: 10,
+    });
+
+    expect(hasil.subtotal.toString()).toBe("30000000");
+    expect(hasil.dasar_service_charge.toString()).toBe("30000000");
+    expect(hasil.dasar_pb1.toString()).toBe("30000000");
+    expect(hasil.service_charge_amount.toString()).toBe("3000000");
+    expect(hasil.pb1_amount.toString()).toBe("3000000");
+    expect(hasil.grand_total.toString()).toBe("36000000");
+  });
+
+  it("compliment tetap nol berapa pun harinya", () => {
+    expect(subtotalBaris({ day: 5, qty: 10, price: 50_000, is_compliment: true }).toString()).toBe("0");
+  });
+
+  it("SUB-ITEM MEWARISI hari induknya", () => {
+    // Satu stall yang disajikan tiga hari berarti seluruh isinya disajikan
+    // tiga hari. Meminta angka hari di setiap sub-item hanya membuka peluang
+    // keduanya menyimpang.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          day: 3,
+          qty: 0,
+          price: 0,
+          children: [
+            { qty: 35, price: 39_500 },
+            { qty: 35, price: 45_000 },
+          ],
+        },
+      ],
+    });
+
+    // 3 x (35 x 39.500 + 35 x 45.000) = 3 x 2.957.500
+    expect(hasil.subtotal.toString()).toBe("8872500");
+  });
+
+  it("sub-item boleh menyebut harinya sendiri", () => {
+    const hasil = hitungTotalDokumen({
+      items: [{ day: 3, qty: 0, price: 0, children: [{ day: 1, qty: 35, price: 39_500 }] }],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("1382500");
+  });
+
+  it("tidak mengubah satu pun dokumen yang ditulis tanpa hari", () => {
+    // Angka dari INV-2026-0015, seluruhnya tanpa kolom hari.
+    const total = hitungTotalDokumen({
+      items: [
+        { qty: 130, price: 58_500, charge_service: false, charge_pb1: false },
+        { qty: 160, price: 170_000 },
+      ],
+      service_charge_percent: 20,
+      pb1_enabled: true,
+      pb1_percent: 10,
+      biaya_tambahan: [{ label: "Rounded (Diskon)", amount: -65_000 }],
+    });
+
+    expect(total.subtotal.toString()).toBe("34805000");
+    expect(total.grand_total.toString()).toBe("42900000");
+  });
+});

@@ -56,6 +56,8 @@ export type IsiAwal = {
 export type BarisForm = {
   kunci: string;
   product_id: string;
+  /** Berapa hari baris ini disajikan. Kosong berarti satu. */
+  day: string;
   item_name: string;
   unit: string;
   qty: string;
@@ -94,6 +96,7 @@ export function barisKosong(): BarisForm {
     product_id: "",
     item_name: "",
     unit: "",
+    day: "1",
     qty: "1",
     price: "",
     is_compliment: false,
@@ -196,6 +199,7 @@ export function FormDokumen({
     () =>
       hitungTotalDokumen({
         items: f.items.map((b) => ({
+          day: uraikanRupiah(b.day) ?? 1,
           qty: uraikanRupiah(b.qty) ?? 0,
           price: uraikanRupiah(b.price) ?? 0,
           is_compliment: b.is_compliment,
@@ -263,6 +267,7 @@ export function FormDokumen({
     payment_terms: f.payment_terms,
     items: f.items.map((b) => ({
       product_id: b.product_id || null,
+      day: b.day,
       item_name: b.item_name,
       unit: b.unit || null,
       qty: b.qty,
@@ -777,6 +782,7 @@ function BarisItem({
   onHapus: () => void;
 }) {
   const nilai = subtotalBaris({
+    day: uraikanRupiah(baris.day) ?? 1,
     qty: uraikanRupiah(baris.qty) ?? 0,
     price: uraikanRupiah(baris.price) ?? 0,
     is_compliment: baris.is_compliment,
@@ -808,7 +814,7 @@ function BarisItem({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-12">
-        <div className="sm:col-span-5">
+        <div className="sm:col-span-4">
           <Label className="sr-only" htmlFor={`nama-${baris.kunci}`}>
             Nama item
           </Label>
@@ -831,6 +837,26 @@ function BarisItem({
             onChange={(e) => onUbah({ item_name: e.target.value })}
             placeholder="Nama item"
           />
+        </div>
+
+        {/* Hari x Jumlah x Harga. Dipisah, bukan dikalikan sendiri oleh
+            yang mengetik: dokumen yang menulis "390 box" menghilangkan
+            keterangan 130 per hari selama tiga hari — dan angka itulah yang
+            dipakai dapur menyiapkannya. */}
+        <div className="sm:col-span-1">
+          <Label className="sr-only" htmlFor={`hari-${baris.kunci}`}>
+            Jumlah hari
+          </Label>
+          <Input
+            id={`hari-${baris.kunci}`}
+            inputMode="decimal"
+            value={baris.day}
+            onChange={(e) => onUbah({ day: e.target.value })}
+            placeholder="Hari"
+            aria-label={`Jumlah hari baris ${nomor}`}
+            className="angka tabular-nums"
+          />
+          <p className="mt-1 text-center text-[0.6875rem] text-muted-foreground">hari</p>
         </div>
 
         <div className="sm:col-span-2">

@@ -122,6 +122,7 @@ export async function simpanTagihan(
               parent_id: barisInduk.id,
               item_name: a.item_name,
               unit: a.unit,
+              day: a.day,
               qty: a.qty,
               price: a.price,
               subtotal: a.subtotal,

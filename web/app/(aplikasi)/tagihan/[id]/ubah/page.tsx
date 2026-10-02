@@ -92,6 +92,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
           items: tagihan.invoice_items.map((b) => ({
             kunci: b.id.toString(),
             product_id: b.product_id?.toString() ?? "",
+            day: Number(b.day).toString(),
             item_name: b.item_name,
             unit: b.unit ?? "",
             qty: Number(b.qty).toLocaleString("id-ID"),

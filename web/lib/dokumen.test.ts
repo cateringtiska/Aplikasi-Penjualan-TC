@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { siapkanDokumen } from "./dokumen";
+import { barisUntukDisimpan, siapkanDokumen } from "./dokumen";
 
 /* ==========================================================================
    TANDA HUBUNG YANG DIKETIK BERARTI KOSONG
@@ -446,5 +446,76 @@ describe("tanggal acara", () => {
       expect(hasil.ok, `"${buruk}" seharusnya ditolak`).toBe(false);
       if (!hasil.ok) expect(hasil.keadaan.galat?.event_dates).toMatch(/tidak terbaca/i);
     }
+  });
+});
+
+/* ==========================================================================
+   KOLOM HARI PADA BARIS ITEM
+   ========================================================================== */
+
+describe("kolom hari", () => {
+  it("mengalikan nilai baris dan menyimpannya", () => {
+    const hasil = coba({
+      items: [{ item_name: "Lunch box", day: "3", qty: "130", price: "58500", children: [] }],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("22815000.00");
+    expect(hasil.items[0].dayD.toString()).toBe("3");
+  });
+
+  it("KOSONG BERARTI SATU", () => {
+    // Formulir dokumen lama tidak mengirim kolom ini sama sekali.
+    const hasil = coba({
+      items: [{ item_name: "Lunch box", qty: "130", price: "58500", children: [] }],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+    expect(hasil.kolom.subtotal).toBe("7605000.00");
+    expect(hasil.items[0].dayD.toString()).toBe("1");
+  });
+
+  it("MENOLAK hari nol", () => {
+    // Nol tidak dianggap satu: baris berhari nol tidak menagih apa pun,
+    // sementara dokumennya tetap terlihat wajar.
+    const hasil = coba({
+      items: [{ item_name: "Lunch box", day: "0", qty: "130", price: "58500", children: [] }],
+    });
+
+    expect(hasil.ok).toBe(false);
+    if (hasil.ok) return;
+    expect(hasil.keadaan.galat?.items).toMatch(/minimal 1/i);
+  });
+
+  it("MENOLAK hari minus dan hari yang tidak terbaca", () => {
+    for (const buruk of ["-2", "tiga"]) {
+      const hasil = coba({
+        items: [{ item_name: "Lunch box", day: buruk, qty: "130", price: "58500", children: [] }],
+      });
+      expect(hasil.ok, `"${buruk}" seharusnya ditolak`).toBe(false);
+    }
+  });
+
+  it("menurunkan harinya ke sub-item yang disimpan", () => {
+    // Baris sub-item yang tersimpan berhari 1 sementara nilainya sudah
+    // dikali tiga adalah baris yang angkanya tidak menjelaskan nilainya.
+    const hasil = coba({
+      items: [
+        {
+          item_name: "Aneka Stall",
+          day: "3",
+          qty: "0",
+          price: "",
+          children: [{ item_name: "Bakwan Malang", qty: "35", price: "39500" }],
+        },
+      ],
+    });
+
+    if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
+
+    const { anak } = barisUntukDisimpan(hasil.items)[0];
+    expect(anak[0].day).toBe("3.00");
+    expect(anak[0].subtotal).toBe("4147500.00"); // 3 x 35 x 39.500
+    expect(hasil.kolom.subtotal).toBe("4147500.00");
   });
 });

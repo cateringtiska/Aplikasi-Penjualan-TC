@@ -31,6 +31,7 @@ const barisAnak = z.object({
 
 const barisItem = z.object({
   product_id: z.string().trim().nullable().optional(),
+  day: z.string().optional(),
   item_name: z.string().trim().min(1, "Nama item belum diisi.").max(255),
   unit: z.string().trim().max(255).nullable().optional(),
   qty: z.string(),
@@ -86,6 +87,7 @@ export type AnakSiap = {
 };
 
 export type BarisSiap = z.infer<typeof barisItem> & {
+  dayD: Decimal;
   qtyD: Decimal;
   priceD: Decimal;
   anakSiap: AnakSiap[];
@@ -192,6 +194,26 @@ export function siapkanDokumen(
     const qty = uraikanRupiah(baris.qty);
     const price = uraikanRupiah(baris.price);
 
+    // Hari. Kosong berarti SATU — itu yang membuat seluruh dokumen yang
+    // sudah terbit menghasilkan angka yang sama persis seperti sebelumnya.
+    // Nol ditolak, bukan dianggap satu: baris berhari nol tidak menagih apa
+    // pun, dan dokumennya tetap terlihat wajar.
+    const teksHari = String(baris.day ?? "").trim();
+    const hari = teksHari === "" ? d(1) : uraikanRupiah(teksHari);
+
+    if (hari === null) {
+      return {
+        ok: false,
+        keadaan: { galat: { items: `Baris ${i + 1}: jumlah hari tidak terbaca. Isi angka saja, contoh: 3.` } },
+      };
+    }
+    if (hari.lt(1)) {
+      return {
+        ok: false,
+        keadaan: { galat: { items: `Baris ${i + 1}: jumlah hari minimal 1.` } },
+      };
+    }
+
     // DUA BENTUK JUDUL, keduanya ada di dokumen katering sungguhan:
     //
     //   ANEKA STALL          sub-itemnya membawa angkanya sendiri
@@ -281,6 +303,7 @@ export function siapkanDokumen(
     // dan tidak ada tempat kedua yang harus ingat mengabaikannya.
     items.push({
       ...baris,
+      dayD: hari,
       qtyD: kepalaKelompok ? d(0) : (qty ?? d(0)),
       priceD: kepalaKelompok ? d(0) : (price ?? d(0)),
       anakSiap: baris.children.map((a) => ({
@@ -388,12 +411,13 @@ export function siapkanDokumen(
 
   const total = hitungTotalDokumen({
     items: items.map((b) => ({
+      day: b.dayD,
       qty: b.qtyD,
       price: b.priceD,
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
-      children: b.anakSiap.map((a) => ({ qty: a.qtyD, price: a.priceD })),
+      children: b.anakSiap.map((a) => ({ day: b.dayD, qty: a.qtyD, price: a.priceD })),
     })),
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
@@ -464,9 +488,10 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       product_id: b.product_id ? BigInt(b.product_id) : null,
       item_name: b.item_name,
       unit: b.unit || null,
+      day: b.dayD.toFixed(2),
       qty: b.qtyD.toFixed(2),
       price: b.priceD.toFixed(2),
-      subtotal: (b.is_compliment ? d(0) : b.qtyD.times(b.priceD)).toFixed(2),
+      subtotal: (b.is_compliment ? d(0) : b.dayD.times(b.qtyD).times(b.priceD)).toFixed(2),
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
@@ -478,10 +503,15 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       .map((a) => ({
         item_name: a.item_name.trim(),
         unit: a.unit || null,
+        // Hari DISIMPAN juga di barisnya sendiri, bukan hanya dipakai saat
+        // menghitung. Baris yang tersimpan berhari 1 sementara nilainya
+        // sudah dikali tiga adalah baris yang angkanya tidak menjelaskan
+        // nilainya sendiri.
+        day: b.dayD.toFixed(2),
         qty: a.qtyD.toFixed(2),
         price: a.priceD.toFixed(2),
-        // Compliment menurun dari induknya, jadi nilainya ikut nol.
-        subtotal: (b.is_compliment ? d(0) : a.qtyD.times(a.priceD)).toFixed(2),
+        // Compliment DAN hari sama-sama menurun dari induknya.
+        subtotal: (b.is_compliment ? d(0) : b.dayD.times(a.qtyD).times(a.priceD)).toFixed(2),
       })),
   }));
 }

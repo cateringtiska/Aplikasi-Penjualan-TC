@@ -176,6 +176,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                   <tr className="border-b bg-muted/40">
                     <Th className="w-12">No</Th>
                     <Th>Uraian</Th>
+                    <Th className="w-16 text-right">Hari</Th>
                     <Th className="w-24 text-right">Jumlah</Th>
                     <Th className="w-32 text-right">Harga</Th>
                     <Th className="w-36 text-right">Nilai</Th>
@@ -225,6 +226,9 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                         ) : null}
                       </Td>
                       <Td className="angka text-right tabular-nums text-muted-foreground">
+                        {judulKelompok ? "" : Number(b.day).toLocaleString("id-ID")}
+                      </Td>
+                      <Td className="angka text-right tabular-nums text-muted-foreground">
                         {judulKelompok ? "" : `${Number(b.qty).toLocaleString("id-ID")} ${b.unit ?? ""}`}
                       </Td>
                       <Td className="angka text-right tabular-nums text-muted-foreground">
@@ -248,6 +252,9 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                             </Td>
                             <Td className="pl-7">{a.item_name}</Td>
                             <Td className="angka text-right tabular-nums text-muted-foreground">
+                              {Number(b.day).toLocaleString("id-ID")}
+                            </Td>
+                            <Td className="angka text-right tabular-nums text-muted-foreground">
                               {Number(a.qty).toLocaleString("id-ID")} {a.unit ?? ""}
                             </Td>
                             <Td className="angka text-right tabular-nums text-muted-foreground">
@@ -266,6 +273,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                           <tr className="border-b bg-muted/30 last:border-0">
                             <Td>{""}</Td>
                             <Td className="font-medium">Total — {romawi(i + 1)}</Td>
+                            <Td>{""}</Td>
                             <Td>{""}</Td>
                             <Td>{""}</Td>
                             <Td className="angka text-right font-semibold tabular-nums">

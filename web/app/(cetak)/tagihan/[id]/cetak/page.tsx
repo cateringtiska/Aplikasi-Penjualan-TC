@@ -82,6 +82,7 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
         baris: t.invoice_items.map((b) => ({
           id: b.id.toString(),
           item_name: b.item_name,
+          day: b.day.toString(),
           unit: b.unit,
           qty: b.qty.toString(),
           price: b.price.toString(),

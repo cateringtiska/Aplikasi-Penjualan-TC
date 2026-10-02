@@ -114,6 +114,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       items: p.quotation_items.map((b) => ({
         kunci: `q${b.id}`,
         product_id: b.product_id?.toString() ?? "",
+        day: Number(b.day).toString(),
         item_name: b.item_name,
         unit: b.unit ?? "",
         qty: Number(b.qty).toLocaleString("id-ID"),
