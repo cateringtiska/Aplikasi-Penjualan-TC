@@ -101,23 +101,33 @@ export function ratakanBaris(items: BarisBerAnak[]): BarisItem[] {
       day: a.day ?? induk.day,
     }));
 
-    // Begitu ada sub-item berharga, induknya menjadi JUDUL KELOMPOK dan
-    // angkanya sendiri diabaikan. Tanpa ini, baris induk yang qty-nya masih
-    // 1 dari bawaan formulir ikut terhitung — dan kalau harganya juga
-    // terisi, nilainya terhitung DUA KALI.
-    return [punyaAnakBerharga(induk) ? { ...induk, qty: 0, price: 0 } : induk, ...anak];
+    // ANGKA INDUKNYA TIDAK PERNAH DIABAIKAN. Baris induk yang punya
+    // qty dan harga sendiri adalah baris berharga, walaupun sub-itemnya
+    // juga berharga — "LUNCH BUFFET 35 pax" dengan tambahan "VEGETARIAN
+    // 2 pax" adalah 37 porsi yang ditagihkan, bukan 2.
+    //
+    // Baris yang memang hanya judul tidak perlu diperlakukan khusus: qty
+    // kali harganya sudah nol dengan sendirinya, jadi ia tidak menambah
+    // apa pun tanpa satu aturan pun yang harus diingat.
+    return [induk, ...anak];
   });
 }
 
 /**
- * Apakah baris ini judul kelompok?
+ * Apakah baris ini JUDUL KELOMPOK, bukan baris berharga?
  *
- * Ditentukan oleh anaknya, bukan oleh isian induknya. Meminta orang
- * mengosongkan qty dan harga induk secara manual berarti menuntut mereka
- * mengingat aturan yang bisa disimpulkan sendiri oleh aplikasinya.
+ * Ditentukan oleh angkanya sendiri: judul adalah baris yang tidak menagih
+ * apa pun. "ANEKA STALL" yang qty-nya masih 1 dari bawaan formulir tetapi
+ * harganya kosong bernilai nol, jadi ia judul.
+ *
+ * SEBELUMNYA ini ditentukan oleh anaknya — begitu ada sub-item berharga,
+ * induknya dianggap judul dan angkanya dibuang. Aturan itu salah, dan
+ * terbukti salah pada dokumen sungguhan: "Day 1 - LUNCH BUFFET 35 pax"
+ * dengan sub-item "VEGETARIAN 2 pax" kehilangan seluruh 5.250.000-nya,
+ * dan PB1 ikut salah karena dasarnya menyusut.
  */
-export function punyaAnakBerharga(induk: BarisBerAnak): boolean {
-  return (induk.children ?? []).some((a) => d(a.qty).times(d(a.price)).gt(0));
+export function judulKelompok(baris: BarisItem): boolean {
+  return d(baris.qty).times(d(baris.price)).lte(0);
 }
 
 /**

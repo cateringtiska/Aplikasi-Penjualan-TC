@@ -224,13 +224,15 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
             // menyebutkan isinya.
             const anakBerharga = b.anak.filter((a) => Number(a.subtotal) > 0);
             const anakRincian = b.anak.filter((a) => Number(a.subtotal) <= 0);
-            // Baris JUDUL tidak menampilkan angka sama sekali. Ada dua
-            // bentuknya: yang anaknya berharga, dan yang memang tanpa angka
-            // dari atas sampai bawah ("STALL/ GUBUKAN" dengan daftar isinya).
+            // Baris JUDUL adalah baris yang tidak menagih apa pun —
+            // ditentukan oleh angkanya sendiri, BUKAN oleh anaknya. Induk
+            // yang punya qty dan harga tetap menampilkannya walaupun
+            // sub-itemnya juga berharga: "LUNCH BUFFET 35 pax" dengan
+            // tambahan "VEGETARIAN 2 pax" adalah 37 porsi yang ditagihkan.
+            //
             // Menampilkan "0" dan "Rp 0" di baris judul membuat pembacanya
             // mencari-cari apa yang berharga nol.
-            const indukBernilai =
-              anakBerharga.length === 0 && (Number(b.qty) > 0 || Number(b.price) > 0);
+            const indukBernilai = Number(b.qty) * Number(b.price) > 0;
 
             // Dinilai dengan aturan yang sama persis dengan halaman detailnya.
             const kelompok = { subtotal: b.subtotal, anak: b.anak };

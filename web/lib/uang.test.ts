@@ -9,6 +9,7 @@ import {
   hitungStatusInvoice,
   hitungSubtotal,
   hitungTotalDokumen,
+  judulKelompok,
   labelStatusInvoice,
   nilaiBiaya,
   nilaiKelompok,
@@ -142,24 +143,25 @@ describe("Total dokumen", () => {
     expect(hasil.grand_total.toString()).toBe("3115000");
   });
 
-  it("mengabaikan angka induk begitu sub-itemnya berharga", () => {
-    // Formulir mengisi qty induk dengan 1 secara bawaan. Tanpa penjagaan ini,
-    // baris "ANEKA STALL" ikut terhitung — dan kalau harganya juga sempat
-    // terisi, nilainya masuk DUA KALI: sekali di induk, sekali di anaknya.
+  it("tidak membuang angka induk hanya karena sub-itemnya berharga", () => {
+    // Tes ini DULU menuntut sebaliknya, dengan alasan harga induk yang
+    // sempat terisi akan terhitung dua kali. Dokumen sungguhan membantahnya:
+    // "LUNCH BUFFET 35 pax" dengan sub-item "VEGETARIAN 2 pax" adalah 37
+    // porsi yang ditagihkan, dan membuang induknya menghilangkan 35 porsi.
+    //
+    // Judul kelompok tidak perlu aturan khusus — qty kali harganya memang
+    // sudah nol. Lihat "ANEKA STALL" di bawah.
     const hasil = hitungTotalDokumen({
       items: [
         {
-          qty: 1,
-          price: 9_999_999, // sengaja: tidak boleh ikut terhitung
-          children: [
-            { qty: 35, price: 39_500 }, // Bakwan Malang
-            { qty: 35, price: 45_000 }, // Sate Ayam Ponorogo + Lontong
-          ],
+          qty: 35,
+          price: 150_000,
+          children: [{ qty: 2, price: 150_000 }],
         },
       ],
     });
 
-    expect(hasil.subtotal.toString()).toBe("2957500"); // 1.382.500 + 1.575.000
+    expect(hasil.subtotal.toString()).toBe("5550000"); // 5.250.000 + 300.000
   });
 
   it("tetap menghitung paket berharga yang anaknya hanya rincian isi", () => {
@@ -808,5 +810,87 @@ describe("hari sebagai pengali", () => {
 
     expect(total.subtotal.toString()).toBe("34805000");
     expect(total.grand_total.toString()).toBe("42900000");
+  });
+});
+
+/* ==========================================================================
+   INDUK BERHARGA YANG SUB-ITEMNYA JUGA BERHARGA
+
+   Dilaporkan pemiliknya dari quotation sungguhan empat hari. Subtotalnya
+   terbaca 17.830.000 padahal seharusnya 44.955.000 — dan karena PB1
+   dihitung dari dasar yang sama, pajaknya ikut salah.
+
+   Sebabnya: aturan lama menganggap "punya sub-item berharga" berarti
+   induknya cuma judul, lalu MEMBUANG angka induknya. Pada dokumen ini
+   setiap "LUNCH BUFFET 35 pax" punya sub-item "VEGETARIAN 2 pax", jadi
+   keempat buffetnya hilang seluruhnya.
+
+   Aturan yang benar ditentukan oleh angka barisnya sendiri: judul adalah
+   baris yang tidak menagih apa pun. Baris yang punya qty dan harga adalah
+   baris berharga, berapa pun sub-itemnya.
+   ========================================================================== */
+
+describe("induk berharga dengan sub-item berharga", () => {
+  /** Angka persis dari quotation yang dilaporkan. */
+  const DOKUMEN = {
+    items: [
+      // 4 hari x 37 pax x 55.000 = 8.140.000, sub-itemnya hanya daftar nama.
+      {
+        day: 4,
+        qty: 37,
+        price: 55_000,
+        children: [{ qty: "", price: "" }, { qty: "", price: "" }],
+      },
+      // Empat buffet, masing-masing dengan tambahan porsi vegetarian.
+      { day: 1, qty: 35, price: 150_000, children: [{ day: 1, qty: 2, price: 150_000 }] },
+      { day: 1, qty: 35, price: 190_000, children: [{ day: 1, qty: 2, price: 190_000 }] },
+      { day: 1, qty: 35, price: 190_000, children: [{ day: 1, qty: 2, price: 190_000 }] },
+      { day: 1, qty: 35, price: 245_000, children: [{ day: 1, qty: 2, price: 245_000 }] },
+      { day: 4, qty: 37, price: 55_000 },
+    ],
+  };
+
+  it("menjumlahkan induk DAN sub-itemnya, bukan salah satunya", () => {
+    const hasil = hitungTotalDokumen(DOKUMEN);
+
+    // 8.140.000 + 5.250.000 + 300.000 + 6.650.000 + 380.000
+    //          + 6.650.000 + 380.000 + 8.575.000 + 490.000 + 8.140.000
+    expect(hasil.subtotal.toString()).toBe("44955000");
+  });
+
+  it("menghitung PB1 dari dasar yang utuh", () => {
+    // Inti akibatnya. Dasar yang menyusut membuat pajaknya ikut salah, dan
+    // dokumennya tetap terbit dengan angka yang kelihatan wajar.
+    const hasil = hitungTotalDokumen({ ...DOKUMEN, pb1_enabled: true, pb1_percent: 10 });
+
+    expect(hasil.dasar_pb1.toString()).toBe("44955000");
+    expect(hasil.pb1_amount.toString()).toBe("4495500");
+    expect(hasil.grand_total.toString()).toBe("49450500");
+  });
+
+  it("baris yang memang judul tetap bernilai nol", () => {
+    // "ANEKA STALL": qty-nya masih 1 dari bawaan formulir, harganya kosong.
+    const hasil = hitungTotalDokumen({
+      items: [
+        {
+          qty: 1,
+          price: "",
+          children: [
+            { qty: 35, price: 39_500 },
+            { qty: 35, price: 45_000 },
+          ],
+        },
+      ],
+    });
+
+    expect(hasil.subtotal.toString()).toBe("2957500");
+    expect(judulKelompok({ qty: 1, price: "" })).toBe(true);
+  });
+
+  it("membedakan judul dari baris berharga lewat angkanya sendiri", () => {
+    expect(judulKelompok({ qty: 0, price: 0 })).toBe(true);
+    expect(judulKelompok({ qty: 1, price: 0 })).toBe(true);
+    expect(judulKelompok({ qty: 0, price: 150_000 })).toBe(true);
+    expect(judulKelompok({ qty: 35, price: 150_000 })).toBe(false);
   });
 });

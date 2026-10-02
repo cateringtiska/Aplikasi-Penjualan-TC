@@ -172,11 +172,10 @@ export default async function HalamanDetailPenawaran({
                     const rincian = b.other_quotation_items.filter(
                       (a) => Number(a.subtotal) <= 0,
                     );
-                    // Dua bentuk judul: yang anaknya berharga, dan yang memang
-                    // tanpa angka dari atas sampai bawah. Keduanya tampil
-                    // dengan kolom angka kosong, sama seperti di cetakannya.
-                    const judulKelompok =
-                      berharga.length > 0 || (Number(b.qty) === 0 && Number(b.price) === 0);
+                    // Judul adalah baris yang tidak menagih apa pun —
+                    // ditentukan oleh angkanya sendiri, bukan oleh anaknya.
+                    // Aturan yang sama persis dengan dokumen cetaknya.
+                    const judulKelompok = Number(b.qty) * Number(b.price) <= 0;
 
                     // Dinilai dengan aturan yang sama persis dengan dokumen
                     // cetaknya — dua tempat yang menghitung sendiri-sendiri

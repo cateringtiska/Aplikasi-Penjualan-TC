@@ -216,29 +216,17 @@ export function siapkanDokumen(
       };
     }
 
-    // DUA BENTUK JUDUL, keduanya ada di dokumen katering sungguhan:
-    //
-    //   ANEKA STALL          sub-itemnya membawa angkanya sendiri
-    //   STALL/ GUBUKAN       tidak ada angka sama sekali, hanya daftar isi;
-    //                        nilainya nol, atau ditagihkan di tempat lain
-    //
-    // Keduanya dikenali tanpa menuntut orang mengingat aturan: yang pertama
-    // dari anaknya, yang kedua dari tidak adanya angka pada barisnya.
-    const anakBerharga = baris.children.some((a) => {
-      const q = uraikanRupiah(a.qty ?? "");
-      const h = uraikanRupiah(a.price ?? "");
-      return q !== null && h !== null && q.times(h).gt(0);
-    });
-
     // Baris tanpa jumlah DAN tanpa harga tidak mungkin salah ketik yang
     // merugikan: salah ketik yang merugikan adalah harga yang terisi tetapi
     // jumlahnya nol — customer tidak jadi ditagih untuk sesuatu yang memang
     // hendak ditagihkan. Baris yang kedua kolomnya nol tidak pernah hendak
     // menagih apa pun, jadi ia judul.
+    //
+    // PUNYA SUB-ITEM BERHARGA TIDAK MENJADIKAN INDUKNYA JUDUL. "Day 1 -
+    // LUNCH BUFFET 35 pax" dengan sub-item "VEGETARIAN 2 pax" adalah 37
+    // porsi yang ditagihkan; menganggap induknya judul membuang 35 porsinya.
     const tanpaAngka =
       (qty === null || qty.isZero()) && (price === null || price.isZero());
-
-    const kepalaKelompok = anakBerharga || tanpaAngka;
 
     // ISIAN KOSONG BERARTI NOL, bukan galat. Pada judul kelompok, kolom
     // harga memang ditinggal kosong — angkanya ada di sub-itemnya. Sebelum
@@ -271,7 +259,7 @@ export function siapkanDokumen(
     // Yang tersisa untuk ditolak hanyalah keadaan yang benar-benar
     // merugikan: harganya terisi, tetapi jumlahnya nol. Baris itu tidak akan
     // menagih apa pun, padahal jelas dimaksudkan menagih.
-    if (!kepalaKelompok && (qty === null || qty.lte(0))) {
+    if (!tanpaAngka && (qty === null || qty.lte(0))) {
       return {
         ok: false,
         keadaan: {
@@ -324,11 +312,14 @@ export function siapkanDokumen(
     // Judul kelompok DISIMPAN bernilai nol, bukan sekadar disembunyikan saat
     // ditampilkan. Angka yang tersimpan lalu sejalan dengan yang tercetak,
     // dan tidak ada tempat kedua yang harus ingat mengabaikannya.
+    // Angkanya disimpan apa adanya. Baris judul bernilai nol dengan
+    // sendirinya — qty kali harganya memang nol — jadi tidak ada yang perlu
+    // dipaksa, dan tidak ada tempat kedua yang harus ingat memaksanya.
     items.push({
       ...baris,
       dayD: hari,
-      qtyD: kepalaKelompok ? d(0) : (qty ?? d(0)),
-      priceD: kepalaKelompok ? d(0) : (price ?? d(0)),
+      qtyD: qty ?? d(0),
+      priceD: price ?? d(0),
       anakSiap: baris.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit ?? null,
