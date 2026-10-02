@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { FormDokumen, tanggalKosong } from "@/components/form-dokumen";
+import { FormDokumen } from "@/components/form-dokumen";
+import { tanggalKosong } from "@/lib/bentuk-form";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { type BarisTanggalForm, tanggalKosong } from "@/lib/bentuk-form";
 import { jumlahHariAcara } from "@/lib/tanggal";
 import { d, hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
 
@@ -89,13 +90,6 @@ export type BarisTambahanForm = {
 
 export function tambahanKosong(): BarisTambahanForm {
   return { kunci: crypto.randomUUID(), label: "", amount: "" };
-}
-
-/** Satu tanggal acara. Kuncinya supaya baris tidak berpindah saat dihapus. */
-export type BarisTanggalForm = { kunci: string; tanggal: string };
-
-export function tanggalKosong(tanggal = ""): BarisTanggalForm {
-  return { kunci: crypto.randomUUID(), tanggal };
 }
 
 export function barisKosong(): BarisForm {
