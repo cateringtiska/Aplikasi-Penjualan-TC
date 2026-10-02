@@ -3,7 +3,7 @@ import { Fragment } from "react";
 import { format } from "date-fns";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
-import { romawi, rupiah } from "@/lib/uang";
+import { nilaiKelompok, perluTotalKelompok, romawi, rupiah } from "@/lib/uang";
 
 /* ==========================================================================
    DOKUMEN CETAK
@@ -229,6 +229,9 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
             const indukBernilai =
               anakBerharga.length === 0 && (Number(b.qty) > 0 || Number(b.price) > 0);
 
+            // Dinilai dengan aturan yang sama persis dengan halaman detailnya.
+            const kelompok = { subtotal: b.subtotal, anak: b.anak };
+
             return (
               <Fragment key={b.id}>
                 <tr className="break-inside-avoid">
@@ -271,6 +274,22 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                     <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.subtotal)}</Td>
                   </tr>
                 ))}
+
+                {/* Total kelompok. Isinya baris-baris kelompok ini saja —
+                    PB1, service charge, delivery, dan biaya tambahan tetap
+                    dihitung sekali di bawah. Dengan begitu Sub Total SELALU
+                    sama persis dengan jumlah seluruh total kelompok, tanpa
+                    perlu mencocokkan pembulatan di dua tempat. */}
+                {perluTotalKelompok(kelompok) ? (
+                  <tr className="break-inside-avoid bg-[#f4f4f4] font-bold">
+                    <td className="border border-[#999] px-1.5 py-1" colSpan={5}>
+                      Total - {romawi(i + 1)}
+                    </td>
+                    <td className="border border-[#999] px-1.5 py-1 text-right">
+                      {rupiah(nilaiKelompok(kelompok))}
+                    </td>
+                  </tr>
+                ) : null}
               </Fragment>
             );
           })}

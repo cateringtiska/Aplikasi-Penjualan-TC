@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   angka,
   bulatkanRupiah,
+  d,
   dasarServiceCharge,
   hitungMargin,
   hitungStatusInvoice,
@@ -10,6 +11,8 @@ import {
   hitungTotalDokumen,
   labelStatusInvoice,
   nilaiBiaya,
+  nilaiKelompok,
+  perluTotalKelompok,
   romawi,
   rupiah,
   sisaTagihan,
@@ -622,5 +625,90 @@ describe("Tampilan", () => {
     expect(romawi(9)).toBe("IX");
     expect(romawi(14)).toBe("XIV");
     expect(romawi(40)).toBe("XL");
+  });
+});
+
+/* ==========================================================================
+   TOTAL PER KELOMPOK
+
+   Baris "Total - I" di bawah tiap kelompok bernomor Romawi. Isinya baris
+   kelompok itu saja — PB1, service charge, delivery, dan biaya tambahan
+   tetap dihitung sekali di bawah. Dengan begitu Sub Total SELALU sama persis
+   dengan jumlah seluruh total kelompok; tidak ada pembulatan yang harus
+   dicocokkan di dua tempat, dan tidak ada dokumen yang kolomnya tidak
+   menjumlah menjadi totalnya sendiri.
+
+   Yang dikunci paling keras: KAPAN BARIS ITU TIDAK MUNCUL.
+   ========================================================================== */
+
+describe("total per kelompok", () => {
+  it("menjumlahkan induk dan seluruh sub-itemnya", () => {
+    // Paket berharga: angkanya di induknya, sub-itemnya hanya daftar isi.
+    const paket = { subtotal: "7605000", anak: [{ subtotal: "0" }, { subtotal: "0" }] };
+    expect(nilaiKelompok(paket).toString()).toBe("7605000");
+
+    // Judul kelompok: induknya nol, angkanya di sub-itemnya.
+    const stall = { subtotal: "0", anak: [{ subtotal: "1382500" }, { subtotal: "1575000" }] };
+    expect(nilaiKelompok(stall).toString()).toBe("2957500");
+  });
+
+  it("TIDAK memberi total pada kelompok yang tanpa angka", () => {
+    // "STALL/ GUBUKAN - Menu dari Luar" dengan empat sub-item yang hanya
+    // nama. Barisnya tidak menagih apa pun, dan "Total - II Rp 0" di
+    // bawahnya hanya membuat pembacanya mencari-cari apa yang berharga nol.
+    const daftarNama = {
+      subtotal: "0",
+      anak: [{ subtotal: "0" }, { subtotal: "0" }, { subtotal: "0" }, { subtotal: "0" }],
+    };
+
+    expect(nilaiKelompok(daftarNama).toString()).toBe("0");
+    expect(perluTotalKelompok(daftarNama)).toBe(false);
+  });
+
+  it("TIDAK memberi total pada baris yang tidak punya sub-item", () => {
+    // Nilainya sudah tertulis di baris itu sendiri; mengulanginya tepat di
+    // bawahnya tidak menambah apa pun.
+    expect(perluTotalKelompok({ subtotal: "2747500", anak: [] })).toBe(false);
+  });
+
+  it("memberi total pada kelompok yang punya angka, di kedua bentuknya", () => {
+    expect(perluTotalKelompok({ subtotal: "7605000", anak: [{ subtotal: "0" }] })).toBe(true);
+    expect(perluTotalKelompok({ subtotal: "0", anak: [{ subtotal: "1382500" }] })).toBe(true);
+  });
+
+  it("TIDAK memberi total pada kelompok compliment", () => {
+    // Compliment tersimpan bernilai nol — ia tercetak, tetapi tidak menagih.
+    expect(perluTotalKelompok({ subtotal: "0", anak: [{ subtotal: "0" }] })).toBe(false);
+  });
+
+  it("seluruh total kelompok berjumlah PERSIS sama dengan subtotal dokumen", () => {
+    // Inilah akibat dari memilih "isi barisnya saja": tidak ada pembulatan
+    // yang perlu dicocokkan, jadi kolomnya tidak mungkin tidak menjumlah.
+    // Angka dari dokumen sungguhan: INV-2026-0015.
+    const kelompok = [
+      { subtotal: "7605000", anak: [{ subtotal: "0" }] },
+      { subtotal: "27200000", anak: [{ subtotal: "0" }] },
+    ];
+
+    const jumlahKelompok = kelompok.reduce((j, k) => j.plus(nilaiKelompok(k)), d(0));
+
+    const total = hitungTotalDokumen({
+      items: [
+        { qty: 130, price: 58_500, charge_service: false, charge_pb1: false },
+        { qty: 160, price: 170_000 },
+      ],
+      service_charge_percent: 20,
+      pb1_enabled: true,
+      pb1_percent: 10,
+      biaya_tambahan: [{ label: "Rounded (Diskon)", amount: -65_000 }],
+    });
+
+    expect(jumlahKelompok.toString()).toBe("34805000");
+    expect(total.subtotal.toString()).toBe(jumlahKelompok.toString());
+
+    // Sekalian: seluruh dokumennya harus menghasilkan 42.900.000.
+    expect(total.service_charge_amount.toString()).toBe("5440000");
+    expect(total.pb1_amount.toString()).toBe("2720000");
+    expect(total.grand_total.toString()).toBe("42900000");
   });
 });

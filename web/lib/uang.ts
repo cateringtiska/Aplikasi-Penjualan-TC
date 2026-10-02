@@ -451,3 +451,40 @@ export function romawi(angka: number): string {
   }
   return hasil;
 }
+
+/* -------------------------------------------------------------------------
+   TOTAL PER KELOMPOK
+   ------------------------------------------------------------------------- */
+
+/** Satu baris bernomor Romawi beserta sub-itemnya, apa adanya dari database. */
+export type KelompokDokumen = {
+  subtotal: NilaiUang;
+  anak: { subtotal: NilaiUang }[];
+};
+
+/**
+ * Nilai satu kelompok: baris induknya ditambah seluruh sub-itemnya.
+ *
+ * Kedua bentuk tertampung oleh satu penjumlahan yang sama. Pada paket
+ * berharga, angkanya ada di induknya dan sub-itemnya nol. Pada judul
+ * kelompok, induknya nol dan angkanya ada di sub-itemnya.
+ */
+export function nilaiKelompok(k: KelompokDokumen): Decimal {
+  return k.anak.reduce((jumlah, a) => jumlah.plus(d(a.subtotal)), d(k.subtotal));
+}
+
+/**
+ * Apakah kelompok ini perlu baris "Total - I"?
+ *
+ * Hanya kalau ada angkanya. Kelompok seperti "STALL/ GUBUKAN - Menu dari
+ * Luar" yang isinya cuma daftar nama tidak menagih apa pun, dan baris
+ * "Total - II  Rp 0" di bawahnya hanya membuat pembacanya berhenti
+ * mencari-cari apa yang berharga nol.
+ *
+ * Baris tanpa sub-item juga tidak diberi total: nilainya sudah tertulis di
+ * baris itu sendiri, dan mengulanginya tepat di bawahnya tidak menambah
+ * apa pun.
+ */
+export function perluTotalKelompok(k: KelompokDokumen): boolean {
+  return k.anak.length > 0 && nilaiKelompok(k).gt(0);
+}

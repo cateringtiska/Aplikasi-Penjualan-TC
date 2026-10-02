@@ -15,7 +15,7 @@ import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 
 import { AksiStatusPenawaran } from "./aksi-status";
-import { romawi, rupiah } from "@/lib/uang";
+import { nilaiKelompok, perluTotalKelompok, romawi, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Detail quotation" };
 export const dynamic = "force-dynamic";
@@ -177,6 +177,14 @@ export default async function HalamanDetailPenawaran({
                     const judulKelompok =
                       berharga.length > 0 || (Number(b.qty) === 0 && Number(b.price) === 0);
 
+                    // Dinilai dengan aturan yang sama persis dengan dokumen
+                    // cetaknya — dua tempat yang menghitung sendiri-sendiri
+                    // akan menyimpang tanpa ada yang menegur.
+                    const kelompok = {
+                      subtotal: b.subtotal,
+                      anak: b.other_quotation_items.map((a) => ({ subtotal: a.subtotal })),
+                    };
+
                     return (
                       <Fragment key={b.id.toString()}>
                     <tr className="border-b last:border-0 align-top">
@@ -237,6 +245,17 @@ export default async function HalamanDetailPenawaran({
                             </Td>
                           </tr>
                         ))}
+                        {perluTotalKelompok(kelompok) ? (
+                          <tr className="border-b bg-muted/30 last:border-0">
+                            <Td>{""}</Td>
+                            <Td className="font-medium">Total — {romawi(i + 1)}</Td>
+                            <Td>{""}</Td>
+                            <Td>{""}</Td>
+                            <Td className="angka text-right font-semibold tabular-nums">
+                              {rupiah(nilaiKelompok(kelompok))}
+                            </Td>
+                          </tr>
+                        ) : null}
                       </Fragment>
                     );
                   })}
