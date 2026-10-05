@@ -248,6 +248,8 @@ model payments {
   created_by      BigInt?
   created_at      DateTime?         @db.Timestamp(0)
   updated_at      DateTime?         @db.Timestamp(0)
+  pph23_amount    Decimal           @default(0) @db.Decimal(15, 2)
+  pph23_bukti     String?           @db.VarChar(255)
   payment_details payment_details[]
   users           users?            @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "payments_created_by_foreign")
   customers       customers         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "payments_customer_id_foreign")

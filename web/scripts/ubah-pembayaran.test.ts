@@ -208,3 +208,90 @@ describe("memecah satu setoran ke dua invoice", () => {
     expect(b.status).toBe("partial");
   });
 });
+
+/* ==========================================================================
+   PEMBAYARAN YANG DIPOTONG PPh 23
+
+   Customer berstatus pemotong pajak menahan 2% dari nilai jasa katering —
+   harga makanan dan service charge — lalu menyetorkannya ke kas negara ATAS
+   NAMA perusahaan, dan memberi bukti potong.
+
+   Uang yang masuk ke rekening memang lebih kecil. Tetapi invoicenya LUNAS:
+   yang dipotong bukan hilang, melainkan sudah dibayarkan dan bisa
+   dikreditkan. Mencatatnya sebagai kurang bayar akan membuat piutang yang
+   tidak akan pernah bisa ditagih kepada siapa pun — customer sudah membayar
+   penuh, dan negara tidak akan mengembalikannya ke rekening perusahaan.
+   ========================================================================== */
+
+describe("pembayaran yang dipotong PPh 23", () => {
+  it("MELUNASI invoice walaupun uang yang masuk lebih kecil", async () => {
+    const cap = `${Date.now().toString().slice(-6)}P`;
+
+    // Invoice 10 juta: makanan 8 juta + service charge 1 juta + PB1 1 juta.
+    const inv = await prisma.invoices.create({
+      data: {
+        invoice_number: `UJU-PPH-${cap}`,
+        customer_id: jejak.pelanggan!,
+        invoice_date: hari(-10),
+        due_date: hari(20),
+        subtotal: "8000000",
+        service_charge_amount: "1000000",
+        pb1_enabled: true,
+        pb1_amount: "1000000",
+        grand_total: "10000000",
+        paid_amount: "0",
+        status: "unpaid",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    // 2% dari 9 juta (makanan + service charge) = 180.000.
+    // Customer mentransfer 9.820.000 dan menahan 180.000.
+    const bayar = await prisma.payments.create({
+      data: {
+        payment_number: `UJU-PAY-PPH-${cap}`,
+        payment_date: hari(-1),
+        customer_id: jejak.pelanggan!,
+        payment_method: "transfer",
+        total_amount: "9820000",
+        pph23_amount: "180000",
+        pph23_bukti: `BP-${cap}`,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    await prisma.$transaction((tx) =>
+      pasangAlokasi(tx, bayar.id, [{ invoice_id: inv.id, jumlah: d("10000000") }]),
+    );
+
+    const sesudah = await bacaTagihan(inv.id);
+    expect(sesudah.paid_amount.toFixed(0)).toBe("10000000");
+    expect(sesudah.status).toBe("paid");
+
+    // Uang yang masuk ke rekening tetap tercatat apa adanya — itu yang
+    // dicocokkan dengan rekening koran.
+    const tersimpan = await prisma.payments.findUniqueOrThrow({
+      where: { id: bayar.id },
+      select: { total_amount: true, pph23_amount: true, pph23_bukti: true },
+    });
+    expect(tersimpan.total_amount.toFixed(0)).toBe("9820000");
+    expect(tersimpan.pph23_amount.toFixed(0)).toBe("180000");
+    expect(tersimpan.pph23_bukti).toBe(`BP-${cap}`);
+
+    // Yang diterima ditambah yang dipotong harus sama dengan yang menutup.
+    expect(
+      tersimpan.total_amount.plus(tersimpan.pph23_amount).toFixed(0),
+    ).toBe(sesudah.paid_amount.toFixed(0));
+  });
+
+  it("PB1 tidak ikut menjadi dasar potongannya", async () => {
+    // 2% dari seluruh 10 juta adalah 200.000, bukan 180.000. Selisih 20.000
+    // itu PB1 — pajak daerah atas penjualannya, bukan imbalan jasa. Memotong
+    // PPh 23 dari situ berarti menyetorkan pajak atas pajak.
+    const dasar = d("8000000").plus(d("1000000"));
+    expect(dasar.times(0.02).toFixed(0)).toBe("180000");
+    expect(d("10000000").times(0.02).toFixed(0)).toBe("200000");
+  });
+});

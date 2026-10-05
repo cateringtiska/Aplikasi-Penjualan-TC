@@ -91,6 +91,10 @@ export async function tagihanBelumLunas(idPelanggan: string, idPembayaran?: stri
       grand_total: true,
       paid_amount: true,
       status: true,
+      // Dasar PPh 23: harga makanan dan service charge. PB1 tidak ikut —
+      // ia pajak daerah atas penjualannya, bukan imbalan jasa.
+      subtotal: true,
+      service_charge_amount: true,
     },
   });
 
@@ -108,6 +112,7 @@ export async function tagihanBelumLunas(idPelanggan: string, idPembayaran?: stri
         dibayar: dibayarLain.toString(),
         sisa: t.grand_total.minus(dibayarLain).toString(),
         status: t.status,
+        dasarPph: t.subtotal.plus(t.service_charge_amount).toString(),
       };
     });
 }

@@ -128,3 +128,37 @@ export async function pasangAlokasi(
     await hitungUlangTagihan(tx, id);
   }
 }
+
+/* -------------------------------------------------------------------------
+   APA YANG HARUS SAMA DENGAN APA
+   ------------------------------------------------------------------------- */
+
+/**
+ * Memeriksa bahwa alokasinya menutup persis sebanyak yang dibayarkan.
+ *
+ * Yang menutup invoice adalah UANG YANG DITERIMA DITAMBAH PPh 23 YANG
+ * DIPOTONG. PPh 23 bukan uang yang hilang: customer menahannya lalu
+ * menyetorkannya ke kas negara atas nama perusahaan, dan memberi bukti
+ * potong. Invoicenya lunas sebesar nilai penuhnya.
+ *
+ * Menuntut alokasinya sama dengan uang yang diterima saja akan membuat
+ * setiap pembayaran yang dipotong pajak mustahil dicatat — satu-satunya
+ * jalan keluarnya adalah mencatat invoicenya kurang bayar, dan piutang itu
+ * tidak akan pernah bisa ditagih kepada siapa pun.
+ *
+ * Mengembalikan kalimat galat, atau null kalau sudah cocok.
+ */
+export function cocokkanAlokasi(argumen: {
+  diterima: Decimal;
+  pph23: Decimal;
+  totalAlokasi: Decimal;
+}): string | null {
+  const menutup = argumen.diterima.plus(argumen.pph23);
+  if (argumen.totalAlokasi.equals(menutup)) return null;
+
+  const rincian = argumen.pph23.gt(0)
+    ? `uang yang diterima (${argumen.diterima.toFixed(0)}) ditambah PPh 23 (${argumen.pph23.toFixed(0)}) = ${menutup.toFixed(0)}`
+    : `uang yang diterima (${argumen.diterima.toFixed(0)})`;
+
+  return `Jumlah alokasi (${argumen.totalAlokasi.toFixed(0)}) harus sama persis dengan ${rincian}. Selisih ${menutup.minus(argumen.totalAlokasi).abs().toFixed(0)}.`;
+}

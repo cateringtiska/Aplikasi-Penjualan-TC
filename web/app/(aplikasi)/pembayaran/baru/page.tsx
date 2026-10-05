@@ -50,6 +50,8 @@ export default async function HalamanPembayaranBaru({
           grand_total: true,
           paid_amount: true,
           status: true,
+          subtotal: true,
+          service_charge_amount: true,
         },
       });
 
@@ -61,6 +63,7 @@ export default async function HalamanPembayaranBaru({
         dibayar: x.paid_amount.toString(),
         sisa: x.grand_total.minus(x.paid_amount).toString(),
         status: x.status,
+        dasarPph: x.subtotal.plus(x.service_charge_amount).toString(),
       }));
     }
   }

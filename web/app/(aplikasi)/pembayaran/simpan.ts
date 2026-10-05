@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { lepasAlokasi, pasangAlokasi } from "@/lib/alokasi-pembayaran";
+import { cocokkanAlokasi, lepasAlokasi, pasangAlokasi } from "@/lib/alokasi-pembayaran";
 import { pesanGagal } from "@/lib/dokumen";
 import { nomorDokumenBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
@@ -18,8 +18,16 @@ import { d, uraikanRupiah } from "@/lib/uang";
    Satu setoran bisa menutup beberapa tagihan sekaligus. Bagian yang paling
    mudah salah adalah alokasinya, jadi tiga aturan dijaga ketat:
 
-   1. Jumlah seluruh alokasi harus SAMA PERSIS dengan uang yang diterima.
-      Kalau tidak, ada rupiah yang menghilang atau muncul tanpa asal.
+   1. Jumlah seluruh alokasi harus SAMA PERSIS dengan uang yang diterima
+      DITAMBAH PPh 23 yang dipotong. Kalau tidak, ada rupiah yang menghilang
+      atau muncul tanpa asal.
+
+      PPh 23 adalah 2% dari nilai jasa katering yang DITAHAN customer lalu
+      disetorkannya ke kas negara atas nama perusahaan. Uang yang masuk ke
+      rekening memang lebih kecil, tetapi invoicenya LUNAS: yang dipotong
+      bukan hilang, melainkan sudah dibayarkan dan bisa dikreditkan dengan
+      bukti potongnya. Mencatatnya sebagai kurang bayar akan membuat piutang
+      yang tidak akan pernah bisa ditagih kepada siapa pun.
    2. Alokasi ke satu tagihan tidak boleh melebihi sisanya.
    3. Sisa tagihan dibaca ULANG di dalam transaksi, bukan dari yang dikirim
       browser. Selama halaman terbuka, orang lain bisa saja sudah mencatat
@@ -35,6 +43,8 @@ const skema = z.object({
   bank_cash: z.string().trim().max(255).nullable().optional(),
   notes: z.string().trim().max(5000).nullable().optional(),
   total_amount: z.string(),
+  pph23_amount: z.string().nullable().optional(),
+  pph23_bukti: z.string().trim().max(255).nullable().optional(),
   alokasi: z
     .array(z.object({ invoice_id: z.string(), jumlah: z.string() }))
     .min(1, "Pilih minimal satu invoice."),
@@ -75,6 +85,12 @@ export async function simpanPembayaran(
     return { galat: { total_amount: "Isi jumlah uang yang diterima." } };
   }
 
+  const teksPph = String(f.pph23_amount ?? "").trim();
+  const pph23 = teksPph === "" ? d(0) : uraikanRupiah(teksPph);
+  if (pph23 === null || pph23.isNegative()) {
+    return { galat: { pph23_amount: "Isi angka saja, dan tidak boleh minus." } };
+  }
+
   const alokasi: { invoice_id: bigint; jumlah: Decimal }[] = [];
   for (const baris of f.alokasi) {
     const jumlah = uraikanRupiah(baris.jumlah);
@@ -87,13 +103,8 @@ export async function simpanPembayaran(
   }
 
   const totalAlokasi = alokasi.reduce((jumlah, a) => jumlah.plus(a.jumlah), d(0));
-  if (!totalAlokasi.equals(totalDiterima)) {
-    return {
-      galat: {
-        alokasi: `Jumlah alokasi (${totalAlokasi.toFixed(0)}) harus sama persis dengan uang yang diterima (${totalDiterima.toFixed(0)}). Selisih ${totalDiterima.minus(totalAlokasi).abs().toFixed(0)}.`,
-      },
-    };
-  }
+  const tidakCocok = cocokkanAlokasi({ diterima: totalDiterima, pph23, totalAlokasi });
+  if (tidakCocok) return { galat: { alokasi: tidakCocok } };
 
   let idHasil: string;
 
@@ -156,6 +167,8 @@ export async function simpanPembayaran(
               payment_method: f.payment_method,
               bank_cash: f.bank_cash || null,
               total_amount: totalDiterima.toFixed(2),
+              pph23_amount: pph23.toFixed(2),
+              pph23_bukti: f.pph23_bukti || null,
               notes: f.notes || null,
               updated_at: new Date(),
             },
@@ -172,6 +185,8 @@ export async function simpanPembayaran(
                   payment_method: f.payment_method,
                   bank_cash: f.bank_cash || null,
                   total_amount: totalDiterima.toFixed(2),
+                  pph23_amount: pph23.toFixed(2),
+                  pph23_bukti: f.pph23_bukti || null,
                   notes: f.notes || null,
                   created_by: BigInt(sesi.id),
                   created_at: new Date(),

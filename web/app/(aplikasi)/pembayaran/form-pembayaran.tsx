@@ -24,6 +24,8 @@ export type BarisTagihan = {
   dibayar: string;
   sisa: string;
   status: string;
+  /** Harga makanan + service charge — dasar perhitungan PPh 23. */
+  dasarPph: string;
 };
 
 const METODE = [
@@ -54,6 +56,8 @@ export function FormPembayaran({
   tanggalAwal: string;
   /** Isian pembayaran yang sedang diubah. */
   isiAwal?: {
+    pph23: string;
+    buktiPph: string;
     metode: string;
     bankCash: string;
     catatan: string;
@@ -67,6 +71,8 @@ export function FormPembayaran({
   const [idPelanggan, setIdPelanggan] = useState(pelangganAwal);
   const [tagihan, setTagihan] = useState<BarisTagihan[]>(tagihanAwal);
   const [tanggal, setTanggal] = useState(tanggalAwal);
+  const [pph23, setPph23] = useState(isiAwal?.pph23 ?? "");
+  const [buktiPph, setBuktiPph] = useState(isiAwal?.buktiPph ?? "");
   const [metode, setMetode] = useState(isiAwal?.metode ?? "transfer");
   const [bankCash, setBankCash] = useState(isiAwal?.bankCash ?? "");
   const [catatan, setCatatan] = useState(isiAwal?.catatan ?? "");
@@ -107,7 +113,30 @@ export function FormPembayaran({
   );
 
   const diterima = uraikanRupiah(totalDiterima) ?? d(0);
-  const selisih = diterima.minus(jumlahAlokasi);
+  const dipotong = uraikanRupiah(pph23) ?? d(0);
+
+  // Yang menutup invoice adalah uang yang masuk DITAMBAH yang dipotong:
+  // PPh 23 sudah disetorkan customer ke kas negara atas nama perusahaan.
+  const menutup = diterima.plus(dipotong);
+  const selisih = menutup.minus(jumlahAlokasi);
+
+  /**
+   * 2% dari harga makanan dan service charge, sebanding dengan bagian yang
+   * dialokasikan. Pada pelunasan penuh ia tepat 2% dari dasarnya.
+   */
+  const usulanPph = useMemo(
+    () =>
+      tagihan.reduce((jumlah, t) => {
+        const bagian = uraikanRupiah(alokasi[t.id] ?? "") ?? d(0);
+        if (bagian.lte(0)) return jumlah;
+
+        const total = d(t.total);
+        if (total.lte(0)) return jumlah;
+
+        return jumlah.plus(d(t.dasarPph).times(bagian).dividedBy(total).times(0.02));
+      }, d(0)),
+    [tagihan, alokasi],
+  );
 
   const muatan = JSON.stringify({
     id: idPembayaran ?? null,
@@ -117,6 +146,8 @@ export function FormPembayaran({
     bank_cash: bankCash,
     notes: catatan,
     total_amount: totalDiterima,
+    pph23_amount: pph23,
+    pph23_bukti: buktiPph,
     alokasi: Object.entries(alokasi)
       .filter(([, nilai]) => (uraikanRupiah(nilai) ?? d(0)).gt(0))
       .map(([invoice_id, jumlah]) => ({ invoice_id, jumlah })),
@@ -211,6 +242,59 @@ export function FormPembayaran({
             </div>
           </Bidang>
         </div>
+
+        {/* PPh 23. Dipisah dari "uang diterima" karena memang bukan uang yang
+            masuk ke rekening — ia ditahan customer lalu disetorkannya ke kas
+            negara atas nama perusahaan. Invoicenya tetap lunas. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Bidang
+            label="PPh 23 dipotong"
+            nama="pph23_amount"
+            galat={keadaan.galat?.pph23_amount}
+          >
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
+                  Rp
+                </span>
+                <Input
+                  id="pph23_amount"
+                  inputMode="numeric"
+                  value={pph23}
+                  onChange={(e) => setPph23(e.target.value)}
+                  placeholder="0"
+                  className="angka pl-9 tabular-nums"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={usulanPph.lte(0)}
+                onClick={() => setPph23(usulanPph.toFixed(0))}
+              >
+                Hitung 2%
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {usulanPph.gt(0)
+                ? `2% dari harga makanan dan service charge: ${rupiah(usulanPph)}`
+                : "Isi alokasinya dulu untuk menghitung 2% otomatis."}
+            </p>
+          </Bidang>
+
+          <Bidang label="Nomor bukti potong" nama="pph23_bukti">
+            <Input
+              id="pph23_bukti"
+              value={buktiPph}
+              onChange={(e) => setBuktiPph(e.target.value)}
+              placeholder="Nomor dari customer"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tanpa bukti potong, potongannya tidak bisa dikreditkan di SPT.
+            </p>
+          </Bidang>
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">
@@ -218,7 +302,7 @@ export function FormPembayaran({
           <h2 className="text-sm font-semibold tracking-[-0.01em]">Alokasi ke invoice</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Satu setoran boleh menutup beberapa invoice. Jumlah alokasi harus sama persis dengan
-            uang yang diterima.
+            uang yang diterima ditambah PPh 23 yang dipotong.
           </p>
         </div>
 

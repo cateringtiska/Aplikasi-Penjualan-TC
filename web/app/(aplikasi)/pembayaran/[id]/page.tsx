@@ -84,7 +84,15 @@ export default async function HalamanDetailPembayaran({
       </header>
 
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
-        <KartuAngka label="Uang diterima" nilai={rupiah(p.total_amount)} menonjol warna="hijau" />
+        <KartuAngka
+          label="Uang diterima"
+          nilai={rupiah(p.total_amount)}
+          menonjol
+          warna="hijau"
+          keterangan={
+            Number(p.pph23_amount) > 0 ? "masuk ke rekening" : undefined
+          }
+        />
         <KartuAngka label="Dari customer" warna="biru" nilai={p.customers.name} teks />
         <KartuAngka
           label="Menutup"
@@ -94,6 +102,25 @@ export default async function HalamanDetailPembayaran({
           keterangan={p.users ? `Dicatat oleh ${p.users.name}` : undefined}
         />
       </section>
+
+      {/* PPh 23 disebut terpisah: uang yang masuk ke rekening memang lebih
+          kecil daripada yang menutup invoice, dan tanpa keterangan ini
+          selisihnya terbaca sebagai kesalahan pencatatan. */}
+      {Number(p.pph23_amount) > 0 ? (
+        <section className="mb-6 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+          <p className="font-medium">
+            PPh 23 dipotong {rupiah(p.pph23_amount)} · menutup{" "}
+            {rupiah(d(p.total_amount).plus(d(p.pph23_amount)))}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {p.pph23_bukti
+              ? `Bukti potong ${p.pph23_bukti}. `
+              : "Nomor bukti potong belum diisi — tanpa itu potongannya tidak bisa dikreditkan di SPT. "}
+            Yang dipotong sudah disetorkan customer ke kas negara atas nama perusahaan, jadi
+            invoicenya tetap lunas.
+          </p>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="pb-2.5 text-sm font-semibold tracking-[-0.01em]">Alokasi ke invoice</h2>

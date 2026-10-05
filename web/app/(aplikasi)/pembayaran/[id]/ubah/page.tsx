@@ -29,6 +29,8 @@ export default async function HalamanUbahPembayaran({
         bank_cash: true,
         notes: true,
         total_amount: true,
+        pph23_amount: true,
+        pph23_bukti: true,
         customer_id: true,
         payment_details: { select: { invoice_id: true, amount_applied: true } },
       },
@@ -73,6 +75,10 @@ export default async function HalamanUbahPembayaran({
         tagihanAwal={daftarTagihan}
         tanggalAwal={pembayaran.payment_date.toISOString().slice(0, 10)}
         isiAwal={{
+          pph23: Number(pembayaran.pph23_amount) > 0
+            ? Number(pembayaran.pph23_amount).toLocaleString("id-ID")
+            : "",
+          buktiPph: pembayaran.pph23_bukti ?? "",
           metode: pembayaran.payment_method,
           bankCash: pembayaran.bank_cash ?? "",
           catatan: pembayaran.notes ?? "",
