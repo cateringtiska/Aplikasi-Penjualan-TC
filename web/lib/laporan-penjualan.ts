@@ -57,6 +57,24 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
         status: true,
         event_type: true,
         customers: { select: { name: true } },
+
+        // Rincian untuk penjurnalan. Kelimanya berjumlah tepat grand_total,
+        // jadi barisnya bisa dicocokkan sendiri tanpa menebak sisanya.
+        subtotal: true,
+        service_charge_amount: true,
+        pb1_amount: true,
+        delivery_amount: true,
+        invoice_charges: { select: { amount: true } },
+
+        // Tanggal bayar dan PPh 23 yang ditanggung invoice ini.
+        payment_details: {
+          select: {
+            amount_applied: true,
+            payments: {
+              select: { payment_date: true, total_amount: true, pph23_amount: true },
+            },
+          },
+        },
         // Kolom lamanya ikut diambil — lihat catatan di tanggalAcaraDokumen().
         event_date: true,
         event_days: true,
@@ -89,13 +107,47 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     })),
   );
 
-  const baris = tagihan.map((t) => ({
+  const baris = tagihan.map((t) => {
+    const tanggalAcara = tanggalAcaraDokumen(
+      t.invoice_event_dates,
+      t.event_date,
+      t.event_days,
+    );
+
+    const biayaTambahan = t.invoice_charges.reduce((j, c) => j.plus(d(c.amount)), d(0));
+
+    // PPh 23 yang ditanggung invoice ini. Satu setoran bisa menutup beberapa
+    // invoice, jadi potongannya dibagi SEBANDING dengan alokasinya — bukan
+    // dibebankan seluruhnya ke invoice pertama yang kebetulan ditemukan.
+    const pph23 = t.payment_details.reduce((jumlah, r) => {
+      const menutup = d(r.payments.total_amount).plus(d(r.payments.pph23_amount));
+      if (menutup.lte(0)) return jumlah;
+      return jumlah.plus(
+        d(r.payments.pph23_amount).times(d(r.amount_applied)).dividedBy(menutup),
+      );
+    }, d(0));
+
+    const tanggalBayar = t.payment_details.reduce<Date | null>(
+      (akhir, r) =>
+        akhir === null || r.payments.payment_date > akhir ? r.payments.payment_date : akhir,
+      null,
+    );
+
+    return {
     id: t.id.toString(),
     nomor: t.invoice_number,
     tanggal: t.invoice_date,
     jatuhTempo: t.due_date,
+    tanggalAcara,
+    tanggalBayar,
     pelanggan: t.customers.name,
     acara: t.event_type ?? "",
+    penjualan: t.subtotal.toString(),
+    serviceCharge: t.service_charge_amount.toString(),
+    pb1: t.pb1_amount.toString(),
+    delivery: t.delivery_amount.toString(),
+    biayaTambahan: biayaTambahan.toString(),
+    pph23: pph23.toFixed(2),
     total: t.grand_total.toString(),
     dibayar: t.paid_amount.toString(),
     sisa: d(t.grand_total).minus(d(t.paid_amount)).toString(),
@@ -104,9 +156,10 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     pengakuan: pengakuanDokumen({
       grand_total: t.grand_total,
       paid_amount: t.paid_amount,
-      tanggalAcara: tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
+      tanggalAcara,
     }).keadaan,
-  }));
+    };
+  });
 
   return {
     baris,

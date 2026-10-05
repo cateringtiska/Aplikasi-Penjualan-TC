@@ -1,22 +1,22 @@
 import { format } from "date-fns";
-import ExcelJS from "exceljs";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { penggunaAktif } from "@/lib/auth";
-import { hanyaMiliknya } from "@/lib/rbac";
-
+import { buatBukuPenjualan } from "@/lib/excel-penjualan";
 import { ambilLaporan, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
+import { prisma } from "@/lib/prisma";
+import { hanyaMiliknya } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Mengunduh laporan penjualan sebagai berkas Excel.
  *
- * Kolomnya sengaja sama persis dengan ekspor Laravel, supaya berkas lama dan
- * baru bisa ditumpuk di satu lembar kerja tanpa menyesuaikan apa pun.
+ * Bentuk berkasnya disusun di lib/excel-penjualan.ts; di sini hanya hak
+ * akses, penyaringan, dan pengambilan datanya.
  *
- * Nilai uang ditulis sebagai ANGKA, bukan teks — supaya bisa dijumlah langsung
- * di Excel. Formatnya diberi pemisah ribuan gaya Indonesia.
+ * Nilai uang ditulis sebagai ANGKA, bukan teks — supaya bisa dijumlah
+ * langsung di Excel oleh siapa pun yang menerimanya.
  */
 export async function GET(request: NextRequest) {
   // Dibaca ulang dari database, bukan dari cookie: pengguna yang sudah
@@ -31,82 +31,24 @@ export async function GET(request: NextRequest) {
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const saring = bacaSaring(params);
-  const { baris, ringkasan } = await ambilLaporan(saring, hanyaMiliknya(sesi));
 
-  const buku = new ExcelJS.Workbook();
-  buku.creator = "Penjualan TC";
-  buku.created = new Date();
-
-  const lembar = buku.addWorksheet("Laporan Penjualan", {
-    views: [{ state: "frozen", ySplit: 4 }],
-  });
-
-  lembar.mergeCells("A1:H1");
-  lembar.getCell("A1").value = "Laporan Penjualan";
-  lembar.getCell("A1").font = { bold: true, size: 14 };
-
-  lembar.mergeCells("A2:H2");
-  lembar.getCell("A2").value = `Periode: ${judulPeriode(saring)}`;
-  lembar.getCell("A2").font = { color: { argb: "FF666666" } };
-
-  const KEPALA = [
-    "No. Invoice",
-    "Tanggal",
-    "Customer",
-    "Jatuh Tempo",
-    "Total",
-    "Terbayar",
-    "Sisa",
-    "Status",
-  ];
-
-  const barisKepala = lembar.getRow(4);
-  barisKepala.values = KEPALA;
-  barisKepala.font = { bold: true };
-  barisKepala.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFF0F0F0" },
-  };
-  barisKepala.border = { bottom: { style: "thin", color: { argb: "FF999999" } } };
-
-  for (const b of baris) {
-    lembar.addRow([
-      b.nomor,
-      format(b.tanggal, "dd/MM/yyyy"),
-      b.pelanggan,
-      format(b.jatuhTempo, "dd/MM/yyyy"),
-      Number(b.total),
-      Number(b.dibayar),
-      Number(b.sisa),
-      b.statusLabel,
-    ]);
-  }
-
-  // Baris total di bawah, supaya angkanya bisa langsung dibandingkan dengan
-  // ringkasan di layar.
-  const barisTotal = lembar.addRow([
-    "TOTAL",
-    "",
-    "",
-    "",
-    Number(ringkasan.nilaiTagihan),
-    Number(ringkasan.totalTerbayar),
-    Number(ringkasan.totalPiutang),
-    `${ringkasan.jumlahTagihan} invoice aktif`,
+  const [{ baris }, perusahaan] = await Promise.all([
+    ambilLaporan(saring, hanyaMiliknya(sesi)),
+    prisma.company_settings.findUnique({
+      where: { id: BigInt(1) },
+      select: { company_name: true, logo_path: true },
+    }),
   ]);
-  barisTotal.font = { bold: true };
-  barisTotal.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  const lebar = [16, 12, 34, 12, 16, 16, 16, 24];
-  lebar.forEach((w, i) => {
-    lembar.getColumn(i + 1).width = w;
+  const buku = await buatBukuPenjualan({
+    baris,
+    periode: judulPeriode(saring),
+    perusahaan: {
+      nama: perusahaan?.company_name ?? "Perusahaan",
+      logo: await ambilLogo(perusahaan?.logo_path ?? null),
+    },
+    dicetakOleh: sesi.nama,
   });
-
-  for (const kolom of [5, 6, 7]) {
-    lembar.getColumn(kolom).numFmt = "#,##0";
-    lembar.getColumn(kolom).alignment = { horizontal: "right" };
-  }
 
   const isi = await buku.xlsx.writeBuffer();
   const namaBerkas = `laporan-penjualan-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;
@@ -119,4 +61,25 @@ export async function GET(request: NextRequest) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+/**
+ * Mengambil logo untuk ditempel di kop.
+ *
+ * Gagal mengambilnya TIDAK menggagalkan laporannya. Logo adalah hiasan;
+ * angkanya yang dicari orang, dan menolak menerbitkan laporan karena
+ * gambarnya tidak terunduh akan menukar sesuatu yang penting dengan sesuatu
+ * yang tidak.
+ */
+async function ambilLogo(tautan: string | null): Promise<ArrayBuffer | null> {
+  if (!tautan || !tautan.startsWith("http")) return null;
+
+  try {
+    const tanggapan = await fetch(tautan, { cache: "no-store" });
+    if (!tanggapan.ok) return null;
+    return await tanggapan.arrayBuffer();
+  } catch (galat) {
+    console.error("Logo gagal diambil untuk laporan Excel", galat);
+    return null;
+  }
 }

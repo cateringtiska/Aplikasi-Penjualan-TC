@@ -34,6 +34,7 @@ export default defineConfig({
       "scripts/tanggal-acara.test.ts",
       "scripts/pengakuan-piutang.test.ts",
       "scripts/ubah-pembayaran.test.ts",
+      "scripts/excel-penjualan.test.ts",
     ],
     // Vitest tidak memuat .env sendiri; tanpa ini DATABASE_URL kosong.
     setupFiles: ["dotenv/config"],
