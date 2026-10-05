@@ -36,18 +36,30 @@ const METODE = [
 const keadaanAwal: KeadaanPembayaran = {};
 
 export function FormPembayaran({
+  id: idPembayaran,
   pelanggan,
   pelangganAwal,
   tagihanAwal,
   tandaiAwal,
   tanggalAwal,
+  isiAwal,
 }: {
+  /** Diisi saat MENGUBAH pembayaran yang sudah ada. */
+  id?: string;
   pelanggan: PilihanPelanggan[];
   pelangganAwal: string;
   tagihanAwal: BarisTagihan[];
   /** Id tagihan yang langsung dicentang, saat datang dari halaman tagihan. */
   tandaiAwal?: string;
   tanggalAwal: string;
+  /** Isian pembayaran yang sedang diubah. */
+  isiAwal?: {
+    metode: string;
+    bankCash: string;
+    catatan: string;
+    totalDiterima: string;
+    alokasi: Record<string, string>;
+  };
 }) {
   const [keadaan, kirim, sedangKirim] = useActionState(simpanPembayaran, keadaanAwal);
   const [memuat, mulaiMuat] = useTransition();
@@ -55,9 +67,9 @@ export function FormPembayaran({
   const [idPelanggan, setIdPelanggan] = useState(pelangganAwal);
   const [tagihan, setTagihan] = useState<BarisTagihan[]>(tagihanAwal);
   const [tanggal, setTanggal] = useState(tanggalAwal);
-  const [metode, setMetode] = useState("transfer");
-  const [bankCash, setBankCash] = useState("");
-  const [catatan, setCatatan] = useState("");
+  const [metode, setMetode] = useState(isiAwal?.metode ?? "transfer");
+  const [bankCash, setBankCash] = useState(isiAwal?.bankCash ?? "");
+  const [catatan, setCatatan] = useState(isiAwal?.catatan ?? "");
   // Saat datang dari halaman tagihan, tagihan itu langsung tercentang sejumlah
   // sisanya dan uang diterima terisi sama besar — kasus yang paling sering
   // terjadi, jadi tidak perlu diketik ulang.
@@ -68,20 +80,23 @@ export function FormPembayaran({
     ? Number(tagihanDitandai.sisa).toLocaleString("id-ID")
     : "";
 
-  const [totalDiterima, setTotalDiterima] = useState(sisaDitandai);
+  const [totalDiterima, setTotalDiterima] = useState(isiAwal?.totalDiterima ?? sisaDitandai);
 
-  const [alokasi, setAlokasi] = useState<Record<string, string>>(() =>
-    tagihanDitandai ? { [tagihanDitandai.id]: sisaDitandai } : {},
-  );
+  const [alokasi, setAlokasi] = useState<Record<string, string>>(() => {
+    if (isiAwal) return isiAwal.alokasi;
+    return tagihanDitandai ? { [tagihanDitandai.id]: sisaDitandai } : {};
+  });
 
-  function gantiPelanggan(id: string) {
-    setIdPelanggan(id);
+  function gantiPelanggan(idBaru: string) {
+    setIdPelanggan(idBaru);
     setAlokasi({});
     setTagihan([]);
-    if (!id) return;
+    if (!idBaru) return;
 
     mulaiMuat(async () => {
-      setTagihan(await tagihanBelumLunas(id));
+      // Pembayaran yang sedang diubah ikut disebut: alokasinya sendiri harus
+      // dikembalikan ke sisa, kalau tidak angkanya terbaca melebihi sisa.
+      setTagihan(await tagihanBelumLunas(idBaru, idPembayaran));
     });
   }
 
@@ -95,6 +110,7 @@ export function FormPembayaran({
   const selisih = diterima.minus(jumlahAlokasi);
 
   const muatan = JSON.stringify({
+    id: idPembayaran ?? null,
     customer_id: idPelanggan,
     payment_date: tanggal,
     payment_method: metode,
@@ -324,7 +340,7 @@ export function FormPembayaran({
                   Menyimpan…
                 </>
               ) : (
-                "Simpan payment"
+                idPembayaran ? "Simpan perubahan" : "Simpan payment"
               )}
             </Button>
           </div>

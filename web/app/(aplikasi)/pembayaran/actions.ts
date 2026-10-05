@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
 
-import { hitungUlangTagihan } from "./simpan";
+import { hitungUlangTagihan } from "@/lib/alokasi-pembayaran";
 
 /**
  * Menghapus pembayaran, lalu mengembalikan status tagihan yang terpengaruh.
@@ -40,14 +42,46 @@ export async function hapusPembayaran(id: string): Promise<void> {
   revalidatePath("/tagihan");
 }
 
-/** Tagihan yang masih punya sisa, untuk satu pelanggan. */
-export async function tagihanBelumLunas(idPelanggan: string) {
+/**
+ * Tagihan yang masih punya sisa, untuk satu pelanggan.
+ *
+ * `idPembayaran` diisi saat MENGUBAH pembayaran. Tanpa itu, invoice yang
+ * sudah LUNAS OLEH PEMBAYARAN INI SENDIRI tidak akan muncul di daftar —
+ * statusnya "paid" — sehingga membuka formulir ubah lalu menyimpannya akan
+ * diam-diam melepas alokasinya. Uangnya tetap tercatat, tetapi tidak lagi
+ * menempel pada invoice mana pun.
+ *
+ * Alokasi pembayaran itu sendiri juga DIKEMBALIKAN ke sisanya, supaya angka
+ * yang sudah terisi di formulir tidak terbaca melebihi sisa.
+ */
+export async function tagihanBelumLunas(idPelanggan: string, idPembayaran?: string) {
   await pastikanPeran("finance");
+
+  const alokasiSendiri = new Map<string, Prisma.Decimal>();
+
+  if (idPembayaran) {
+    const rinci = await prisma.payment_details.findMany({
+      where: { payment_id: BigInt(idPembayaran) },
+      select: { invoice_id: true, amount_applied: true },
+    });
+    for (const r of rinci) {
+      const kunci = r.invoice_id.toString();
+      alokasiSendiri.set(
+        kunci,
+        (alokasiSendiri.get(kunci) ?? new Prisma.Decimal(0)).plus(r.amount_applied),
+      );
+    }
+  }
 
   const daftar = await prisma.invoices.findMany({
     where: {
       customer_id: BigInt(idPelanggan),
-      status: { in: ["unpaid", "partial", "overdue"] },
+      OR: [
+        { status: { in: ["unpaid", "partial", "overdue"] } },
+        ...(alokasiSendiri.size > 0
+          ? [{ id: { in: [...alokasiSendiri.keys()].map((x) => BigInt(x)) } }]
+          : []),
+      ],
     },
     orderBy: { due_date: "asc" },
     select: {
@@ -60,13 +94,20 @@ export async function tagihanBelumLunas(idPelanggan: string) {
     },
   });
 
-  return daftar.map((t) => ({
-    id: t.id.toString(),
-    nomor: t.invoice_number,
-    jatuhTempo: t.due_date.toISOString().slice(0, 10),
-    total: t.grand_total.toString(),
-    dibayar: t.paid_amount.toString(),
-    sisa: t.grand_total.minus(t.paid_amount).toString(),
-    status: t.status,
-  }));
+  return daftar
+    .filter((t) => t.status !== "cancelled")
+    .map((t) => {
+      const sendiri = alokasiSendiri.get(t.id.toString()) ?? new Prisma.Decimal(0);
+      const dibayarLain = t.paid_amount.minus(sendiri);
+
+      return {
+        id: t.id.toString(),
+        nomor: t.invoice_number,
+        jatuhTempo: t.due_date.toISOString().slice(0, 10),
+        total: t.grand_total.toString(),
+        dibayar: dibayarLain.toString(),
+        sisa: t.grand_total.minus(dibayarLain).toString(),
+        status: t.status,
+      };
+    });
 }

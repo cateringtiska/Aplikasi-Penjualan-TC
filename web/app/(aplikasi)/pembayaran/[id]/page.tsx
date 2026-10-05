@@ -1,10 +1,11 @@
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PencilLine } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { Halaman } from "@/components/halaman";
 import { KartuAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
@@ -66,13 +67,20 @@ export default async function HalamanDetailPembayaran({
         </Link>
       </div>
 
-      <header className="pb-6">
-        <h1 className="nomor-dokumen text-lg font-semibold">{p.payment_number}</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {format(p.payment_date, "d MMMM yyyy", { locale: localeId })} ·{" "}
-          {LABEL_METODE[p.payment_method] ?? p.payment_method}
-          {p.bank_cash ? ` · ${p.bank_cash}` : ""}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4 pb-6">
+        <div className="min-w-0">
+          <h1 className="nomor-dokumen text-lg font-semibold">{p.payment_number}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {format(p.payment_date, "d MMMM yyyy", { locale: localeId })} ·{" "}
+            {LABEL_METODE[p.payment_method] ?? p.payment_method}
+            {p.bank_cash ? ` · ${p.bank_cash}` : ""}
+          </p>
+        </div>
+
+        <Button variant="outline" size="sm" render={<Link href={`/pembayaran/${p.id}/ubah`} />}>
+          <PencilLine className="size-4" />
+          Ubah
+        </Button>
       </header>
 
       <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">

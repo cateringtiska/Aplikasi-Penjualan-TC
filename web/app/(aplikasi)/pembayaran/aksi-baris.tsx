@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, MoreHorizontal, Trash2 } from "lucide-react";
+import { FileText, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -40,6 +40,10 @@ export function AksiBaris({ id, nomor }: { id: string; nomor: string }) {
         <DropdownMenuItem onClick={() => router.push(`/pembayaran/${id}`)}>
           <FileText className="size-4" />
           Lihat detail
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push(`/pembayaran/${id}/ubah`)}>
+          <PencilLine className="size-4" />
+          Ubah pembayaran
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

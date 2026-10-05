@@ -5,11 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { lepasAlokasi, pasangAlokasi } from "@/lib/alokasi-pembayaran";
 import { pesanGagal } from "@/lib/dokumen";
 import { nomorDokumenBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
-import { d, hitungStatusInvoice, type StatusInvoice, uraikanRupiah } from "@/lib/uang";
+import { d, uraikanRupiah } from "@/lib/uang";
 
 /* ==========================================================================
    MENCATAT PEMBAYARAN
@@ -26,6 +27,8 @@ import { d, hitungStatusInvoice, type StatusInvoice, uraikanRupiah } from "@/lib
    ========================================================================== */
 
 const skema = z.object({
+  /** Diisi hanya saat mengubah pembayaran yang sudah ada. */
+  id: z.string().trim().nullable().optional(),
   customer_id: z.string().trim().min(1, "Customer belum dipilih."),
   payment_date: z.string().min(1, "Tanggal belum diisi."),
   payment_method: z.enum(["cash", "transfer", "giro", "lainnya"]),
@@ -96,6 +99,20 @@ export async function simpanPembayaran(
 
   try {
     idHasil = await prisma.$transaction(async (tx) => {
+      // MENGUBAH PEMBAYARAN: alokasi lamanya dilepas LEBIH DULU, lalu tagihan
+      // yang terdampak dihitung ulang. Tanpa itu, sisa yang dibaca di bawah
+      // masih memuat uang dari pembayaran ini sendiri, dan menaikkan
+      // alokasinya satu rupiah pun akan ditolak sebagai "melebihi sisa".
+      if (f.id) {
+        const ada = await tx.payments.findUnique({
+          where: { id: BigInt(f.id) },
+          select: { id: true },
+        });
+        if (!ada) throw new Error("Payment tidak ditemukan.");
+
+        await lepasAlokasi(tx, BigInt(f.id));
+      }
+
       // Sisa dibaca ulang di dalam transaksi — bukan dari yang dikirim browser.
       const tagihan = await tx.invoices.findMany({
         where: { id: { in: alokasi.map((a) => a.invoice_id) } },
@@ -128,39 +145,43 @@ export async function simpanPembayaran(
         }
       }
 
-      const pembayaran = await simpanDenganKodeUnik(
-        () => nomorDokumenBerikutnya("payments", "payment_number", "PAY", tx),
-        (nomor) =>
-          tx.payments.create({
+      // Nomor pembayaran TIDAK berubah saat diubah: ia sudah disebut di
+      // kuitansi dan percakapan dengan customer.
+      const pembayaran = f.id
+        ? await tx.payments.update({
+            where: { id: BigInt(f.id) },
             data: {
-              payment_number: nomor,
               payment_date: new Date(f.payment_date),
               customer_id: BigInt(f.customer_id),
               payment_method: f.payment_method,
               bank_cash: f.bank_cash || null,
               total_amount: totalDiterima.toFixed(2),
               notes: f.notes || null,
-              created_by: BigInt(sesi.id),
-              created_at: new Date(),
               updated_at: new Date(),
             },
             select: { id: true },
-          }),
-      );
+          })
+        : await simpanDenganKodeUnik(
+            () => nomorDokumenBerikutnya("payments", "payment_number", "PAY", tx),
+            (nomor) =>
+              tx.payments.create({
+                data: {
+                  payment_number: nomor,
+                  payment_date: new Date(f.payment_date),
+                  customer_id: BigInt(f.customer_id),
+                  payment_method: f.payment_method,
+                  bank_cash: f.bank_cash || null,
+                  total_amount: totalDiterima.toFixed(2),
+                  notes: f.notes || null,
+                  created_by: BigInt(sesi.id),
+                  created_at: new Date(),
+                  updated_at: new Date(),
+                },
+                select: { id: true },
+              }),
+          );
 
-      for (const a of alokasi) {
-        await tx.payment_details.create({
-          data: {
-            payment_id: pembayaran.id,
-            invoice_id: a.invoice_id,
-            amount_applied: a.jumlah.toFixed(2),
-            created_at: new Date(),
-            updated_at: new Date(),
-          },
-        });
-
-        await hitungUlangTagihan(tx, a.invoice_id);
-      }
+      await pasangAlokasi(tx, pembayaran.id, alokasi);
 
       return pembayaran.id.toString();
     });
@@ -170,44 +191,7 @@ export async function simpanPembayaran(
 
   revalidatePath("/pembayaran");
   revalidatePath("/tagihan");
+  revalidatePath(`/pembayaran/${idHasil}`);
   redirect(`/pembayaran/${idHasil}?tersimpan=1`);
 }
 
-/**
- * Menjumlah ulang seluruh alokasi yang masuk ke satu tagihan, lalu menetapkan
- * statusnya.
- *
- * Selalu dihitung dari nol berdasarkan baris payment_details yang ada —
- * tidak pernah menambah atau mengurangi angka yang tersimpan. Dengan begitu,
- * menghapus pembayaran juga otomatis benar.
- */
-export async function hitungUlangTagihan(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  idTagihan: bigint,
-): Promise<void> {
-  const jumlah = await tx.payment_details.aggregate({
-    where: { invoice_id: idTagihan },
-    _sum: { amount_applied: true },
-  });
-
-  const tagihan = await tx.invoices.findUniqueOrThrow({
-    where: { id: idTagihan },
-    select: { status: true, grand_total: true, due_date: true },
-  });
-
-  const dibayar = d(jumlah._sum.amount_applied);
-
-  await tx.invoices.update({
-    where: { id: idTagihan },
-    data: {
-      paid_amount: dibayar.toFixed(2),
-      status: hitungStatusInvoice({
-        statusSekarang: tagihan.status as StatusInvoice,
-        grandTotal: tagihan.grand_total.toString(),
-        totalDibayar: dibayar,
-        dueDate: tagihan.due_date,
-      }),
-      updated_at: new Date(),
-    },
-  });
-}
