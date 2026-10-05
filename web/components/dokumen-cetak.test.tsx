@@ -28,7 +28,9 @@ const PERUSAHAAN: Perusahaan = {
   swift_code: "CENAIDJA",
 };
 
-function pasang(perusahaan: Partial<Perusahaan> = {}) {
+type IsiCetak = React.ComponentProps<typeof DokumenCetak>["isi"];
+
+function pasang(perusahaan: Partial<Perusahaan> = {}, isi: Partial<IsiCetak> = {}) {
   render(
     <DokumenCetak
       isi={{
@@ -61,6 +63,7 @@ function pasang(perusahaan: Partial<Perusahaan> = {}) {
         catatan: null,
         syarat: null,
         perusahaan: { ...PERUSAHAAN, ...perusahaan },
+        ...isi,
       }}
     />,
   );
@@ -118,3 +121,88 @@ describe("keterangan pembayaran", () => {
     expect(screen.queryByText(/Pembayaran via transfer/)).toBeNull();
   });
 });
+
+/* ==========================================================================
+   WARNA HANYA PENEKANAN
+
+   Dokumen ini dicetak di printer hitam putih sama seringnya dengan dilihat
+   di layar. Di situ birunya menjadi abu dan hijaunya hampir putih.
+
+   Jadi setiap hal yang membedakan satu baris dari baris lain harus TETAP ADA
+   tanpa warna: judul kelompok dikenali dari kolom angkanya yang kosong,
+   baris TOTAL dari hurufnya yang tebal dan kata "TOTAL" itu sendiri.
+
+   Kalau suatu saat ada yang mengandalkan warna saja, yang menemukannya
+   adalah orang yang menerima dokumennya — setelah dicetak.
+   ========================================================================== */
+
+const BARIS_BERHARGA = {
+  id: "1",
+  item_name: "INDONESIAN BUFFET",
+  unit: "pax",
+  day: "1",
+  qty: "50",
+  price: "160000",
+  subtotal: "8000000",
+  is_compliment: false,
+  anak: [],
+};
+
+const JUDUL_KELOMPOK = {
+  id: "2",
+  item_name: "ANEKA STALL",
+  unit: null,
+  day: "1",
+  qty: "1",
+  price: "0",
+  subtotal: "0",
+  is_compliment: false,
+  anak: [
+    {
+      id: "2a",
+      item_name: "Bakwan Malang",
+      unit: "Porsi",
+      day: "1",
+      qty: "35",
+      price: "39500",
+      subtotal: "1382500",
+    },
+  ],
+};
+
+describe("warna pada dokumen cetak", () => {
+  it("judul kelompok tetap dikenali tanpa warna: kolom angkanya kosong", () => {
+    pasang({}, { baris: [BARIS_BERHARGA, JUDUL_KELOMPOK] });
+
+    // Kolomnya: No, Deskripsi, Hari, Qty, Satuan, Harga, Subtotal.
+    const judul = barisTabel("ANEKA STALL");
+    // Seluruh kolom angkanya kosong — ITU yang membedakannya dari baris
+    // berharga, bukan latar abunya.
+    expect(judul.slice(2)).toEqual(["", "", "", "", ""]);
+
+    const berharga = barisTabel("INDONESIAN BUFFET");
+    expect(berharga[2]).toBe("1"); // hari
+    expect(berharga[3]).toBe("50"); // qty
+    expect(berharga[6]).toBe("Rp 8.000.000");
+  });
+
+  it("baris TOTAL tetap dikenali tanpa warna: tebal dan bernama TOTAL", () => {
+    pasang({}, { baris: [BARIS_BERHARGA], grand_total: "8000000" });
+
+    const sel = screen.getByText("TOTAL");
+    expect(sel.closest("tr")?.className).toContain("font-bold");
+  });
+
+  it("nama item tetap terbaca utuh, bukan hanya berwarna", () => {
+    pasang({}, { baris: [BARIS_BERHARGA] });
+    expect(screen.getByText("INDONESIAN BUFFET")).toBeTruthy();
+  });
+});
+
+/** Isi satu baris tabel rincian, sebagai teks per kolom. */
+function barisTabel(namaItem: string): string[] {
+  const sel = screen.getByText(namaItem).closest("tr");
+  return Array.from(sel?.querySelectorAll("td") ?? []).map((td) =>
+    (td.textContent ?? "").replace(/\s+/g, " ").trim(),
+  );
+}

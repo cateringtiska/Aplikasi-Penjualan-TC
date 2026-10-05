@@ -89,6 +89,28 @@ export type IsiDokumen = {
   perusahaan: Perusahaan;
 };
 
+/* --------------------------------------------------------------------------
+   WARNA DOKUMEN CETAK
+
+   Mengikuti bentuk yang sudah dipakai pemiliknya: nama item biru, judul
+   kelompok biru di baris berlatar abu, blok total berlatar hijau.
+
+   SETIAP WARNA HANYA PENEKANAN, TIDAK PERNAH SATU-SATUNYA PENANDA. Dokumen
+   ini dicetak di printer hitam putih, dan di situ birunya menjadi abu dan
+   hijaunya hampir putih. Judul kelompok tetap dikenali dari kolom angkanya
+   yang kosong, dan baris TOTAL tetap dikenali dari hurufnya yang tebal —
+   bukan dari warnanya.
+
+   Latar belakangnya bertahan saat dicetak berkat print-color-adjust di
+   app/globals.css; tanpa itu peramban membuang seluruh latar.
+   -------------------------------------------------------------------------- */
+
+const BIRU = "#1f4e99";
+const LATAR_JUDUL = "#eef1f6";
+const LATAR_TOTAL = "#eaf2e4";
+const LATAR_TOTAL_AKHIR = "#cfe3c2";
+const LATAR_PITA = "#dce6f1";
+
 /** Membuang nol di belakang koma: 5.00 -> 5, 7.50 -> 7,5 */
 function persen(nilai: string | null): string {
   if (!nilai) return "0";
@@ -197,6 +219,19 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
         </table>
       ) : null}
 
+      {/* Pita tanggal acara. Di dokumen katering ia berdiri sendiri di atas
+          daftar pesanan: yang membacanya mencari HARI ACARANYA lebih dulu,
+          bukan nomor invoicenya. */}
+      {tanggalAcara ? (
+        <div
+          className="border border-[#999] border-b-0 px-2 py-1 text-center font-bold"
+          style={{ backgroundColor: LATAR_PITA, color: BIRU }}
+        >
+          {tanggalAcara}
+          {hariAcara > 1 ? " · " + hariAcara + " hari" : ""}
+        </div>
+      ) : null}
+
       {/* Rincian */}
       <table className="w-full border-collapse">
         <thead>
@@ -239,10 +274,13 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
 
             return (
               <Fragment key={b.id}>
-                <tr className="break-inside-avoid">
+                <tr
+                  className="break-inside-avoid"
+                  style={indukBernilai ? undefined : { backgroundColor: LATAR_JUDUL }}
+                >
                   <Td>{romawi(i + 1)}</Td>
                   <Td>
-                    <span className={anakBerharga.length > 0 ? "font-bold" : ""}>
+                    <span className="font-bold" style={{ color: BIRU }}>
                       {b.item_name}
                     </span>
                     {anakRincian.length > 0 ? (
@@ -288,7 +326,10 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                     sama persis dengan jumlah seluruh total kelompok, tanpa
                     perlu mencocokkan pembulatan di dua tempat. */}
                 {perluTotalKelompok(kelompok) ? (
-                  <tr className="break-inside-avoid bg-[#f4f4f4] font-bold">
+                  <tr
+                    className="break-inside-avoid font-bold"
+                    style={{ backgroundColor: LATAR_JUDUL }}
+                  >
                     <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
                       Total - {romawi(i + 1)}
                     </td>
@@ -322,7 +363,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           {isi.biaya_tambahan.map((b) => (
             <TrTotal key={b.id} label={b.label} nilai={rupiah(b.amount)} />
           ))}
-          <TrTotal label="TOTAL" nilai={rupiah(isi.grand_total)} />
+          <TrTotal label="TOTAL" nilai={rupiah(isi.grand_total)} akhir />
         </tbody>
       </table>
 
@@ -453,9 +494,27 @@ function Td({ children, kanan }: { children?: React.ReactNode; kanan?: boolean }
   );
 }
 
-function TrTotal({ label, nilai }: { label: string; nilai: string }) {
+/**
+ * Satu baris pada blok total.
+ *
+ * `akhir` menandai baris TOTAL — latarnya lebih tua, dan hurufnya tetap
+ * tebal seperti baris lain supaya ia tetap dikenali ketika dicetak hitam
+ * putih dan kedua hijaunya menjadi hampir sama.
+ */
+function TrTotal({
+  label,
+  nilai,
+  akhir,
+}: {
+  label: string;
+  nilai: string;
+  akhir?: boolean;
+}) {
   return (
-    <tr className="break-inside-avoid bg-[#f9f9f9] font-bold">
+    <tr
+      className="break-inside-avoid font-bold"
+      style={{ backgroundColor: akhir ? LATAR_TOTAL_AKHIR : LATAR_TOTAL }}
+    >
       <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
         {label}
       </td>
