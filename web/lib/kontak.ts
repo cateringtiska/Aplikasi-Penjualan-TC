@@ -36,3 +36,23 @@ export function namaPic(
   const customer = (picCustomer ?? "").trim();
   return customer === "" ? null : customer;
 }
+
+/**
+ * Label satu customer pada daftar pilihan.
+ *
+ * Nama saja tidak cukup membedakan. Pada data sungguhan ada DUA customer
+ * bernama "Meet The Bride - WO" — pekerjaan yang berbeda dari perencana yang
+ * sama. Yang memilih dari daftar tidak punya cara menebak mana yang mana,
+ * dan salah pilih berarti invoice terkirim ke orang yang salah.
+ *
+ * Jadi kodenya selalu disebut, dan nama PIC-nya disebut kalau ada — itu yang
+ * benar-benar dikenali orang, lebih daripada nomor customer.
+ */
+export function labelPelanggan(p: {
+  nama: string;
+  kode: string;
+  pic?: string | null;
+}): string {
+  const pic = (p.pic ?? "").trim();
+  return `${p.nama} (${p.kode})${pic === "" ? "" : ` · ${pic}`}`;
+}

@@ -9,12 +9,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { labelPelanggan } from "@/lib/kontak";
 import { d, rupiah, uraikanRupiah } from "@/lib/uang";
 
 import { tagihanBelumLunas } from "./actions";
 import { type KeadaanPembayaran, simpanPembayaran } from "./simpan";
 
-export type PilihanPelanggan = { id: string; nama: string; kode: string };
+export type PilihanPelanggan = {
+  id: string;
+  nama: string;
+  kode: string;
+  pic: string | null;
+};
 
 export type BarisTagihan = {
   id: string;
@@ -180,7 +186,7 @@ export function FormPembayaran({
               <option value="">— Pilih customer —</option>
               {pelanggan.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.nama} ({p.kode})
+                  {labelPelanggan(p)}
                 </option>
               ))}
             </select>

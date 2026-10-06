@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { type BarisTanggalForm, tanggalKosong } from "@/lib/bentuk-form";
+import { labelPelanggan } from "@/lib/kontak";
 import { jumlahHariAcara } from "@/lib/tanggal";
 import { d, hitungTotalDokumen, rupiah, subtotalBaris, uraikanRupiah } from "@/lib/uang";
 
@@ -355,7 +356,7 @@ export function FormDokumen({
               <option value="">— Pilih customer —</option>
               {pelanggan.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.nama} ({p.kode})
+                  {labelPelanggan({ nama: p.nama, kode: p.kode, pic: p.contact_person })}
                 </option>
               ))}
             </select>

@@ -7,6 +7,7 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { labelPelanggan } from "@/lib/kontak";
 
 /**
  * Penyaring laporan.
@@ -18,7 +19,7 @@ import { Label } from "@/components/ui/label";
 export function SaringLaporan({
   pelanggan,
 }: {
-  pelanggan: { id: string; nama: string }[];
+  pelanggan: { id: string; nama: string; kode: string; pic: string | null }[];
 }) {
   const router = useRouter();
   const jalur = usePathname();
@@ -75,7 +76,7 @@ export function SaringLaporan({
           <option value="">Semua customer</option>
           {pelanggan.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.nama}
+              {labelPelanggan(p)}
             </option>
           ))}
         </select>

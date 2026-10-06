@@ -20,7 +20,7 @@ export default async function HalamanPembayaranBaru({
 
   const pelanggan = await prisma.customers.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, customer_code: true },
+    select: { id: true, name: true, customer_code: true, pic_name: true },
   });
 
   // Kalau datang dari halaman tagihan, pelanggannya langsung terpilih dan
@@ -80,6 +80,7 @@ export default async function HalamanPembayaranBaru({
           id: p.id.toString(),
           nama: p.name,
           kode: p.customer_code,
+          pic: p.pic_name,
         }))}
         pelangganAwal={pelangganAwal}
         tagihanAwal={daftarTagihan}

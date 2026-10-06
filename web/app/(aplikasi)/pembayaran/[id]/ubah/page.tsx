@@ -37,7 +37,7 @@ export default async function HalamanUbahPembayaran({
     }),
     prisma.customers.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, customer_code: true },
+      select: { id: true, name: true, customer_code: true, pic_name: true },
     }),
   ]);
 
@@ -70,6 +70,7 @@ export default async function HalamanUbahPembayaran({
           id: p.id.toString(),
           nama: p.name,
           kode: p.customer_code,
+          pic: p.pic_name,
         }))}
         pelangganAwal={pembayaran.customer_id.toString()}
         tagihanAwal={daftarTagihan}

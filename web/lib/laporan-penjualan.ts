@@ -91,7 +91,7 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
     }),
     prisma.customers.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: { id: true, name: true, customer_code: true, pic_name: true },
     }),
   ]);
 
@@ -163,7 +163,14 @@ export async function ambilLaporan(saring: SaringLaporan, milik: SaringMilik) {
 
   return {
     baris,
-    pelanggan: daftarPelanggan.map((p) => ({ id: p.id.toString(), nama: p.name })),
+    // Kode dan PIC ikut: di penyaring ini namanya berdiri sendiri, dan dua
+    // customer bernama sama tidak bisa dibedakan sama sekali tanpa keduanya.
+    pelanggan: daftarPelanggan.map((p) => ({
+      id: p.id.toString(),
+      nama: p.name,
+      kode: p.customer_code,
+      pic: p.pic_name,
+    })),
     ringkasan: {
       jumlahPenawaran: penawaran.length,
       nilaiPenawaran: penawaran.reduce((j, q) => j.plus(d(q.grand_total)), d(0)),
