@@ -10,6 +10,8 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PanelBiaya } from "@/components/panel-biaya";
 import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
+import { bacaIzin } from "@/lib/izin";
+import { bolehBuka } from "@/lib/navigasi";
 import { wajibIzin } from "@/lib/rbac";
 import { hitungMargin, rupiah } from "@/lib/uang";
 
@@ -60,6 +62,14 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
   });
 
   const terkunci = margin?.status === "final";
+  // Bagian Cost hanya boleh membuka laporan Margin, jadi menautkannya ke
+  // dokumennya akan melemparnya balik ke tempat ia tadi berada — terbaca
+  // sebagai tautan rusak. Untuk mereka, jalan pulangnya adalah laporannya.
+  const izin = await bacaIzin();
+  const bolehBukaDokumen = bolehBuka(sesi.peran, "tagihan", izin);
+  const jalanPulang = bolehBukaDokumen ? `/tagihan/${tagihan.id}` : "/laporan/margin";
+  const kataPulang = bolehBukaDokumen ? tagihan.invoice_number : "laporan margin";
+
   // Mengisi biaya memang pekerjaan bagian Cost; Sales yang kebetulan diberi
   // izin melihat margin tetap hanya boleh membacanya.
   const bolehUbah =
@@ -69,11 +79,11 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
     <Halaman>
       <div className="pb-5">
         <Link
-          href={`/tagihan/${tagihan.id}`}
+          href={jalanPulang}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-3.5" />
-          Kembali ke {tagihan.invoice_number}
+          Kembali ke {kataPulang}
         </Link>
       </div>
 

@@ -10,6 +10,8 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PanelBiaya } from "@/components/panel-biaya";
 import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
+import { bacaIzin } from "@/lib/izin";
+import { bolehBuka } from "@/lib/navigasi";
 import { wajibIzin } from "@/lib/rbac";
 import { hitungMargin, rupiah } from "@/lib/uang";
 
@@ -55,6 +57,14 @@ export default async function HalamanMarginPenawaran({
     })),
   });
 
+  // Bagian Cost hanya boleh membuka laporan Margin, jadi menautkannya ke
+  // dokumennya akan melemparnya balik ke tempat ia tadi berada — terbaca
+  // sebagai tautan rusak. Untuk mereka, jalan pulangnya adalah laporannya.
+  const izin = await bacaIzin();
+  const bolehBukaDokumen = bolehBuka(sesi.peran, "penawaran", izin);
+  const jalanPulang = bolehBukaDokumen ? `/penawaran/${penawaran.id}` : "/laporan/margin";
+  const kataPulang = bolehBukaDokumen ? penawaran.quotation_number : "laporan margin";
+
   // Mengisi biaya memang pekerjaan bagian Cost; Sales yang kebetulan diberi
   // izin melihat margin tetap hanya boleh membacanya.
   const bolehUbah =
@@ -64,11 +74,11 @@ export default async function HalamanMarginPenawaran({
     <Halaman>
       <div className="pb-5">
         <Link
-          href={`/penawaran/${penawaran.id}`}
+          href={jalanPulang}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-3.5" />
-          Kembali ke {penawaran.quotation_number}
+          Kembali ke {kataPulang}
         </Link>
       </div>
 

@@ -5,6 +5,7 @@ import { PERAN } from "./peran";
 import {
   bolehBuka,
   butirMenu,
+  halamanAwal,
   kunciIzin,
   LABEL_PERAN,
   MENU,
@@ -147,26 +148,26 @@ describe("kunci izin", () => {
 });
 
 describe("peran Cost", () => {
-  it("membuka dokumen, product, dan margin — bukan uang maupun laporan penjualan", () => {
-    // Pekerjaannya mengisi biaya, jadi ia perlu melihat dokumennya dan
-    // halaman margin. Bawaannya TIDAK memberinya payment, laporan penjualan,
-    // kartu piutang, maupun data customer.
+  it("hanya membuka laporan Margin, tidak satu halaman pun yang lain", () => {
+    // Pekerjaannya mengisi biaya, dan seluruhnya bisa dikerjakan dari
+    // laporan Margin: tabelnya menautkan langsung ke halaman margin tiap
+    // quotation dan invoice, dan halaman itu memakai kunci izin yang sama.
+    //
+    // Jadi ia TIDAK perlu daftar dokumen, data customer, product, maupun
+    // dasbor — dan dasbor justru halaman yang memperlihatkan piutang serta
+    // omzet seluruh perusahaan.
     //
     // Yang ditulis di sini adalah BAWAANNYA, yang berlaku ketika barisnya di
     // tabel izin belum ada. Admin tetap bisa mengubahnya kapan saja dari
     // layar User.
     const kosong = izin();
 
-    expect(bolehBuka("cost", "dasbor", kosong)).toBe(true);
-    expect(bolehBuka("cost", "penawaran", kosong)).toBe(true);
-    expect(bolehBuka("cost", "tagihan", kosong)).toBe(true);
-    expect(bolehBuka("cost", "produk", kosong)).toBe(true);
     expect(bolehBuka("cost", "laporan-margin", kosong)).toBe(true);
 
-    expect(bolehBuka("cost", "pembayaran", kosong)).toBe(false);
-    expect(bolehBuka("cost", "laporan-penjualan", kosong)).toBe(false);
-    expect(bolehBuka("cost", "laporan-piutang", kosong)).toBe(false);
-    expect(bolehBuka("cost", "pelanggan", kosong)).toBe(false);
+    for (const butir of MENU.flatMap((k) => k.butir)) {
+      if (butir.kunci === "laporan-margin") continue;
+      expect(bolehBuka("cost", butir.kunci, kosong), butir.label).toBe(false);
+    }
   });
 
   it("ikut muncul di tabel hak akses, supaya admin bisa mengaturnya", () => {
@@ -189,5 +190,89 @@ describe("setiap peran punya nama di layar", () => {
 
   it("memuat seluruh peran yang diatur, plus admin", () => {
     expect(new Set(PERAN)).toEqual(new Set(["admin", ...PERAN_DIATUR]));
+  });
+});
+
+/* ==========================================================================
+   HALAMAN AWAL TIAP PERAN
+
+   Bahaya khasnya satu: halaman awal yang TERNYATA TIDAK BOLEH ia buka.
+   Halaman itu akan melemparnya kembali ke halaman awal, dan keduanya saling
+   melempar sampai browsernya menyerah. Yang terlihat pemakainya hanyalah
+   layar putih sesudah memasukkan sandi yang benar — tanpa pesan apa pun.
+   ========================================================================== */
+
+describe("halaman awal", () => {
+  it("SELALU halaman yang boleh dibuka peran itu", () => {
+    // Diperiksa atas banyak susunan centang, bukan satu susunan bawaan:
+    // admin mengubah centangnya kapan saja, dan susunan yang menyesatkan
+    // tidak harus aneh untuk bisa terjadi.
+    const semuaKunci = MENU.flatMap((k) => k.butir.map((b) => b.kunci));
+
+    for (const peran of PERAN_DIATUR) {
+      // Satu per satu: hanya SATU halaman yang terbuka, bergiliran.
+      for (const hidup of semuaKunci) {
+        const peta = izin(
+          Object.fromEntries(semuaKunci.map((k) => [kunciIzin(peran, k), k === hidup])),
+        );
+
+        const awal = halamanAwal(peran, peta);
+        const butir = MENU.flatMap((k) => k.butir).find((b) => b.href === awal);
+
+        // "/dasbor" dipakai sebagai hentian terakhir, dan dasbor memang
+        // hanya menuntut sesi — jadi ia tidak pernah melempar balik.
+        if (awal === "/dasbor") continue;
+
+        expect(butir, `halaman awal ${awal} bukan butir menu`).toBeDefined();
+        expect(
+          bolehBuka(peran, butir!.kunci, peta),
+          `${peran} dikirim ke ${awal} yang tidak boleh ia buka`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("berhenti di dasbor ketika tidak ada satu pun halaman terbuka", () => {
+    // Dasbor hanya menuntut sesi, jadi putarannya berhenti di situ. Peran
+    // tanpa izin apa pun tetap mendapat halaman, bukan layar putih.
+    const semuaMati = izin(
+      Object.fromEntries(
+        PERAN_DIATUR.flatMap((p) =>
+          MENU.flatMap((k) => k.butir.map((b) => [kunciIzin(p, b.kunci), false])),
+        ),
+      ),
+    );
+
+    for (const peran of PERAN_DIATUR) {
+      expect(halamanAwal(peran, semuaMati), peran).toBe("/dasbor");
+    }
+  });
+
+  it("mengantar Cost ke laporan Margin, bukan ke Dashboard", () => {
+    // Inti permintaannya: Cost mendarat di tempat kerjanya. Dashboard
+    // memperlihatkan piutang dan omzet seluruh perusahaan.
+    const kosong = izin();
+
+    expect(halamanAwal("cost", kosong)).toBe("/laporan/margin");
+    expect(bolehBuka("cost", "dasbor", kosong), "Cost masih boleh membuka Dashboard").toBe(
+      false,
+    );
+  });
+
+  it("tidak mengubah tujuan peran yang lain", () => {
+    const kosong = izin();
+
+    expect(halamanAwal("admin", kosong)).toBe("/dasbor");
+    expect(halamanAwal("sales", kosong)).toBe("/dasbor");
+    expect(halamanAwal("finance", kosong)).toBe("/dasbor");
+  });
+
+  it("mengikuti centang admin, bukan bawaannya", () => {
+    // Dasbor dimatikan untuk Sales: ia harus mendarat di halaman berikutnya
+    // yang terbuka, bukan tetap dikirim ke dasbor.
+    expect(halamanAwal("sales", izin({ "sales:dasbor": false }))).toBe("/penawaran");
+
+    // Sebaliknya, Cost yang diberi dasbor oleh admin memang mendarat di sana.
+    expect(halamanAwal("cost", izin({ "cost:dasbor": true }))).toBe("/dasbor");
   });
 });

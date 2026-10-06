@@ -12,6 +12,7 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
+import { PemberitahuanAkses } from "@/components/pemberitahuan-akses";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { ambilLaporanMargin } from "@/lib/laporan-margin";
@@ -26,7 +27,7 @@ export default async function HalamanLaporanMargin({
 }: PageProps<"/laporan/margin">) {
   await wajibIzin("laporan-margin");
 
-  const { cari } = await searchParams;
+  const { cari, akses } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
   const { nyata, perkiraan, ringkasanNyata, ringkasanPerkiraan } =
@@ -34,6 +35,8 @@ export default async function HalamanLaporanMargin({
 
   return (
     <Halaman>
+      <PemberitahuanAkses ditolak={akses === "ditolak"} />
+
       <KepalaHalaman
         judul="Laporan margin"
         keterangan="Margin per acara. Angka nyata dari invoice dan angka perkiraan dari quotation dipisah, tidak pernah dijumlahkan."

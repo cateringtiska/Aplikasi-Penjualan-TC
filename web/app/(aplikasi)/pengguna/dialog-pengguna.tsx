@@ -45,7 +45,7 @@ const JELAS_PERAN: Record<Peran, string> = {
   admin: "Semua halaman, plus User dan Pengaturan company.",
   sales: "Quotation, invoice, customer, product, laporan penjualan dan piutang.",
   finance: "Semua milik Sales, ditambah payment dan laporan margin.",
-  cost: "Quotation, invoice, product, dan laporan margin — untuk mengisi biaya.",
+  cost: "Laporan margin saja, untuk mengisi biaya tiap acara. Masuk langsung ke sana.",
 };
 
 const keadaanAwal: KeadaanPengguna = {};

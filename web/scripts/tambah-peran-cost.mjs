@@ -17,18 +17,23 @@
 import "dotenv/config";
 import pg from "pg";
 
-// Bawaan untuk peran Cost. Disalin dari lib/navigasi.ts; yang berlaku
-// sehari-hari tetap isi tabel ini, yang bisa diubah admin kapan saja.
+// Bawaan untuk peran Cost: laporan Margin saja. Seluruh pekerjaannya bisa
+// dikerjakan dari sana — tabelnya menautkan langsung ke halaman margin tiap
+// quotation dan invoice, dan halaman itu memakai kunci izin yang sama.
+//
+// Dasbor sengaja ditutup: di sanalah piutang dan omzet SELURUH perusahaan
+// ditampilkan. Disalin dari lib/navigasi.ts; yang berlaku sehari-hari tetap
+// isi tabel ini, yang bisa diubah admin kapan saja.
 const BAWAAN = {
-  dasbor: true,
-  penawaran: true,
-  tagihan: true,
+  dasbor: false,
+  penawaran: false,
+  tagihan: false,
   pembayaran: false,
   "laporan-penjualan": false,
   "laporan-piutang": false,
   "laporan-margin": true,
   pelanggan: false,
-  produk: true,
+  produk: false,
 };
 
 const url = new URL(process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL);

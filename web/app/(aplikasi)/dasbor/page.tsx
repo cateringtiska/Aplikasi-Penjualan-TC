@@ -2,12 +2,16 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
+import { PemberitahuanAkses } from "@/components/pemberitahuan-akses";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
 import { pengakuanDokumen } from "@/lib/pengakuan";
 import { ringkasTanggalAcara, tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
+import { bacaIzin } from "@/lib/izin";
+import { bolehBuka, halamanAwal } from "@/lib/navigasi";
 import { hanyaMiliknya, wajibSesi } from "@/lib/rbac";
 
 import { tandaiJatuhTempo } from "../tagihan/actions";
@@ -23,6 +27,19 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   const sesi = await wajibSesi();
   const { akses } = await searchParams;
   const ditolak = akses === "ditolak";
+
+  // Halaman ini dulu hanya menuntut sesi, bukan izin. Peran yang menu
+  // Dashboard-nya disembunyikan tetap bisa membukanya dengan mengetik
+  // alamatnya — dan itu bukan halaman yang sepele: di sinilah piutang dan
+  // omzet SELURUH perusahaan ditampilkan.
+  const izin = await bacaIzin();
+  if (!bolehBuka(sesi.peran, "dasbor", izin)) {
+    const tujuan = halamanAwal(sesi.peran, izin);
+    // Tidak dilempar kalau halaman awalnya memang dasbor sendiri — itu
+    // terjadi ketika tidak ada satu pun halaman yang terbuka untuknya, dan
+    // melemparnya ke sini lagi hanya akan berputar tanpa henti.
+    if (tujuan !== "/dasbor") redirect(`${tujuan}?akses=ditolak`);
+  }
 
   const sekarang = new Date();
   const awalHariIni = new Date(sekarang);
@@ -146,20 +163,7 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
         </p>
       </header>
 
-      {/* wajibPeran melempar ke sini dengan ?akses=ditolak. Tanpa
-          pemberitahuan ini, orang yang membuka halaman terlarang hanya
-          mendapati dirinya tiba-tiba di Dashboard — yang terbaca sebagai
-          tautan rusak, bukan sebagai penolakan yang memang disengaja. */}
-      {ditolak ? (
-        <p
-          role="alert"
-          className="mt-6 rounded-md border border-border-strong/60 bg-muted/50 px-3.5 py-3 text-sm"
-        >
-          Halaman yang Anda buka hanya untuk peran tertentu, jadi Anda dikembalikan ke
-          Dashboard. Ini bukan kesalahan — menu yang tidak terlihat memang sengaja ditutup
-          untuk peran Anda.
-        </p>
-      ) : null}
+      <PemberitahuanAkses ditolak={ditolak} />
 
       {/* Empat angka utama disusun sebagai satu papan, bukan empat kartu
           terpisah — supaya terbaca sebagai satu ringkasan. */}

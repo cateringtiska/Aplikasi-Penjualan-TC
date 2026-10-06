@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { masuk } from "@/lib/auth";
+import { halamanAwalSesi } from "@/lib/rbac";
 
 const skema = z.object({
   username: z.string().trim().min(1, "Nama user belum diisi."),
@@ -40,7 +41,11 @@ export async function aksiMasuk(
     return { pesan: percobaan.pesan };
   }
 
+  // Tiap peran mendarat di halaman yang memang boleh ia buka. Bagian Cost
+  // hanya punya laporan Margin, jadi /dasbor bukan tujuan yang benar.
+  const tujuan = await halamanAwalSesi(percobaan.sesi);
+
   // redirect() bekerja dengan melempar sinyal khusus Next.js, jadi harus
   // dipanggil di luar blok try/catch mana pun.
-  redirect("/dasbor");
+  redirect(tujuan);
 }

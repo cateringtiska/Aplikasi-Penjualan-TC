@@ -1,6 +1,13 @@
 import { afterAll, describe, expect, it } from "vitest";
 
-import { MENU, PERAN_DIATUR } from "../lib/navigasi";
+import {
+  bolehBuka,
+  halamanAwal,
+  kunciIzin,
+  MENU,
+  PERAN_DIATUR,
+  type PetaIzin,
+} from "../lib/navigasi";
 import { PERAN } from "../lib/peran";
 import { prisma } from "../lib/prisma";
 import { hanyaMiliknya } from "../lib/rbac";
@@ -28,6 +35,14 @@ import { hanyaMiliknya } from "../lib/rbac";
 afterAll(async () => {
   await prisma.$disconnect();
 });
+
+/** Izin yang sungguh tersimpan, dibentuk seperti yang dibaca lib/izin.ts. */
+async function petaIzin(): Promise<PetaIzin> {
+  const baris = await prisma.role_permissions.findMany({
+    select: { role: true, menu_key: true, allowed: true },
+  });
+  return new Map(baris.map((b) => [kunciIzin(b.role, b.menu_key), b.allowed]));
+}
 
 describe("batasan peran di tabel users", () => {
   it("MENERIMA setiap peran yang dikenal kode", async () => {
@@ -146,5 +161,35 @@ describe("cost melihat dokumen seluruh perusahaan", () => {
 
     expect(hanyaMiliknya(sesi("cost"))).toEqual({});
     expect(hanyaMiliknya(sesi("sales"))).toEqual({ created_by: BigInt(7) });
+  });
+});
+
+describe("halaman awal menurut izin yang SUNGGUH tersimpan", () => {
+  it("mengantar Cost ke laporan Margin", async () => {
+    // Diperiksa atas isi tabelnya, bukan atas bawaan di lib/navigasi.ts.
+    // Pemiliknya bisa mengubah centangnya kapan saja, dan yang menentukan
+    // ke mana orangnya mendarat adalah tabel ini.
+    const izin = await petaIzin();
+
+    expect(bolehBuka("cost", "laporan-margin", izin), "Cost kehilangan laporan Margin").toBe(
+      true,
+    );
+    expect(halamanAwal("cost", izin)).toBe("/laporan/margin");
+  });
+
+  it("tidak mengirim peran mana pun ke halaman yang ditolaknya sendiri", async () => {
+    // Kalau ini terlepas, orangnya memasukkan sandi yang benar lalu hanya
+    // melihat layar putih: halaman awal dan penjaganya saling melempar.
+    const izin = await petaIzin();
+    const butirMenu = MENU.flatMap((k) => k.butir);
+
+    for (const peran of PERAN_DIATUR) {
+      const awal = halamanAwal(peran, izin);
+      if (awal === "/dasbor") continue; // Hentian terakhir, hanya menuntut sesi.
+
+      const butir = butirMenu.find((b) => b.href === awal);
+      expect(butir, `${peran} → ${awal} bukan butir menu`).toBeDefined();
+      expect(bolehBuka(peran, butir!.kunci, izin), `${peran} dikirim ke ${awal}`).toBe(true);
+    }
   });
 });

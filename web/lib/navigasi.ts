@@ -60,25 +60,16 @@ export const MENU: KelompokMenu[] = [
   {
     judul: "Ringkasan",
     butir: [
-      {
-        kunci: "dasbor",
-        label: "Dashboard",
-        href: "/dasbor",
-        peran: ["sales", "finance", "cost"],
-      },
+      // Cost TIDAK termasuk: dasbor memperlihatkan piutang dan omzet
+      // seluruh perusahaan, sedangkan pekerjaannya mengisi biaya.
+      { kunci: "dasbor", label: "Dashboard", href: "/dasbor", peran: ["sales", "finance"] },
     ],
   },
   {
     judul: "Transaksi",
     butir: [
-      {
-        kunci: "penawaran",
-        label: "Quotation",
-        href: "/penawaran",
-        // Cost ikut masuk: halaman margin dicapai dari dokumennya.
-        peran: ["sales", "finance", "cost"],
-      },
-      { kunci: "tagihan", label: "Invoice", href: "/tagihan", peran: ["sales", "finance", "cost"] },
+      { kunci: "penawaran", label: "Quotation", href: "/penawaran", peran: ["sales", "finance"] },
+      { kunci: "tagihan", label: "Invoice", href: "/tagihan", peran: ["sales", "finance"] },
       { kunci: "pembayaran", label: "Payment", href: "/pembayaran", peran: ["finance"] },
     ],
   },
@@ -109,7 +100,7 @@ export const MENU: KelompokMenu[] = [
     judul: "Data Induk",
     butir: [
       { kunci: "pelanggan", label: "Customer", href: "/pelanggan", peran: ["sales", "finance"] },
-      { kunci: "produk", label: "Product", href: "/produk", peran: ["sales", "finance", "cost"] },
+      { kunci: "produk", label: "Product", href: "/produk", peran: ["sales", "finance"] },
     ],
   },
   {
@@ -184,6 +175,33 @@ export function bolehBuka(peran: Peran, kunci: KunciMenu, izin: PetaIzin): boole
   if (tersimpan !== undefined) return tersimpan;
 
   return butir?.peran.includes(peran as Exclude<Peran, "admin">) ?? false;
+}
+
+/**
+ * Halaman pertama yang dibuka seseorang setelah masuk.
+ *
+ * Dulu semua peran dilempar ke /dasbor. Bagian Cost hanya boleh membuka
+ * laporan Margin, jadi ia mendarat di halaman yang menu-nya pun tidak ia
+ * punya — memperlihatkan piutang dan omzet seluruh perusahaan, padahal
+ * pekerjaannya mengisi biaya.
+ *
+ * Diambil dari MENU, bukan ditulis per peran: halaman pertama yang BOLEH
+ * ia buka. Dengan begitu peran baru, dan perubahan centang oleh admin,
+ * tidak perlu diingat di tempat kedua.
+ *
+ * Yang dikembalikan SELALU halaman yang boleh dibuka peran itu. Kalau tidak,
+ * halaman tujuannya akan melempar balik ke sini dan berputar tanpa henti.
+ * "/dasbor" dipakai sebagai hentian terakhir ketika tidak ada satu pun
+ * halaman yang terbuka — dasbor hanya menuntut sesi, jadi putarannya
+ * berhenti di situ.
+ */
+export function halamanAwal(peran: Peran, izin: PetaIzin): string {
+  for (const kelompok of MENU) {
+    for (const butir of kelompok.butir) {
+      if (bolehBuka(peran, butir.kunci, izin)) return butir.href;
+    }
+  }
+  return "/dasbor";
 }
 
 /** Menu yang sudah disaring sesuai izin yang berlaku. */

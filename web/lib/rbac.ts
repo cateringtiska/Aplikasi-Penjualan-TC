@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { penggunaAktif, type Peran, type Sesi } from "./auth";
 import { bacaIzin } from "./izin";
-import { bolehBuka, type KunciMenu } from "./navigasi";
+import { bolehBuka, halamanAwal, type KunciMenu } from "./navigasi";
 
 /* ==========================================================================
    PENJAGA HAK AKSES
@@ -98,7 +98,15 @@ export async function wajibIzin(kunci: KunciMenu): Promise<Sesi> {
 
   if (bolehBuka(sesi.peran, kunci, izin)) return sesi;
 
-  redirect("/dasbor?akses=ditolak");
+  // Dikembalikan ke halaman awal MILIKNYA, bukan selalu ke dasbor: peran
+  // yang tidak boleh membuka dasbor akan dilempar lagi dari sana, dan
+  // keduanya saling melempar tanpa henti.
+  redirect(`${halamanAwal(sesi.peran, izin)}?akses=ditolak`);
+}
+
+/** Halaman pertama yang boleh dibuka pemilik sesi ini. */
+export async function halamanAwalSesi(sesi: Sesi): Promise<string> {
+  return halamanAwal(sesi.peran, await bacaIzin());
 }
 
 /** Versi untuk server action: melempar, bukan mengalihkan halaman. */
