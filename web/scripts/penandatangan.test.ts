@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { penandatanganAktif, tandaTanganDokumen } from "../lib/penandatangan";
+import {
+  bolehHapusPenandatangan,
+  jumlahDokumenPenandatangan,
+  penandatanganAktif,
+  tandaTanganDokumen,
+} from "../lib/penandatangan";
 import { prisma } from "../lib/prisma";
 
 /* ==========================================================================
@@ -178,4 +183,125 @@ describe("tanda tangan satu dokumen", () => {
      akan meninggalkan datanya salah kalau ia gugur di tengah jalan. Langkah
      itu memang hanya jaring terakhir; yang penting dijaga adalah dua langkah
      sebelumnya, dan keduanya ada di atas. */
+});
+
+/* ==========================================================================
+   MENGHAPUS PENANDATANGAN
+
+   Kolom signatory_id memakai ON DELETE SET NULL, jadi menghapus baris yang
+   masih dipakai TIDAK merusak apa pun dan TIDAK melempar galat apa pun —
+   dokumen lamanya hanya berpindah diam-diam ke penandatangan aktif yang
+   pertama. Satu-satunya tanda bahwa itu terjadi adalah nama yang berbeda di
+   cetakan dokumen yang sudah dikirim ke customer.
+
+   Karena itu aturannya dijaga di sini, bukan hanya dipercayakan pada
+   tombolnya: tombol bisa saja memanggil aksinya tanpa memeriksa apa pun.
+   ========================================================================== */
+
+describe("aturan hapus", () => {
+  it("MENOLAK yang sudah dipakai dokumen, dan menyebut jalan keluarnya", async () => {
+    const cap = Date.now().toString().slice(-6);
+    const pelanggan = await prisma.customers.create({
+      data: {
+        customer_code: `UTT-${cap}`,
+        name: `${TANDA} Pelanggan`,
+        status: "active",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const tagihan = await prisma.invoices.create({
+      data: {
+        invoice_number: `UTT-INV-${cap}`,
+        customer_id: pelanggan.id,
+        invoice_date: new Date(),
+        due_date: new Date(Date.now() + 30 * 86_400_000),
+        subtotal: "1000000",
+        grand_total: "1000000",
+        paid_amount: "0",
+        status: "unpaid",
+        signatory_id: jejak.kedua!,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    try {
+      expect(await jumlahDokumenPenandatangan(jejak.kedua!)).toBe(1);
+
+      const izin = await bolehHapusPenandatangan(jejak.kedua!);
+      expect(izin.boleh, "baris yang dipakai dokumen boleh dihapus").toBe(false);
+      if (!izin.boleh) {
+        // Alasannya ikut diperiksa: penolakan tanpa jalan keluar hanya
+        // membuat pemakainya mengira aplikasinya rusak.
+        expect(izin.alasan).toContain("Nonaktifkan");
+      }
+    } finally {
+      await prisma.invoices.delete({ where: { id: tagihan.id } });
+      await prisma.customers.delete({ where: { id: pelanggan.id } });
+    }
+  });
+
+  it("MENGIZINKAN yang belum pernah dipakai", async () => {
+    // Inilah yang perlu bisa dihapus: baris yang tertambah dua kali, atau
+    // salah ketik yang belum sempat terpakai.
+    expect(await jumlahDokumenPenandatangan(jejak.kedua!)).toBe(0);
+
+    const izin = await bolehHapusPenandatangan(jejak.kedua!);
+    expect(izin.boleh, izin.boleh ? "" : izin.alasan).toBe(true);
+  });
+
+  it("MENOLAK yang terakhir aktif, walaupun belum dipakai dokumen", async () => {
+    // Dokumen baru akan terbit tanpa nama sama sekali, dan tidak ada tanda
+    // apa pun bahwa itu terjadi.
+    const lain = await prisma.signatories.findMany({
+      where: { is_active: true, name: { not: { startsWith: TANDA } } },
+      select: { id: true },
+    });
+
+    // Yang sungguhan dimatikan sebentar, lalu dikembalikan persis seperti
+    // semula — bukan "dinyalakan semua", supaya pilihan pemiliknya tidak
+    // ikut berubah karena tes.
+    await prisma.signatories.updateMany({
+      where: { id: { in: lain.map((s) => s.id) } },
+      data: { is_active: false },
+    });
+    await prisma.signatories.update({
+      where: { id: jejak.kedua! },
+      data: { is_active: false },
+    });
+
+    try {
+      // Tinggal "Satu" yang aktif.
+      const aktif = await penandatanganAktif();
+      expect(aktif.map((a) => a.nama)).toEqual([`${TANDA} Satu`]);
+
+      const izin = await bolehHapusPenandatangan(jejak.pertama!);
+      expect(izin.boleh, "penandatangan aktif terakhir boleh dihapus").toBe(false);
+    } finally {
+      await prisma.signatories.updateMany({
+        where: { id: { in: lain.map((s) => s.id) } },
+        data: { is_active: true },
+      });
+      await prisma.signatories.update({
+        where: { id: jejak.kedua! },
+        data: { is_active: true },
+      });
+    }
+  });
+
+  it("MENOLAK baris yang sudah tidak ada", async () => {
+    const izin = await bolehHapusPenandatangan(BigInt("987654321"));
+    expect(izin.boleh).toBe(false);
+  });
+
+  it("mengembalikan pilihan pemiliknya seperti semula", async () => {
+    // Tes di atas mematikan penandatangan yang sungguhan sebentar. Kalau
+    // pemulihannya terlewat, pemiliknya akan menemukan daftarnya berubah
+    // tanpa pernah menyentuhnya.
+    const aktif = await penandatanganAktif();
+    const sungguhan = aktif.filter((a) => !a.nama.startsWith(TANDA));
+    expect(sungguhan.length, "penandatangan sungguhan ikut termatikan").toBeGreaterThan(0);
+  });
 });
