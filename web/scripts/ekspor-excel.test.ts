@@ -107,6 +107,22 @@ describe("unduhan kartu piutang", () => {
   });
 });
 
+/**
+ * Nomor kolom menurut JUDULNYA di baris kepala.
+ *
+ * Dulu nomornya ditulis langsung di tesnya, dan menyisipkan satu kolom
+ * membuat tes ini menuduh hal yang salah: yang gugur adalah "kolom Margin %
+ * harus berdesimal", padahal yang bergeser kolomnya. Yang ingin dijaga
+ * adalah formatnya, bukan letaknya.
+ */
+function kolomBerjudul(lembar: ExcelJS.Worksheet, judul: string): number {
+  const kepala = lembar.getRow(7);
+  for (let i = 1; i <= kepala.cellCount; i += 1) {
+    if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
+  }
+  throw new Error(`Kolom "${judul}" tidak ada di lembar ${lembar.name}.`);
+}
+
 describe("unduhan laporan margin", () => {
   it("memisahkan angka nyata dan perkiraan ke DUA lembar", async () => {
     const modul = await import("../app/(aplikasi)/laporan/margin/excel/route");
@@ -142,8 +158,14 @@ describe("unduhan laporan margin", () => {
     // memang benar di dalam sel, tetapi format "#,##0" membuat margin 44,94%
     // TERTULIS 45 saat dibuka — berkas dan layar lalu menyebut angka berbeda
     // untuk hal yang sama, dan yang dipegang akuntan adalah berkasnya.
-    expect(l1.getColumn(8).numFmt, "kolom Margin % harus berdesimal").toBe("0.00");
-    expect(l1.getColumn(7).numFmt, "kolom rupiah dibulatkan ke satuan").toBe("#,##0");
+    expect(
+      l1.getColumn(kolomBerjudul(l1, "Margin %")).numFmt,
+      "kolom Margin % harus berdesimal",
+    ).toBe("0.00");
+    expect(
+      l1.getColumn(kolomBerjudul(l1, "Margin")).numFmt,
+      "kolom rupiah dibulatkan ke satuan",
+    ).toBe("#,##0");
     expect(l1.getRow(6).getCell(4).numFmt, "ringkasan Margin % berdesimal").toBe("0.00");
 
     const l2 = buku.getWorksheet("Perkiraan - Quotation")!;
@@ -158,8 +180,163 @@ describe("unduhan laporan margin", () => {
     const tanpaBiaya = nyata.find((b) => !b.adaBiaya);
     if (tanpaBiaya) {
       const baris = nyata.indexOf(tanpaBiaya) + 8;
-      expect(l1.getRow(baris).getCell(1).value).toBe(tanpaBiaya.nomor);
-      expect(l1.getRow(baris).getCell(6).value).toBe("belum dicatat");
+      expect(l1.getRow(baris).getCell(kolomBerjudul(l1, "No. Invoice")).value).toBe(
+        tanpaBiaya.nomor,
+      );
+      expect(l1.getRow(baris).getCell(kolomBerjudul(l1, "Biaya")).value).toBe("belum dicatat");
+    }
+  });
+});
+
+describe("PIC di laporan margin", () => {
+  it("ikut tertulis di kedua lembarnya", async () => {
+    // Dicari dari judulnya, bukan dari nomor kolomnya: yang dijaga adalah
+    // keberadaan keterangannya, bukan di kolom keberapa ia kebetulan jatuh.
+    const { ambilLaporanMargin } = await import("../lib/laporan-margin");
+    const { nyata, perkiraan } = await ambilLaporanMargin("");
+
+    const modul = await import("../app/(aplikasi)/laporan/margin/excel/route");
+    const buku = await unduh(modul, "http://localhost/laporan/margin/excel");
+
+    // Hanya kolom pic-nya yang dipakai di sini, jadi kedua bentuk barisnya
+    // disamakan menjadi bentuk itu saja.
+    const lembarUji: [string, { pic: string | null }[]][] = [
+      ["Nyata - Invoice", nyata],
+      ["Perkiraan - Quotation", perkiraan],
+    ];
+
+    for (const [namaLembar, baris] of lembarUji) {
+      const lembar = buku.getWorksheet(namaLembar)!;
+      const kolom = kolomBerjudul(lembar, "PIC");
+
+      const berpic = baris.find((b) => b.pic);
+      if (!berpic) continue;
+
+      const nomorBaris = baris.indexOf(berpic) + 8;
+      expect(
+        lembar.getRow(nomorBaris).getCell(kolom).value,
+        `PIC di ${namaLembar} tidak sama dengan yang di layar`,
+      ).toBe(berpic.pic);
+    }
+  });
+
+  it("dibiarkan KOSONG ketika memang tidak ada namanya", async () => {
+    // Bukan tanda hubung atau "-": sel kosong terbaca sebagai "tidak ada
+    // datanya", sedangkan tanda hubung ikut terbawa kalau kolomnya disalin
+    // ke tempat lain.
+    const { ambilLaporanMargin } = await import("../lib/laporan-margin");
+    const { nyata } = await ambilLaporanMargin("");
+
+    const tanpaPic = nyata.find((b) => !b.pic);
+    if (!tanpaPic) return;
+
+    const modul = await import("../app/(aplikasi)/laporan/margin/excel/route");
+    const buku = await unduh(modul, "http://localhost/laporan/margin/excel");
+    const lembar = buku.getWorksheet("Nyata - Invoice")!;
+
+    const nilai = lembar
+      .getRow(nyata.indexOf(tanpaPic) + 8)
+      .getCell(kolomBerjudul(lembar, "PIC")).value;
+
+    expect(nilai ?? "").toBe("");
+  });
+});
+
+describe("siapa yang disebut sebagai PIC", () => {
+  it("KONTAK DOKUMENNYA yang menang, bukan PIC tetap customernya", async () => {
+    /*
+     * Dua nama tersimpan di tempat berbeda, dan keduanya sering terisi
+     * sekaligus. Menukar urutannya tidak menimbulkan galat apa pun: laporan
+     * tetap terbuka, kolomnya tetap terisi, hanya namanya yang salah orang.
+     *
+     * Tes sebelumnya tidak bisa menangkapnya — ia membandingkan isi Excel
+     * dengan ambilLaporanMargin(), jadi kalau aturannya sendiri yang
+     * tertukar, keduanya tertukar bersama dan tetap cocok. Karena itu di
+     * sini datanya dibuat sendiri, dengan dua nama yang sengaja berbeda.
+     */
+    const cap = Date.now().toString().slice(-6);
+    const { ambilLaporanMargin } = await import("../lib/laporan-margin");
+
+    const pelanggan = await prisma.customers.create({
+      data: {
+        customer_code: `UPIC-${cap}`,
+        name: `UJI PIC Pelanggan ${cap}`,
+        pic_name: "Nama Tetap Di Customer",
+        status: "active",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const tagihan = await prisma.invoices.create({
+      data: {
+        invoice_number: `UPIC-INV-${cap}`,
+        customer_id: pelanggan.id,
+        contact_person: "Nama Di Dokumen Ini",
+        invoice_date: new Date(),
+        due_date: new Date(Date.now() + 30 * 86_400_000),
+        subtotal: "1000000",
+        grand_total: "1000000",
+        paid_amount: "0",
+        status: "unpaid",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    try {
+      const { nyata } = await ambilLaporanMargin(`UPIC-INV-${cap}`);
+      const baris = nyata.find((b) => b.nomor === `UPIC-INV-${cap}`);
+
+      expect(baris, "invoice ujinya tidak terbawa laporan").toBeDefined();
+      expect(
+        baris!.pic,
+        "yang ditelepon untuk invoice ini adalah nama yang tertulis di invoice ini",
+      ).toBe("Nama Di Dokumen Ini");
+    } finally {
+      await prisma.invoices.delete({ where: { id: tagihan.id } });
+      await prisma.customers.delete({ where: { id: pelanggan.id } });
+    }
+  });
+
+  it("memakai PIC customernya ketika dokumennya tidak menyebut siapa pun", async () => {
+    const cap = Date.now().toString().slice(-6);
+    const { ambilLaporanMargin } = await import("../lib/laporan-margin");
+
+    const pelanggan = await prisma.customers.create({
+      data: {
+        customer_code: `UPIC2-${cap}`,
+        name: `UJI PIC Pelanggan Dua ${cap}`,
+        pic_name: "Nama Tetap Di Customer",
+        status: "active",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    const tagihan = await prisma.invoices.create({
+      data: {
+        invoice_number: `UPIC2-INV-${cap}`,
+        customer_id: pelanggan.id,
+        contact_person: null,
+        invoice_date: new Date(),
+        due_date: new Date(Date.now() + 30 * 86_400_000),
+        subtotal: "1000000",
+        grand_total: "1000000",
+        paid_amount: "0",
+        status: "unpaid",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    try {
+      const { nyata } = await ambilLaporanMargin(`UPIC2-INV-${cap}`);
+      const baris = nyata.find((b) => b.nomor === `UPIC2-INV-${cap}`);
+      expect(baris!.pic).toBe("Nama Tetap Di Customer");
+    } finally {
+      await prisma.invoices.delete({ where: { id: tagihan.id } });
+      await prisma.customers.delete({ where: { id: pelanggan.id } });
     }
   });
 });

@@ -16,6 +16,7 @@ import { Pencarian } from "@/components/pencarian";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { BarisKontak } from "@/components/baris-kontak";
 import { namaPic } from "@/lib/kontak";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
@@ -194,17 +195,6 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
  * Bentuknya sama persis dengan daftar invoice — kedua daftar ini dibaca
  * bergantian, dan tata letak yang berbeda membuat mata mencari dua kali.
  */
-function BarisKontak({ pic, acara }: { pic: string | null; acara: string | null }) {
-  const bagian = [pic, acara].filter((x) => x && x.trim() !== "");
-  if (bagian.length === 0) return null;
-
-  return (
-    <span className="block truncate text-xs text-muted-foreground">
-      {bagian.join(" · ")}
-    </span>
-  );
-}
-
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 align-middle ${className ?? ""}`}>{children}</td>;
 }

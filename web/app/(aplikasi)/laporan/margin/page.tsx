@@ -11,6 +11,7 @@ import {
   KepalaHalaman,
   RingkasanTabel,
 } from "@/components/halaman";
+import { BarisKontak } from "@/components/baris-kontak";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PemberitahuanAkses } from "@/components/pemberitahuan-akses";
 import { Pencarian } from "@/components/pencarian";
@@ -115,9 +116,7 @@ export default async function HalamanLaporanMargin({
                   </Td>
                   <Td>
                     <span className="font-medium">{b.pelanggan}</span>
-                    {b.jenisAcara ? (
-                      <span className="block text-xs text-muted-foreground">{b.jenisAcara}</span>
-                    ) : null}
+                    <BarisKontak pic={b.pic} acara={b.jenisAcara} />
                   </Td>
                   <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
                     {rupiah(b.penjualan)}
@@ -212,9 +211,7 @@ export default async function HalamanLaporanMargin({
                     </Td>
                     <Td>
                       <span className="font-medium">{b.pelanggan}</span>
-                      {b.jenisAcara ? (
-                        <span className="block text-xs text-muted-foreground">{b.jenisAcara}</span>
-                      ) : null}
+                      <BarisKontak pic={b.pic} acara={b.jenisAcara} />
                     </Td>
                     <Td className="angka hidden text-right tabular-nums text-muted-foreground lg:table-cell">
                       {rupiah(b.hasil.net_sales)}

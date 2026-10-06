@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
     "No. Invoice",
     "Tanggal",
     "Customer",
+    "PIC",
     "Jenis Acara",
     "Penjualan",
     "Biaya",
@@ -136,6 +137,7 @@ export async function GET(request: NextRequest) {
       b.nomor,
       format(b.tanggal, "dd/MM/yyyy"),
       b.pelanggan,
+      b.pic ?? "",
       b.jenisAcara ?? "",
       Number(b.penjualan.toFixed(2)),
       // Dibedakan dengan jelas dari biaya nol: tagihan yang belum punya
@@ -152,6 +154,7 @@ export async function GET(request: NextRequest) {
     "",
     `${nyata.length} invoice`,
     "",
+    "",
     Number(ringkasanNyata.penjualan.toFixed(2)),
     Number(ringkasanNyata.biaya.toFixed(2)),
     Number(ringkasanNyata.untung.toFixed(2)),
@@ -163,7 +166,7 @@ export async function GET(request: NextRequest) {
   total1.font = { bold: true };
   total1.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  rapikan(l1, [16, 12, 30, 20, 16, 16, 16, 12, 28], [5, 6, 7], [8]);
+  rapikan(l1, [16, 12, 30, 22, 20, 16, 16, 16, 12, 28], [6, 7, 8], [9]);
 
   /* ---------- Lembar 2: angka perkiraan ---------- */
 
@@ -192,6 +195,7 @@ export async function GET(request: NextRequest) {
     "No. Quotation",
     "Tanggal",
     "Customer",
+    "PIC",
     "Jenis Acara",
     "Penjualan",
     "Perkiraan Biaya",
@@ -204,6 +208,7 @@ export async function GET(request: NextRequest) {
       b.nomor,
       format(b.tanggal, "dd/MM/yyyy"),
       b.pelanggan,
+      b.pic ?? "",
       b.jenisAcara ?? "",
       Number(b.hasil.net_sales.toFixed(2)),
       b.adaBiaya ? Number(b.hasil.total_cost.toFixed(2)) : "belum dicatat",
@@ -217,6 +222,7 @@ export async function GET(request: NextRequest) {
     "",
     `${perkiraan.length} quotation`,
     "",
+    "",
     Number(ringkasanPerkiraan.penjualan.toFixed(2)),
     Number(ringkasanPerkiraan.biaya.toFixed(2)),
     Number(ringkasanPerkiraan.untung.toFixed(2)),
@@ -225,7 +231,7 @@ export async function GET(request: NextRequest) {
   total2.font = { bold: true };
   total2.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  rapikan(l2, [16, 12, 30, 20, 16, 18, 18, 12], [5, 6, 7], [8]);
+  rapikan(l2, [16, 12, 30, 22, 20, 16, 18, 18, 12], [6, 7, 8], [9]);
 
   const isi = await buku.xlsx.writeBuffer();
   const namaBerkas = `laporan-margin-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;

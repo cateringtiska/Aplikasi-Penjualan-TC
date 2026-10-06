@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Decimal } from "decimal.js";
 
+import { namaPic } from "./kontak";
 import { PENAWARAN_JADI_PERKIRAAN } from "./margin";
 import { prisma } from "./prisma";
 import { d, hitungMargin, type HasilMargin } from "./uang";
@@ -25,6 +26,8 @@ export type BarisNyata = {
   nomor: string;
   tanggal: Date;
   pelanggan: string;
+  /** Null kalau dokumen maupun customernya tidak menyebut siapa pun. */
+  pic: string | null;
   jenisAcara: string | null;
   penjualan: Decimal;
   biaya: Decimal;
@@ -40,6 +43,7 @@ export type BarisPerkiraan = {
   nomor: string;
   tanggal: Date;
   pelanggan: string;
+  pic: string | null;
   jenisAcara: string | null;
   hasil: HasilMargin;
   adaBiaya: boolean;
@@ -91,7 +95,8 @@ export async function ambilLaporanMargin(kunci: string) {
         invoice_date: true,
         grand_total: true,
         event_type: true,
-        customers: { select: { name: true } },
+        contact_person: true,
+        customers: { select: { name: true, pic_name: true } },
         invoice_margins: {
           select: {
             net_sales: true,
@@ -125,7 +130,8 @@ export async function ambilLaporanMargin(kunci: string) {
         grand_total: true,
         event_type: true,
         status: true,
-        customers: { select: { name: true } },
+        contact_person: true,
+        customers: { select: { name: true, pic_name: true } },
         quotation_costs: { select: { estimated_amount: true, actual_amount: true } },
       },
     }),
@@ -138,6 +144,7 @@ export async function ambilLaporanMargin(kunci: string) {
       nomor: t.invoice_number,
       tanggal: t.invoice_date,
       pelanggan: t.customers.name,
+      pic: namaPic(t.contact_person, t.customers.pic_name),
       jenisAcara: t.event_type,
       penjualan: d(m?.net_sales ?? t.grand_total),
       biaya: d(m?.total_cost ?? 0),
@@ -154,6 +161,7 @@ export async function ambilLaporanMargin(kunci: string) {
     nomor: p.quotation_number,
     tanggal: p.quotation_date,
     pelanggan: p.customers.name,
+    pic: namaPic(p.contact_person, p.customers.pic_name),
     jenisAcara: p.event_type,
     hasil: hitungMargin({
       penjualan: p.grand_total.toString(),
