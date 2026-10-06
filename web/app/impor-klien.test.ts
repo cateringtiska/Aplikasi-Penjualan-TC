@@ -112,3 +112,146 @@ describe("impor dari modul klien", () => {
     ).toEqual([]);
   });
 });
+
+/* ==========================================================================
+   MODUL KLIEN TIDAK BOLEH MENYENTUH MODUL "server-only"
+
+   Arah sebaliknya, dan sama tidak terlihatnya. Modul bertanda
+   `import "server-only"` melempar galat begitu ikut terbawa ke bundel
+   browser. `tsc` lolos — tipenya memang ada — dan kegagalannya muncul
+   sebagai build yang berhenti tanpa menyebut bahwa sebabnya hanya letak
+   berkas.
+
+   Hampir terjadi: layar pemilih peran mengambil daftar PERAN dari
+   lib/auth.ts, yang memasang penjaga itu. Daftarnya lalu dipindah ke
+   lib/peran.ts, yang murni.
+
+   Diperiksa SAMPAI BERLAPIS: modul murni yang mengimpor modul server-only
+   akan ikut menularkannya ke setiap komponen klien yang memakainya.
+
+   Mengimpor TIPE tetap boleh — tipe hilang saat dibangun, jadi tidak ada
+   apa pun yang terbawa.
+   ========================================================================== */
+
+/**
+ * Berkas server action, dikenali dari baris "use server".
+ *
+ * Ia adalah BATAS: Next.js menggantikan ekspornya dengan pemanggilan jarak
+ * jauh, jadi apa pun yang diimpornya tidak pernah ikut ke browser. Komponen
+ * klien yang mengimpor server action memang cara yang benar, dan
+ * penelusuran harus berhenti di sini — kalau tidak, seluruh tombol simpan
+ * di aplikasi ini akan terbaca sebagai pelanggaran.
+ */
+const MODUL_AKSI = new Set(
+  SUMBER.filter((p) => /^s*["']use server["']/m.test(isi.get(p)!.slice(0, 200))),
+);
+
+/** Modul yang memasang penjaga server-only. */
+const MODUL_SERVER = new Set(
+  SUMBER.filter((p) => /^\s*import\s+["']server-only["']/m.test(isi.get(p)!)),
+);
+
+/**
+ * Modul yang diimpor sebagai NILAI, bukan hanya tipenya.
+ *
+ * `import type { X }` dan `{ type X }` dibuang: keduanya hilang saat
+ * dibangun, jadi tidak menularkan apa pun.
+ */
+function imporNilai(berkas: string): string[] {
+  const teks = isi.get(berkas)!;
+  const hasil: string[] = [];
+
+  for (const [, klausa, spesifikasi] of teks.matchAll(
+    /^import\s+(?!type[\s{])([\s\S]*?)\s+from\s+["']([^"']+)["'];/gm,
+  )) {
+    // Klausa yang seluruh isinya bertanda `type` tidak membawa nilai apa pun.
+    const kurung = klausa.match(/^\{([\s\S]*)\}$/);
+    if (kurung) {
+      const adaNilai = kurung[1]
+        .split(",")
+        .map((b) => b.trim())
+        .filter((b) => b !== "")
+        .some((b) => !b.startsWith("type "));
+      if (!adaNilai) continue;
+    }
+
+    const asal = tujuan(berkas, spesifikasi);
+    if (asal) hasil.push(asal);
+  }
+
+  return hasil;
+}
+
+/** Jalur impor dari satu modul sampai modul server-only, kalau ada. */
+function jalurKeServer(mulai: string): string[] | null {
+  const antre: string[][] = [[mulai]];
+  const sudah = new Set([mulai]);
+
+  while (antre.length > 0) {
+    const jalur = antre.shift()!;
+    const kini = jalur[jalur.length - 1];
+
+    // Penelusuran tidak masuk ke dalam server action: lihat MODUL_AKSI.
+    if (kini !== mulai && MODUL_AKSI.has(kini)) continue;
+
+    for (const berikut of imporNilai(kini)) {
+      if (sudah.has(berikut)) continue;
+      sudah.add(berikut);
+
+      const jalurBaru = [...jalur, berikut];
+      if (MODUL_SERVER.has(berikut)) return jalurBaru;
+      antre.push(jalurBaru);
+    }
+  }
+
+  return null;
+}
+
+describe("impor ke modul server-only", () => {
+  it("menemukan modul server-only-nya, supaya pemeriksaan ini tidak kosong", () => {
+    expect(MODUL_SERVER.size).toBeGreaterThan(3);
+    expect(MODUL_AKSI.size, "batas server action tidak ditemukan").toBeGreaterThan(3);
+  });
+
+  it("MASIH menyalakan tanda, berlapis maupun tidak", () => {
+    // Pemeriksaan yang terlalu longgar akan lolos apa saja, dan batas server
+    // action di atas justru melonggarkannya. Dua hal dibuktikan dengan
+    // berkas yang sungguhan ada.
+    const rbac = path.join(AKAR, "lib", "rbac.ts");
+    const auth = path.join(AKAR, "lib", "auth.ts");
+    const peran = path.join(AKAR, "lib", "peran.ts");
+    const dialogPeran = path.join(AKAR, "app", "(aplikasi)", "pengguna", "dialog-pengguna.tsx");
+
+    expect(MODUL_SERVER.has(auth), "lib/auth.ts tidak lagi server-only").toBe(true);
+
+    // 1. Penelusuran berlapis benar-benar berjalan: rbac tidak memasang
+    //    penjaganya sendiri di baris pertama, tetapi ia menarik auth.
+    expect(jalurKeServer(rbac), "jalur berlapis tidak terbaca").toEqual([rbac, auth]);
+
+    // 2. Modul murni tetap murni, dan layar pemilih peran memakainya —
+    //    inilah yang dulu hampir salah.
+    expect(imporNilai(dialogPeran), "dialog peran tidak lagi memakai lib/peran.ts").toContain(
+      peran,
+    );
+    expect(jalurKeServer(peran), "lib/peran.ts ikut menarik modul server").toBeNull();
+  });
+
+  it("tidak ada modul klien yang menariknya, langsung maupun berlapis", () => {
+    const pelanggaran: string[] = [];
+
+    for (const berkas of MODUL_KLIEN) {
+      const jalur = jalurKeServer(berkas);
+      if (jalur) {
+        pelanggaran.push(jalur.map((p) => path.relative(AKAR, p)).join(" → "));
+      }
+    }
+
+    expect(
+      pelanggaran,
+      'Modul klien menarik modul bertanda `import "server-only"`, dan itu ' +
+        "menggagalkan build tanpa menyebut sebabnya. Pindahkan bagian yang " +
+        "dibutuhkan keduanya ke modul murni, seperti lib/peran.ts.\n" +
+        pelanggaran.join("\n"),
+    ).toEqual([]);
+  });
+});

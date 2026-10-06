@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { LABEL_PERAN, PERAN, type Peran } from "@/lib/peran";
+
 import { type KeadaanPengguna, simpanPengguna } from "./actions";
 
 export type Pengguna = {
@@ -27,24 +29,24 @@ export type Pengguna = {
   role: string;
 };
 
-/** Apa yang boleh dibuka tiap peran. Disalin dari lib/navigasi.ts. */
-const PERAN = [
-  {
-    nilai: "admin",
-    label: "Admin",
-    jelas: "Semua halaman, plus User dan Pengaturan company.",
-  },
-  {
-    nilai: "sales",
-    label: "Sales",
-    jelas: "Quotation, invoice, customer, product, laporan penjualan dan piutang.",
-  },
-  {
-    nilai: "finance",
-    label: "Finance",
-    jelas: "Semua milik Sales, ditambah payment dan laporan margin.",
-  },
-];
+/**
+ * Penjelasan singkat tiap peran, untuk dibaca saat memilihnya.
+ *
+ * Bertipe Record<Peran, string> dengan sengaja: menambah peran baru di
+ * lib/auth.ts tanpa menuliskannya di sini akan GAGAL DIKOMPILASI. Daftarnya
+ * dulu disalin apa adanya ke sini, dan salinan seperti itu diam-diam
+ * tertinggal — perannya ada di kode, tetapi tidak pernah muncul di layar
+ * ini, jadi tidak seorang pun bisa diberi peran itu.
+ *
+ * Yang tertulis hanyalah bawaannya. Yang berlaku sehari-hari adalah centang
+ * di tabel hak akses di bawah daftar user.
+ */
+const JELAS_PERAN: Record<Peran, string> = {
+  admin: "Semua halaman, plus User dan Pengaturan company.",
+  sales: "Quotation, invoice, customer, product, laporan penjualan dan piutang.",
+  finance: "Semua milik Sales, ditambah payment dan laporan margin.",
+  cost: "Quotation, invoice, product, dan laporan margin — untuk mengisi biaya.",
+};
 
 const keadaanAwal: KeadaanPengguna = {};
 
@@ -177,19 +179,19 @@ export function DialogPengguna({
             <div className="flex flex-col gap-2">
               {PERAN.map((p) => (
                 <label
-                  key={p.nilai}
+                  key={p}
                   className="flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2.5 transition-colors has-[:checked]:border-foreground/35 has-[:checked]:bg-accent"
                 >
                   <input
                     type="radio"
                     name="role"
-                    value={p.nilai}
-                    defaultChecked={(pengguna?.role ?? "sales") === p.nilai}
+                    value={p}
+                    defaultChecked={(pengguna?.role ?? "sales") === p}
                     className="mt-1 accent-foreground"
                   />
                   <span>
-                    <span className="block text-sm font-medium">{p.label}</span>
-                    <span className="block text-xs text-muted-foreground">{p.jelas}</span>
+                    <span className="block text-sm font-medium">{LABEL_PERAN[p]}</span>
+                    <span className="block text-xs text-muted-foreground">{JELAS_PERAN[p]}</span>
                   </span>
                 </label>
               ))}

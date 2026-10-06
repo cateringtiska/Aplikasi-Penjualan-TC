@@ -60,7 +60,10 @@ export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]
   });
 
   const terkunci = margin?.status === "final";
-  const bolehUbah = sesi.peran === "admin" || sesi.peran === "finance";
+  // Mengisi biaya memang pekerjaan bagian Cost; Sales yang kebetulan diberi
+  // izin melihat margin tetap hanya boleh membacanya.
+  const bolehUbah =
+    sesi.peran === "admin" || sesi.peran === "finance" || sesi.peran === "cost";
 
   return (
     <Halaman>

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { PERAN } from "./peran";
+
 import {
   bolehBuka,
   butirMenu,
   kunciIzin,
+  LABEL_PERAN,
   MENU,
   menuUntukIzin,
   PERAN_DIATUR,
@@ -50,15 +53,27 @@ describe("halaman pengaturan milik admin saja", () => {
     // Halaman User bisa membuat admin baru, dan admin baru bisa membuka
     // seluruh halaman lain — memberikannya ke peran lain diam-diam
     // membatalkan setiap pembatasan yang lain.
-    const dipaksa = izin({
-      [kunciIzin("finance", "pengguna")]: true,
-      [kunciIzin("sales", "pengguna")]: true,
-      [kunciIzin("finance", "perusahaan")]: true,
-    });
+    //
+    // Diulang untuk SETIAP peran yang diatur, bukan untuk dua peran yang
+    // ditulis namanya: peran yang ditambahkan belakangan akan ikut diperiksa
+    // tanpa ada yang perlu ingat memperbarui tes ini.
+    const halamanAdmin = MENU.flatMap((k) => k.butir)
+      .filter((b) => b.hanyaAdmin)
+      .map((b) => b.kunci);
 
-    expect(bolehBuka("finance", "pengguna", dipaksa)).toBe(false);
-    expect(bolehBuka("sales", "pengguna", dipaksa)).toBe(false);
-    expect(bolehBuka("finance", "perusahaan", dipaksa)).toBe(false);
+    expect(halamanAdmin.length, "tidak ada halaman khusus admin lagi?").toBeGreaterThan(0);
+
+    const dipaksa = izin(
+      Object.fromEntries(
+        PERAN_DIATUR.flatMap((p) => halamanAdmin.map((k) => [kunciIzin(p, k), true])),
+      ),
+    );
+
+    for (const p of PERAN_DIATUR) {
+      for (const k of halamanAdmin) {
+        expect(bolehBuka(p, k, dipaksa), `${p} → ${k}`).toBe(false);
+      }
+    }
   });
 
   it("menandai halaman itu, supaya layarnya bisa menjelaskan kenapa", () => {
@@ -128,5 +143,51 @@ describe("kunci izin", () => {
     // halaman sekaligus.
     const kunci = MENU.flatMap((k) => k.butir.map((b) => b.kunci));
     expect(new Set(kunci).size).toBe(kunci.length);
+  });
+});
+
+describe("peran Cost", () => {
+  it("membuka dokumen, product, dan margin — bukan uang maupun laporan penjualan", () => {
+    // Pekerjaannya mengisi biaya, jadi ia perlu melihat dokumennya dan
+    // halaman margin. Bawaannya TIDAK memberinya payment, laporan penjualan,
+    // kartu piutang, maupun data customer.
+    //
+    // Yang ditulis di sini adalah BAWAANNYA, yang berlaku ketika barisnya di
+    // tabel izin belum ada. Admin tetap bisa mengubahnya kapan saja dari
+    // layar User.
+    const kosong = izin();
+
+    expect(bolehBuka("cost", "dasbor", kosong)).toBe(true);
+    expect(bolehBuka("cost", "penawaran", kosong)).toBe(true);
+    expect(bolehBuka("cost", "tagihan", kosong)).toBe(true);
+    expect(bolehBuka("cost", "produk", kosong)).toBe(true);
+    expect(bolehBuka("cost", "laporan-margin", kosong)).toBe(true);
+
+    expect(bolehBuka("cost", "pembayaran", kosong)).toBe(false);
+    expect(bolehBuka("cost", "laporan-penjualan", kosong)).toBe(false);
+    expect(bolehBuka("cost", "laporan-piutang", kosong)).toBe(false);
+    expect(bolehBuka("cost", "pelanggan", kosong)).toBe(false);
+  });
+
+  it("ikut muncul di tabel hak akses, supaya admin bisa mengaturnya", () => {
+    // Peran yang ada di kode tetapi tidak di PERAN_DIATUR tidak punya kolom
+    // di layar User: hak aksesnya tidak bisa diubah siapa pun, dan tidak ada
+    // tanda apa pun bahwa kolomnya hilang.
+    expect(PERAN_DIATUR).toContain("cost");
+  });
+});
+
+describe("setiap peran punya nama di layar", () => {
+  it("tidak ada yang tampil sebagai kode mentah", () => {
+    // LABEL_PERAN bertipe Record<Peran, string>, jadi yang terlewat akan
+    // gagal dikompilasi. Tes ini menjaga sisanya: label kosong lolos tipe,
+    // lalu muncul di layar sebagai ruang hampa.
+    for (const p of PERAN) {
+      expect(LABEL_PERAN[p]?.trim(), `label peran ${p}`).toBeTruthy();
+    }
+  });
+
+  it("memuat seluruh peran yang diatur, plus admin", () => {
+    expect(new Set(PERAN)).toEqual(new Set(["admin", ...PERAN_DIATUR]));
   });
 });

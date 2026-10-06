@@ -1,4 +1,4 @@
-import type { Peran } from "./auth";
+import { LABEL_PERAN, type Peran } from "./peran";
 
 /**
  * Peta menu — satu-satunya sumber kebenaran untuk navigasi DAN hak akses.
@@ -60,14 +60,25 @@ export const MENU: KelompokMenu[] = [
   {
     judul: "Ringkasan",
     butir: [
-      { kunci: "dasbor", label: "Dashboard", href: "/dasbor", peran: ["sales", "finance"] },
+      {
+        kunci: "dasbor",
+        label: "Dashboard",
+        href: "/dasbor",
+        peran: ["sales", "finance", "cost"],
+      },
     ],
   },
   {
     judul: "Transaksi",
     butir: [
-      { kunci: "penawaran", label: "Quotation", href: "/penawaran", peran: ["sales", "finance"] },
-      { kunci: "tagihan", label: "Invoice", href: "/tagihan", peran: ["sales", "finance"] },
+      {
+        kunci: "penawaran",
+        label: "Quotation",
+        href: "/penawaran",
+        // Cost ikut masuk: halaman margin dicapai dari dokumennya.
+        peran: ["sales", "finance", "cost"],
+      },
+      { kunci: "tagihan", label: "Invoice", href: "/tagihan", peran: ["sales", "finance", "cost"] },
       { kunci: "pembayaran", label: "Payment", href: "/pembayaran", peran: ["finance"] },
     ],
   },
@@ -86,14 +97,19 @@ export const MENU: KelompokMenu[] = [
         href: "/laporan/piutang",
         peran: ["sales", "finance"],
       },
-      { kunci: "laporan-margin", label: "Margin", href: "/laporan/margin", peran: ["finance"] },
+      {
+        kunci: "laporan-margin",
+        label: "Margin",
+        href: "/laporan/margin",
+        peran: ["finance", "cost"],
+      },
     ],
   },
   {
     judul: "Data Induk",
     butir: [
       { kunci: "pelanggan", label: "Customer", href: "/pelanggan", peran: ["sales", "finance"] },
-      { kunci: "produk", label: "Product", href: "/produk", peran: ["sales", "finance"] },
+      { kunci: "produk", label: "Product", href: "/produk", peran: ["sales", "finance", "cost"] },
     ],
   },
   {
@@ -118,11 +134,8 @@ export function menuUntuk(peran: Peran): KelompokMenu[] {
   })).filter((kelompok) => kelompok.butir.length > 0);
 }
 
-export const LABEL_PERAN: Record<Peran, string> = {
-  admin: "Admin",
-  sales: "Sales",
-  finance: "Finance",
-};
+// Diteruskan supaya layar yang sudah mengimpornya dari sini tidak berubah.
+export { LABEL_PERAN };
 
 /* ==========================================================================
    SIAPA BOLEH MEMBUKA APA
@@ -182,4 +195,4 @@ export function menuUntukIzin(peran: Peran, izin: PetaIzin): KelompokMenu[] {
 }
 
 /** Peran yang izinnya boleh diatur. Admin tidak termasuk — ia selalu lolos. */
-export const PERAN_DIATUR: Exclude<Peran, "admin">[] = ["sales", "finance"];
+export const PERAN_DIATUR: Exclude<Peran, "admin">[] = ["sales", "finance", "cost"];

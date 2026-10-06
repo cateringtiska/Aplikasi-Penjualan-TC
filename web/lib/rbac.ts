@@ -57,8 +57,8 @@ export async function wajibPeran(...diizinkan: Peran[]): Promise<Sesi> {
  * oleh penjumlahan di bawahnya — sedangkan pemeriksaan setelahnya hanya
  * menyembunyikan baris, dan totalnya terlanjur dihitung dari semuanya.
  *
- * Finance dan admin tidak disaring: mengurus uang perusahaan memang
- * pekerjaan mereka.
+ * Finance, cost, dan admin tidak disaring: mengurus uang dan biaya
+ * perusahaan memang pekerjaan mereka.
  */
 export type SaringMilik = { created_by?: bigint };
 

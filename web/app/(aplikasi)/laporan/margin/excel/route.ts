@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   if (!sesi) {
     return NextResponse.json({ pesan: "Silakan masuk lebih dulu." }, { status: 401 });
   }
-  if (!["admin", "finance"].includes(sesi.peran)) {
+  if (!["admin", "finance", "cost"].includes(sesi.peran)) {
     return NextResponse.json({ pesan: "Anda tidak punya akses." }, { status: 403 });
   }
 

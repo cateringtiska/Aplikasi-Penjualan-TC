@@ -55,7 +55,10 @@ export default async function HalamanMarginPenawaran({
     })),
   });
 
-  const bolehUbah = sesi.peran === "admin" || sesi.peran === "finance";
+  // Mengisi biaya memang pekerjaan bagian Cost; Sales yang kebetulan diberi
+  // izin melihat margin tetap hanya boleh membacanya.
+  const bolehUbah =
+    sesi.peran === "admin" || sesi.peran === "finance" || sesi.peran === "cost";
 
   return (
     <Halaman>

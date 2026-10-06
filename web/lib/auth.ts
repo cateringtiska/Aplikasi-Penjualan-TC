@@ -18,8 +18,13 @@ import { prisma } from "./prisma";
    tidak bisa dibaca JavaScript di browser dan tidak butuh tabel sesi.
    ========================================================================== */
 
-export const PERAN = ["admin", "sales", "finance"] as const;
-export type Peran = (typeof PERAN)[number];
+// Daftarnya ada di lib/peran.ts supaya layar pemilih peran — yang berjalan
+// di browser — bisa ikut memakainya. Diteruskan di sini agar pemanggil lama
+// tidak perlu berubah.
+import { PERAN, type Peran } from "./peran";
+
+export { PERAN };
+export type { Peran };
 
 export type Sesi = {
   id: string;
