@@ -16,6 +16,7 @@ import { Pencarian } from "@/components/pencarian";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { namaPic } from "@/lib/kontak";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
@@ -67,7 +68,8 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
       grand_total: true,
       paid_amount: true,
       status: true,
-      customers: { select: { name: true } },
+      contact_person: true,
+      customers: { select: { name: true, pic_name: true } },
     },
   });
 
@@ -142,11 +144,10 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
                     </Td>
                     <Td>
                       <span className="font-medium">{t.customers.name}</span>
-                      {t.event_type ? (
-                        <span className="block text-xs text-muted-foreground">
-                          {t.event_type}
-                        </span>
-                      ) : null}
+                      <BarisKontak
+                        pic={namaPic(t.contact_person, t.customers.pic_name)}
+                        acara={t.event_type}
+                      />
                     </Td>
                     <Td className="hidden text-muted-foreground lg:table-cell">
                       {format(t.due_date, "d MMM yyyy", { locale: localeId })}
@@ -197,6 +198,24 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
     >
       {children}
     </th>
+  );
+}
+
+/**
+ * Baris kedua di kolom Customer: siapa yang dihubungi, dan acaranya apa.
+ *
+ * Keduanya ditaruh pada SATU baris supaya daftarnya tidak memanjang ke
+ * bawah — daftar yang tiap barisnya tiga baris tinggi memuat separuh lebih
+ * sedikit invoice dalam satu layar.
+ */
+function BarisKontak({ pic, acara }: { pic: string | null; acara: string | null }) {
+  const bagian = [pic, acara].filter((x) => x && x.trim() !== "");
+  if (bagian.length === 0) return null;
+
+  return (
+    <span className="block truncate text-xs text-muted-foreground">
+      {bagian.join(" · ")}
+    </span>
   );
 }
 

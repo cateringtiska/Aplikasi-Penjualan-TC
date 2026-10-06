@@ -16,6 +16,7 @@ import { Pencarian } from "@/components/pencarian";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { namaPic } from "@/lib/kontak";
 import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
@@ -69,7 +70,8 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
       event_type: true,
       grand_total: true,
       status: true,
-      customers: { select: { name: true } },
+      contact_person: true,
+      customers: { select: { name: true, pic_name: true } },
     },
   });
 
@@ -137,9 +139,10 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
                   </Td>
                   <Td>
                     <span className="font-medium">{p.customers.name}</span>
-                    {p.event_type ? (
-                      <span className="block text-xs text-muted-foreground">{p.event_type}</span>
-                    ) : null}
+                    <BarisKontak
+                      pic={namaPic(p.contact_person, p.customers.pic_name)}
+                      acara={p.event_type}
+                    />
                   </Td>
                   <Td className="hidden text-muted-foreground md:table-cell">
                     {format(p.quotation_date, "d MMM yyyy", { locale: localeId })}
@@ -183,6 +186,22 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
     >
       {children}
     </th>
+  );
+}
+
+/**
+ * Baris kedua di kolom Customer: siapa yang dihubungi, dan acaranya apa.
+ * Bentuknya sama persis dengan daftar invoice — kedua daftar ini dibaca
+ * bergantian, dan tata letak yang berbeda membuat mata mencari dua kali.
+ */
+function BarisKontak({ pic, acara }: { pic: string | null; acara: string | null }) {
+  const bagian = [pic, acara].filter((x) => x && x.trim() !== "");
+  if (bagian.length === 0) return null;
+
+  return (
+    <span className="block truncate text-xs text-muted-foreground">
+      {bagian.join(" · ")}
+    </span>
   );
 }
 

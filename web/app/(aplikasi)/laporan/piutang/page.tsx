@@ -162,7 +162,13 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                     >
                       {p.nama}
                     </Link>
-                    <span className="nomor-dokumen block text-muted-foreground">{p.kode}</span>
+                    <span className="nomor-dokumen block text-muted-foreground">
+                      {p.kode}
+                      {/* PIC disebut di sini, bukan di kolom sendiri: yang
+                          dicari orang saat membuka halaman ini adalah siapa
+                          yang harus ditelepon, dan itu menempel pada namanya. */}
+                      {p.pic ? <span className="ml-2">· {p.pic}</span> : null}
+                    </span>
                   </Td>
                   <Td className="hidden text-muted-foreground sm:table-cell">
                     {p.jumlahTagihan} lembar

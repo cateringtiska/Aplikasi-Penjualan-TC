@@ -37,6 +37,8 @@ export type KunciKelompok = (typeof KELOMPOK)[number]["kunci"];
 export type BarisPiutang = {
   nama: string;
   kode: string;
+  /** Siapa yang dihubungi saat menagih. Boleh kosong. */
+  pic: string | null;
   idPelanggan: string;
   jumlahTagihan: number;
   total: Decimal;
@@ -110,7 +112,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       grand_total: true,
       paid_amount: true,
       customer_id: true,
-      customers: { select: { id: true, name: true, customer_code: true } },
+      customers: { select: { id: true, name: true, customer_code: true, pic_name: true } },
       // Kolom lamanya ikut diambil — lihat catatan di tanggalAcaraDokumen().
       event_date: true,
       event_days: true,
@@ -184,6 +186,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       perPelanggan.set(id, {
         nama: t.customers.name,
         kode: t.customers.customer_code,
+        pic: (t.customers.pic_name ?? "").trim() || null,
         idPelanggan: id,
         jumlahTagihan: 1,
         total: sisa,
