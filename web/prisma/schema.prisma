@@ -170,6 +170,7 @@ model invoices {
   pb1_percent            Decimal?              @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal               @default(0) @db.Decimal(15, 2)
   delivery_amount        Decimal               @default(0) @db.Decimal(15, 2)
+  signatory_id           BigInt?
   invoice_charges        invoice_charges[]
   invoice_costs          invoice_costs[]
   invoice_event_dates    invoice_event_dates[]
@@ -178,6 +179,7 @@ model invoices {
   users                  users?                @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "invoices_created_by_foreign")
   customers              customers             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "invoices_customer_id_foreign")
   quotations             quotations?           @relation(fields: [quotation_id], references: [id], onUpdate: NoAction, map: "invoices_quotation_id_foreign")
+  signatories            signatories?          @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "invoices_signatory_id_foreign")
   payment_details        payment_details[]
 }
 
@@ -329,6 +331,7 @@ model quotations {
   pb1_percent            Decimal?                @default(10) @db.Decimal(5, 2)
   pb1_amount             Decimal                 @default(0) @db.Decimal(15, 2)
   delivery_amount        Decimal                 @default(0) @db.Decimal(15, 2)
+  signatory_id           BigInt?
   invoices               invoices[]
   quotation_charges      quotation_charges[]
   quotation_costs        quotation_costs[]
@@ -336,6 +339,7 @@ model quotations {
   quotation_items        quotation_items[]
   users                  users?                  @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
   customers              customers               @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
+  signatories            signatories?            @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "quotations_signatory_id_foreign")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -456,4 +460,17 @@ model role_permissions {
   updated_at DateTime? @db.Timestamp(0)
 
   @@unique([role, menu_key], map: "role_permissions_role_menu_unique")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model signatories {
+  id             BigInt       @id @default(autoincrement())
+  name           String       @db.VarChar(255)
+  signature_path String?      @db.VarChar(255)
+  is_active      Boolean      @default(true)
+  sort_order     Int          @default(0)
+  created_at     DateTime?    @db.Timestamp(0)
+  updated_at     DateTime?    @db.Timestamp(0)
+  invoices       invoices[]
+  quotations     quotations[]
 }

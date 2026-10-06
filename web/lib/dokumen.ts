@@ -74,6 +74,7 @@ export const skemaDokumen = z.object({
   biaya_tambahan: z.array(barisTambahan).default([]),
   pb1_enabled: z.boolean().default(false),
   pb1_percent: z.string().nullable().optional(),
+  signatory_id: z.string().trim().nullable().optional(),
   show_payment_terms: z.boolean().default(false),
   payment_terms: z.string().trim().max(BATAS_SYARAT).nullable().optional(),
   items: z.array(barisItem).min(1, "Tambahkan minimal satu item."),
@@ -130,6 +131,7 @@ export type KolomDokumen = {
   pb1_amount: string;
   delivery_amount: string;
   grand_total: string;
+  signatory_id: bigint | null;
   show_payment_terms: boolean;
   payment_terms: string | null;
   updated_at: Date;
@@ -490,6 +492,9 @@ export function siapkanDokumen(
       pb1_amount: total.pb1_amount.toFixed(2),
       delivery_amount: total.delivery_amount.toFixed(2),
       grand_total: total.grand_total.toFixed(2),
+      // Kosong berarti memakai penandatangan pertama saat dicetak, bukan
+      // tanpa tanda tangan.
+      signatory_id: f.signatory_id ? BigInt(f.signatory_id) : null,
       show_payment_terms: f.show_payment_terms,
       payment_terms: f.show_payment_terms ? f.payment_terms || null : null,
       updated_at: new Date(),

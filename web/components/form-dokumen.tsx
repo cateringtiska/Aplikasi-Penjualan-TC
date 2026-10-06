@@ -24,6 +24,8 @@ export type PilihanPelanggan = {
   phone: string | null;
 };
 
+export type PilihanPenandatangan = { id: string; nama: string };
+
 export type PilihanProduk = {
   id: string;
   nama: string;
@@ -50,6 +52,7 @@ export type IsiAwal = {
   biaya_tambahan: BarisTambahanForm[];
   pb1_enabled: boolean;
   pb1_percent: string;
+  signatory_id: string;
   show_payment_terms: boolean;
   payment_terms: string;
   items: BarisForm[];
@@ -129,6 +132,7 @@ export function FormDokumen({
   isiAwal,
   pelanggan,
   produk,
+  penandatangan,
   aksi,
   istilah,
   medanTambahan,
@@ -136,6 +140,7 @@ export function FormDokumen({
   isiAwal: IsiAwal;
   pelanggan: PilihanPelanggan[];
   produk: PilihanProduk[];
+  penandatangan: PilihanPenandatangan[];
   aksi: (
     sebelumnya: KeadaanDokumen,
     data: FormData,
@@ -267,6 +272,7 @@ export function FormDokumen({
     })),
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent || null,
+    signatory_id: f.signatory_id || null,
     show_payment_terms: f.show_payment_terms,
     payment_terms: f.payment_terms,
     items: f.items.map((b) => ({
@@ -689,6 +695,29 @@ export function FormDokumen({
           Tambah biaya
         </Button>
       </Bagian>
+
+      {/* ---------- Penandatangan ---------- */}
+      {penandatangan.length > 1 ? (
+        <Bagian
+          judul="Penandatangan"
+          keterangan="Nama dan tanda tangannya yang tercetak di kaki dokumen."
+        >
+          <Bidang label="Ditandatangani oleh" nama="signatory_id">
+            <select
+              id="signatory_id"
+              value={f.signatory_id}
+              onChange={(e) => ubah("signatory_id", e.target.value)}
+              className="h-9 w-full max-w-sm rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              {penandatangan.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.nama}
+                </option>
+              ))}
+            </select>
+          </Bidang>
+        </Bagian>
+      ) : null}
 
       {/* ---------- Syarat & catatan ---------- */}
       <Bagian judul="Syarat pembayaran & catatan">

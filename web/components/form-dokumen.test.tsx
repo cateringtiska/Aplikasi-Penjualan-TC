@@ -62,6 +62,7 @@ const ISI_AWAL = {
   biaya_tambahan: [],
   pb1_enabled: false,
   pb1_percent: "10",
+  signatory_id: "",
   show_payment_terms: false,
   payment_terms: "",
   items: [],
@@ -75,6 +76,7 @@ function pasang() {
       istilah={ISTILAH}
       pelanggan={PELANGGAN}
       produk={[]}
+      penandatangan={[]}
     />,
   );
 

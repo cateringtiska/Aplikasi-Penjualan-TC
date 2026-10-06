@@ -14,7 +14,6 @@ import { type KeadaanPerusahaan, simpanPerusahaan } from "./actions";
 
 export type IsiPerusahaan = {
   company_name: string;
-  signature_name: string;
   bank_name: string;
   bank_account_number: string;
   bank_account_holder: string;
@@ -23,7 +22,6 @@ export type IsiPerusahaan = {
   payment_terms_default: string;
   quotation_terms_default: string;
   logo_path: string | null;
-  signature_path: string | null;
 };
 
 const keadaanAwal: KeadaanPerusahaan = {};
@@ -56,7 +54,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
           />
         </Bidang>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="max-w-sm">
           <BidangGambar
             label="Logo"
             nama="logo"
@@ -64,27 +62,7 @@ export function FormPerusahaan({ isi }: { isi: IsiPerusahaan }) {
             tautanSekarang={isi.logo_path}
             keterangan="PNG atau JPG, maksimal 2 MB."
           />
-          <BidangGambar
-            label="Tanda tangan"
-            nama="signature"
-            galat={keadaan.galat?.signature}
-            tautanSekarang={isi.signature_path}
-            keterangan="Sebaiknya PNG berlatar transparan."
-          />
         </div>
-
-        <Bidang
-          label="Nama penanda tangan"
-          nama="signature_name"
-          galat={keadaan.galat?.signature_name}
-        >
-          <Input
-            id="signature_name"
-            name="signature_name"
-            defaultValue={isi.signature_name}
-            placeholder="Nama yang dicetak di bawah tanda tangan"
-          />
-        </Bidang>
       </Bagian>
 
       <Bagian

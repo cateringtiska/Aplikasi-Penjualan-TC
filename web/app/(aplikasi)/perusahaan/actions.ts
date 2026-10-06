@@ -4,12 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { BATAS_SYARAT } from "@/lib/batas";
-import {
-  hapusGambar,
-  hapusTandaTangan,
-  unggahGambar,
-  unggahTandaTangan,
-} from "@/lib/penyimpanan";
+import { hapusGambar, unggahGambar } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
 import { pastikanPeran } from "@/lib/rbac";
 
@@ -17,7 +12,6 @@ const kosongJadiNull = (v: unknown) => (typeof v === "string" && v.trim() === ""
 
 const skema = z.object({
   company_name: z.string().trim().min(2, "Nama perusahaan belum diisi.").max(255),
-  signature_name: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_name: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_number: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
   bank_account_holder: z.preprocess(kosongJadiNull, z.string().trim().max(255).nullable()),
@@ -51,27 +45,24 @@ export async function simpanPerusahaan(
 
   const sekarang = await prisma.company_settings.findUnique({
     where: { id: BigInt(1) },
-    select: { logo_path: true, signature_path: true },
+    select: { logo_path: true },
   });
 
   const perubahan: Record<string, string | null> = { ...hasil.data };
 
-  // Gambar diunggah lebih dulu. Kalau salah satunya gagal, pengaturan teks
-  // pun tidak jadi disimpan — supaya keadaan yang tersimpan tidak setengah.
+  // Logo diunggah lebih dulu. Kalau gagal, pengaturan teksnya pun tidak jadi
+  // disimpan — supaya keadaan yang tersimpan tidak setengah.
+  //
+  // Tanda tangan TIDAK lagi diurus di sini: tiap penandatangan punya barisnya
+  // sendiri di tabel signatories, dikelola lewat penandatangan-actions.ts.
+  // Kolom signature_name/signature_path di company_settings dibiarkan apa
+  // adanya sebagai cadangan terakhir untuk dokumen yang tidak menemukan
+  // penandatangan mana pun (lihat lib/penandatangan.ts).
   const berkasLogo = data.get("logo");
   if (berkasLogo instanceof File && berkasLogo.size > 0) {
     const unggah = await unggahGambar(berkasLogo, "logo");
     if (!unggah.ok) return { galat: { logo: unggah.pesan } };
     perubahan.logo_path = unggah.tautan;
-  }
-
-  // Tanda tangan masuk ke bucket TERTUTUP, dan yang disimpan adalah jalur
-  // berkasnya — bukan tautan. Lihat catatan di lib/penyimpanan.ts.
-  const berkasTtd = data.get("signature");
-  if (berkasTtd instanceof File && berkasTtd.size > 0) {
-    const unggah = await unggahTandaTangan(berkasTtd);
-    if (!unggah.ok) return { galat: { signature: unggah.pesan } };
-    perubahan.signature_path = unggah.jalur;
   }
 
   try {
@@ -93,9 +84,6 @@ export async function simpanPerusahaan(
   // Berkas lama baru dihapus setelah penggantinya benar-benar tersimpan.
   if (perubahan.logo_path && sekarang?.logo_path !== perubahan.logo_path) {
     await hapusGambar(sekarang?.logo_path ?? null);
-  }
-  if (perubahan.signature_path && sekarang?.signature_path !== perubahan.signature_path) {
-    await hapusTandaTangan(sekarang?.signature_path ?? null);
   }
 
   revalidatePath("/perusahaan");

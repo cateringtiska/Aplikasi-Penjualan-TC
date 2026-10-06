@@ -4,6 +4,7 @@ import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { wajibIzin } from "@/lib/rbac";
+import { penandatanganAktif } from "@/lib/penandatangan";
 
 import { hariIni, ISTILAH_PENAWARAN, pilihanForm } from "../data";
 import { simpanPenawaran } from "../simpan";
@@ -22,6 +23,8 @@ export default async function HalamanPenawaranBaru() {
     }),
   ]);
 
+  const penandatangan = await penandatanganAktif();
+
   return (
     <Halaman>
       <KepalaHalaman
@@ -34,6 +37,7 @@ export default async function HalamanPenawaranBaru() {
         istilah={ISTILAH_PENAWARAN}
         pelanggan={pelanggan}
         produk={produk}
+        penandatangan={penandatangan}
         isiAwal={{
           customer_id: "",
           contact_person: "",
@@ -52,6 +56,7 @@ export default async function HalamanPenawaranBaru() {
           biaya_tambahan: [],
           pb1_enabled: false,
           pb1_percent: "10",
+          signatory_id: penandatangan[0]?.id ?? "",
           show_payment_terms: Boolean(pengaturan?.quotation_terms_default),
           payment_terms: pengaturan?.quotation_terms_default ?? "",
           items: [],

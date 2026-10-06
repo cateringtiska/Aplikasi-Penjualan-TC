@@ -6,6 +6,7 @@ import { tanggalKosong } from "@/lib/bentuk-form";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
+import { penandatanganAktif } from "@/lib/penandatangan";
 
 import { hariIni, ISTILAH_TAGIHAN, pilihanForm } from "../data";
 import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
@@ -28,6 +29,8 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     }),
   ]);
 
+  const penandatangan = await penandatanganAktif();
+
   const kosong: IsiAwal = {
     customer_id: "",
     contact_person: "",
@@ -46,6 +49,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     biaya_tambahan: [],
     pb1_enabled: false,
     pb1_percent: "10",
+    signatory_id: penandatangan[0]?.id ?? "",
     show_payment_terms: Boolean(pengaturan?.payment_terms_default),
     payment_terms: pengaturan?.payment_terms_default ?? "",
     items: [],
@@ -110,6 +114,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
         : "",
       pb1_enabled: p.pb1_enabled,
       pb1_percent: p.pb1_percent ? Number(p.pb1_percent).toString() : "10",
+      signatory_id: p.signatory_id?.toString() ?? penandatangan[0]?.id ?? "",
       show_payment_terms: p.show_payment_terms,
       payment_terms: pengaturan?.payment_terms_default ?? p.payment_terms ?? "",
       items: p.quotation_items.map((b) => ({
@@ -138,6 +143,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     };
   }
 
+
   return (
     <Halaman>
       <KepalaHalaman
@@ -154,6 +160,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
         istilah={ISTILAH_TAGIHAN}
         pelanggan={pelanggan}
         produk={produk}
+        penandatangan={penandatangan}
         isiAwal={isiAwal}
         medanTambahan={idPenawaran ? { dari_penawaran: idPenawaran } : undefined}
       />

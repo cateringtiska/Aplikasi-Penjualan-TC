@@ -6,6 +6,7 @@ import { tanggalKosong } from "@/lib/bentuk-form";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
+import { penandatanganAktif } from "@/lib/penandatangan";
 
 import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
@@ -49,6 +50,8 @@ export default async function HalamanUbahPenawaran({
     redirect(`/penawaran/${id}?terkunci=1`);
   }
 
+  const penandatangan = await penandatanganAktif();
+
   return (
     <Halaman>
       <KepalaHalaman
@@ -61,6 +64,7 @@ export default async function HalamanUbahPenawaran({
         istilah={ISTILAH_PENAWARAN}
         pelanggan={pelanggan}
         produk={produk}
+        penandatangan={penandatangan}
         isiAwal={{
           id: penawaran.id.toString(),
           customer_id: penawaran.customer_id.toString(),
@@ -92,6 +96,8 @@ export default async function HalamanUbahPenawaran({
           pb1_percent: penawaran.pb1_percent
             ? Number(penawaran.pb1_percent).toString()
             : "10",
+          signatory_id:
+            penawaran.signatory_id?.toString() ?? penandatangan[0]?.id ?? "",
           show_payment_terms: penawaran.show_payment_terms,
           payment_terms: penawaran.payment_terms ?? "",
           items: penawaran.quotation_items.map((b) => ({

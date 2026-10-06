@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DokumenCetak } from "@/components/dokumen-cetak";
-import { tautanTandaTangan } from "@/lib/penyimpanan";
+import { tandaTanganDokumen } from "@/lib/penandatangan";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
@@ -57,6 +57,14 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
   ]);
 
   if (!t) notFound();
+
+  // Penandatangan yang DIPILIH pada dokumen ini; kalau belum ada, yang
+  // pertama aktif. Lihat urutannya di lib/penandatangan.ts.
+  const ttd = await tandaTanganDokumen({
+    idPenandatangan: t.signatory_id,
+    namaCadangan: perusahaan?.signature_name ?? null,
+    jalurCadangan: perusahaan?.signature_path ?? null,
+  });
 
   return (
     <DokumenCetak
@@ -120,8 +128,8 @@ export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/
         perusahaan: {
           company_name: perusahaan?.company_name ?? "Perusahaan",
           logo_path: perusahaan?.logo_path ?? null,
-          signature_url: await tautanTandaTangan(perusahaan?.signature_path ?? null),
-          signature_name: perusahaan?.signature_name ?? null,
+          signature_url: ttd.tautan,
+          signature_name: ttd.nama,
           bank_name: perusahaan?.bank_name ?? null,
           bank_account_number: perusahaan?.bank_account_number ?? null,
           bank_account_holder: perusahaan?.bank_account_holder ?? null,
