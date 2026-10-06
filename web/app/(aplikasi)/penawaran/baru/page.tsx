@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { FormDokumen } from "@/components/form-dokumen";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 
 import { hariIni, ISTILAH_PENAWARAN, pilihanForm } from "../data";
 import { simpanPenawaran } from "../simpan";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Quotation baru" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanPenawaranBaru() {
-  await wajibPeran("sales", "finance");
+  await wajibIzin("penawaran");
 
   const [{ pelanggan, produk }, pengaturan] = await Promise.all([
     pilihanForm(),

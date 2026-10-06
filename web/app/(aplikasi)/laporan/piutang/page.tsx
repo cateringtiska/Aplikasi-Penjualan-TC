@@ -15,7 +15,7 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Kartu piutang" };
@@ -30,7 +30,7 @@ const WARNA_UMUR = {
 } as const;
 
 export default async function HalamanPiutang({ searchParams }: PageProps<"/laporan/piutang">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("laporan-piutang");
 
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";

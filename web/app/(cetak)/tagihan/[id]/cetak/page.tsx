@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { DokumenCetak } from "@/components/dokumen-cetak";
 import { tautanTandaTangan } from "@/lib/penyimpanan";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({
 }
 
 export default async function CetakTagihan({ params }: PageProps<"/tagihan/[id]/cetak">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("tagihan");
 
   const { id } = await params;
 

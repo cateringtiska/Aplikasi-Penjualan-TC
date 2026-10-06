@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 
 import { hitungUlangTagihan } from "@/lib/alokasi-pembayaran";
 
@@ -17,7 +17,7 @@ import { hitungUlangTagihan } from "@/lib/alokasi-pembayaran";
  * mengaku lunas padahal uangnya sudah dihapus.
  */
 export async function hapusPembayaran(id: string): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("pembayaran");
 
   await prisma.$transaction(async (tx) => {
     const pembayaran = await tx.payments.findUnique({
@@ -55,7 +55,7 @@ export async function hapusPembayaran(id: string): Promise<void> {
  * yang sudah terisi di formulir tidak terbaca melebihi sisa.
  */
 export async function tagihanBelumLunas(idPelanggan: string, idPembayaran?: string) {
-  await pastikanPeran("finance");
+  await pastikanIzin("pembayaran");
 
   const alokasiSendiri = new Map<string, Prisma.Decimal>();
 

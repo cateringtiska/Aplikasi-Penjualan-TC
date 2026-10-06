@@ -19,7 +19,7 @@ import {
   simpanDenganKodeUnik,
 } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanIzin } from "@/lib/rbac";
 import { hitungStatusInvoice, type StatusInvoice } from "@/lib/uang";
 
 // `klien` wajib diisi klien transaksi: lihat catatan di lib/nomor.ts.
@@ -30,7 +30,7 @@ export async function simpanTagihan(
   _sebelumnya: KeadaanDokumen,
   data: FormData,
 ): Promise<KeadaanDokumen> {
-  const sesi = await pastikanPeran("sales", "finance");
+  const sesi = await pastikanIzin("tagihan");
 
   const mentah = bacaMuatan(data);
   if (mentah === null) {

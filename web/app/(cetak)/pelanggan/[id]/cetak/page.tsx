@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { ambilKartuPiutang } from "@/lib/kartu-piutang";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Kartu Piutang" };
@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export default async function CetakKartuPiutang({
   params,
 }: PageProps<"/pelanggan/[id]/cetak">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("pelanggan");
 
   const { id } = await params;
 

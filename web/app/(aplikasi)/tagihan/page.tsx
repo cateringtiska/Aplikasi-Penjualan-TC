@@ -17,7 +17,7 @@ import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { namaPic } from "@/lib/kontak";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
 import { tandaiJatuhTempo } from "./actions";
@@ -36,7 +36,7 @@ const STATUS = [
 ];
 
 export default async function HalamanTagihan({ searchParams }: PageProps<"/tagihan">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("tagihan");
 
   await tandaiJatuhTempo();
 

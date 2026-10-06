@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 
 /* ==========================================================================
    TINDAKAN PADA TAGIHAN
@@ -15,7 +15,7 @@ import { pastikanPeran } from "@/lib/rbac";
    ========================================================================== */
 
 export async function batalkanTagihan(id: string): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("tagihan");
 
   const tagihan = await prisma.invoices.findUnique({
     where: { id: BigInt(id) },
@@ -39,7 +39,7 @@ export async function batalkanTagihan(id: string): Promise<void> {
 }
 
 export async function hapusTagihan(id: string): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("tagihan");
 
   const tagihan = await prisma.invoices.findUnique({
     where: { id: BigInt(id) },

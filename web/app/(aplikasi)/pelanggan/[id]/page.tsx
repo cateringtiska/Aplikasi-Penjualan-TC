@@ -9,7 +9,7 @@ import { BingkaiTabel, Halaman, KeadaanKosong } from "@/components/halaman";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Button } from "@/components/ui/button";
 import { ambilKartuPiutang } from "@/lib/kartu-piutang";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Kartu piutang customer" };
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanKartuCustomer({
   params,
 }: PageProps<"/pelanggan/[id]">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("pelanggan");
 
   const { id } = await params;
   const kartu = await ambilKartuPiutang(id, hanyaMiliknya(sesi));

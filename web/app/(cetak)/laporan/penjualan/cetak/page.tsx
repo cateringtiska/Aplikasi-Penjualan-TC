@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import type { Metadata } from "next";
 
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { ambilLaporan, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function CetakLaporanPenjualan({
   searchParams,
 }: PageProps<"/laporan/penjualan/cetak">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("laporan-penjualan");
 
   const params = await searchParams;
   const saring = bacaSaring(params);

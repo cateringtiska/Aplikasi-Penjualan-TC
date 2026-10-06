@@ -9,7 +9,7 @@ import { cocokkanAlokasi, lepasAlokasi, pasangAlokasi } from "@/lib/alokasi-pemb
 import { pesanGagal } from "@/lib/dokumen";
 import { nomorDokumenBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 import { d, uraikanRupiah } from "@/lib/uang";
 
 /* ==========================================================================
@@ -59,7 +59,7 @@ export async function simpanPembayaran(
   _sebelumnya: KeadaanPembayaran,
   data: FormData,
 ): Promise<KeadaanPembayaran> {
-  const sesi = await pastikanPeran("finance");
+  const sesi = await pastikanIzin("pembayaran");
 
   let mentah: unknown;
   try {

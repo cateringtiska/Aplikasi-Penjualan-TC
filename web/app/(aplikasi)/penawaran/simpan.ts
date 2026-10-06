@@ -14,13 +14,13 @@ import { tulisBiayaTambahanPenawaran } from "@/lib/biaya-tambahan";
 import { tulisTanggalAcaraPenawaran } from "@/lib/tanggal-acara";
 import { nomorPenawaranBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanIzin } from "@/lib/rbac";
 
 export async function simpanPenawaran(
   _sebelumnya: KeadaanDokumen,
   data: FormData,
 ): Promise<KeadaanDokumen> {
-  const sesi = await pastikanPeran("sales", "finance");
+  const sesi = await pastikanIzin("penawaran");
 
   const mentah = bacaMuatan(data);
   if (mentah === null) {

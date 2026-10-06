@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 
 import { tagihanBelumLunas } from "../../actions";
 import { FormPembayaran } from "../../form-pembayaran";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanUbahPembayaran({
   params,
 }: PageProps<"/pembayaran/[id]/ubah">) {
-  await wajibPeran("finance");
+  await wajibIzin("pembayaran");
 
   const { id } = await params;
 

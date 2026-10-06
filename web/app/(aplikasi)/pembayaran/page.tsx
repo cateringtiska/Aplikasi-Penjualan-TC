@@ -14,7 +14,7 @@ import {
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
 import { AksiBaris } from "./aksi-baris";
@@ -30,7 +30,7 @@ const LABEL_METODE: Record<string, string> = {
 };
 
 export default async function HalamanPembayaran({ searchParams }: PageProps<"/pembayaran">) {
-  await wajibPeran("finance");
+  await wajibIzin("pembayaran");
 
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";

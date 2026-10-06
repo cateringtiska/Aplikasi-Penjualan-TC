@@ -7,7 +7,7 @@ import { pesanGagal } from "@/lib/dokumen";
 import { bacaFormulirBiaya } from "@/lib/biaya-masukan";
 import { hitungUlangMargin } from "@/lib/margin";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 
 /* ==========================================================================
    BIAYA & MARGIN PER TAGIHAN
@@ -22,7 +22,7 @@ export async function simpanBiaya(
   _sebelumnya: KeadaanBiaya,
   data: FormData,
 ): Promise<KeadaanBiaya> {
-  const sesi = await pastikanPeran("finance");
+  const sesi = await pastikanIzin("laporan-margin");
 
   const baca = bacaFormulirBiaya(data);
   if (!baca.ok) return { galat: baca.galat };
@@ -62,7 +62,7 @@ export async function simpanBiaya(
 }
 
 export async function hapusBiaya(idBiaya: string, idTagihan: string): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("laporan-margin");
 
   if (await marginTerkunci(idTagihan)) {
     throw new Error("Margin sudah difinalisasi. Buka kembali dulu sebelum menghapus biaya.");
@@ -74,7 +74,7 @@ export async function hapusBiaya(idBiaya: string, idTagihan: string): Promise<vo
 }
 
 export async function finalisasiMargin(idTagihan: string): Promise<void> {
-  const sesi = await pastikanPeran("finance");
+  const sesi = await pastikanIzin("laporan-margin");
 
   // Tagihan tanpa satu pun catatan biaya selalu terbaca 100% untung. Mengunci
   // angka itu berarti mengunci angka yang sudah pasti keliru — dan justru
@@ -110,7 +110,7 @@ export async function finalisasiMargin(idTagihan: string): Promise<void> {
 }
 
 export async function bukaKembaliMargin(idTagihan: string): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("laporan-margin");
 
   await prisma.invoice_margins.update({
     where: { invoice_id: BigInt(idTagihan) },

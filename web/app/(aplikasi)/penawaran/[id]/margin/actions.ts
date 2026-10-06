@@ -6,7 +6,7 @@ import type { KeadaanBiaya } from "@/lib/biaya";
 import { pesanGagal } from "@/lib/dokumen";
 import { bacaFormulirBiaya } from "@/lib/biaya-masukan";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 
 /* ==========================================================================
    PERKIRAAN BIAYA PADA PENAWARAN
@@ -33,7 +33,7 @@ export async function simpanBiayaPenawaran(
   _sebelumnya: KeadaanBiaya,
   data: FormData,
 ): Promise<KeadaanBiaya> {
-  const sesi = await pastikanPeran("finance");
+  const sesi = await pastikanIzin("laporan-margin");
 
   const baca = bacaFormulirBiaya(data);
   if (!baca.ok) return { galat: baca.galat };
@@ -71,7 +71,7 @@ export async function hapusBiayaPenawaran(
   idBiaya: string,
   idPenawaran: string,
 ): Promise<void> {
-  await pastikanPeran("finance");
+  await pastikanIzin("laporan-margin");
 
   await prisma.quotation_costs.delete({ where: { id: BigInt(idBiaya) } });
 

@@ -2,6 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { menuUntukIzin } from "@/lib/navigasi";
+
 import { KerangkaAplikasi } from "./kerangka-aplikasi";
 
 /* ==========================================================================
@@ -34,9 +36,14 @@ const sesi = {
   peran: "admin" as const,
 };
 
-function gambar(onKeluar = vi.fn(async () => {})) {
+/**
+ * Menu yang digambar kini DITERIMA dari server, bukan dihitung di sini.
+ * Tes ini memeriksa cara menggambarnya; penyaringannya sendiri diuji di
+ * lib/izin.test.ts, tempat aturannya berada.
+ */
+function gambar(onKeluar = vi.fn(async () => {}), kelompok = menuUntukIzin("admin", new Map())) {
   render(
-    <KerangkaAplikasi sesi={sesi} onKeluar={onKeluar}>
+    <KerangkaAplikasi sesi={sesi} kelompok={kelompok} onKeluar={onKeluar}>
       <p>isi halaman</p>
     </KerangkaAplikasi>,
   );

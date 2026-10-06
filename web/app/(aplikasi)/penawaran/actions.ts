@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, pastikanPeran } from "@/lib/rbac";
+import { hanyaMiliknya, pastikanIzin } from "@/lib/rbac";
 
 /* ==========================================================================
    PERUBAHAN STATUS PENAWARAN
@@ -25,7 +25,7 @@ const BOLEH_DIUBAH: Record<string, string[]> = {
 };
 
 export async function ubahStatusPenawaran(id: string, tujuan: string): Promise<void> {
-  const sesi = await pastikanPeran("sales", "finance");
+  const sesi = await pastikanIzin("penawaran");
 
   // Penyaringnya ikut ke dalam pencarian, bukan diperiksa sesudahnya. Sales
   // tidak pernah melihat quotation orang lain di layar, tetapi tindakan ini
@@ -50,7 +50,7 @@ export async function ubahStatusPenawaran(id: string, tujuan: string): Promise<v
 }
 
 export async function hapusPenawaran(id: string): Promise<void> {
-  const sesi = await pastikanPeran("sales", "finance");
+  const sesi = await pastikanIzin("penawaran");
 
   const penawaran = await prisma.quotations.findFirst({
     where: { id: BigInt(id), ...hanyaMiliknya(sesi) },

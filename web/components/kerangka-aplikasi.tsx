@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import type { Sesi } from "@/lib/auth";
-import { LABEL_PERAN, menuUntuk } from "@/lib/navigasi";
+import { type KelompokMenu, LABEL_PERAN } from "@/lib/navigasi";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,15 +29,24 @@ import { cn } from "@/lib/utils";
  */
 export function KerangkaAplikasi({
   sesi,
+  kelompok,
   onKeluar,
   children,
 }: {
   sesi: Sesi;
+  /**
+   * Menu yang sudah disaring, dihitung DI SERVER.
+   *
+   * Dulu dihitung di sini dari peran saja. Sekarang hak aksesnya tersimpan
+   * di database dan diatur pemiliknya, jadi menunya harus dibaca di tempat
+   * yang bisa membaca database — dan harus memakai peta izin yang SAMA
+   * dengan yang dipakai penjaga halamannya.
+   */
+  kelompok: KelompokMenu[];
   onKeluar: () => Promise<void>;
   children: React.ReactNode;
 }) {
   const [bukaMenu, setBukaMenu] = useState(false);
-  const kelompok = menuUntuk(sesi.peran);
 
   return (
     <div className="flex min-h-dvh">
@@ -85,7 +94,7 @@ function IsiNavigasi({
   kelompok,
   onPilih,
 }: {
-  kelompok: ReturnType<typeof menuUntuk>;
+  kelompok: KelompokMenu[];
   onPilih?: () => void;
 }) {
   const jalur = usePathname();

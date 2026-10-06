@@ -5,7 +5,7 @@ import { FormDokumen } from "@/components/form-dokumen";
 import { tanggalKosong } from "@/lib/bentuk-form";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
 import { ISTILAH_PENAWARAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanUbahPenawaran({
   params,
 }: PageProps<"/penawaran/[id]/ubah">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("penawaran");
 
   const { id } = await params;
 

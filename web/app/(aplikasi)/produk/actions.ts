@@ -6,7 +6,7 @@ import { z } from "zod";
 import { BATAS_KETERANGAN } from "@/lib/batas";
 import { kodeProdukBerikutnya, simpanDenganKodeUnik } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
-import { pastikanPeran } from "@/lib/rbac";
+import { pastikanIzin } from "@/lib/rbac";
 import { uraikanRupiah } from "@/lib/uang";
 
 const kosongJadiNull = (v: unknown) => (typeof v === "string" && v.trim() === "" ? null : v);
@@ -29,7 +29,7 @@ export async function simpanProduk(
   _sebelumnya: KeadaanProduk,
   data: FormData,
 ): Promise<KeadaanProduk> {
-  const sesi = await pastikanPeran("sales", "finance");
+  const sesi = await pastikanIzin("produk");
 
   const hasil = skema.safeParse(Object.fromEntries(data));
 
@@ -85,7 +85,7 @@ export async function simpanProduk(
 }
 
 export async function ubahStatusProduk(id: string): Promise<void> {
-  await pastikanPeran("sales", "finance");
+  await pastikanIzin("produk");
 
   const produk = await prisma.products.findUnique({
     where: { id: BigInt(id) },

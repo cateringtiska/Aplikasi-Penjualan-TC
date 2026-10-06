@@ -10,7 +10,7 @@ import { Halaman } from "@/components/halaman";
 import { KartuAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Detail payment" };
@@ -26,7 +26,7 @@ const LABEL_METODE: Record<string, string> = {
 export default async function HalamanDetailPembayaran({
   params,
 }: PageProps<"/pembayaran/[id]">) {
-  await wajibPeran("finance");
+  await wajibIzin("pembayaran");
 
   const { id } = await params;
 

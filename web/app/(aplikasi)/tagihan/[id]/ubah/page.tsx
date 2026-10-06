@@ -5,7 +5,7 @@ import { FormDokumen } from "@/components/form-dokumen";
 import { tanggalKosong } from "@/lib/bentuk-form";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { prisma } from "@/lib/prisma";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
 import { ISTILAH_TAGIHAN, pilihanForm, tanggalUntukInput } from "../../data";
 import { tanggalAcaraUntukFormulir } from "@/lib/pilihan";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Ubah invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan/[id]/ubah">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("tagihan");
 
   const { id } = await params;
 

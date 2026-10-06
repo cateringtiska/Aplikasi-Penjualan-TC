@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Halaman, KepalaHalaman } from "@/components/halaman";
 import { hariIni } from "@/lib/pilihan";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 
 import { FormPembayaran, type BarisTagihan } from "../form-pembayaran";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanPembayaranBaru({
   searchParams,
 }: PageProps<"/pembayaran/baru">) {
-  await wajibPeran("finance");
+  await wajibIzin("pembayaran");
 
   const { tagihan: idTagihan } = await searchParams;
   const dariTagihan = typeof idTagihan === "string" ? idTagihan : "";

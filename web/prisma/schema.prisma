@@ -445,3 +445,15 @@ model quotation_event_dates {
 
   @@unique([quotation_id, event_date], map: "quotation_event_dates_quotation_id_event_date_unique")
 }
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model role_permissions {
+  id         BigInt    @id @default(autoincrement())
+  role       String    @db.VarChar(255)
+  menu_key   String    @db.VarChar(255)
+  allowed    Boolean   @default(false)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+
+  @@unique([role, menu_key], map: "role_permissions_role_menu_unique")
+}

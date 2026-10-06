@@ -14,7 +14,7 @@ import {
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { ambilLaporan, bacaSaring } from "@/lib/laporan-penjualan";
@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanLaporanPenjualan({
   searchParams,
 }: PageProps<"/laporan/penjualan">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("laporan-penjualan");
 
   const params = await searchParams;
   const saring = bacaSaring(params);

@@ -17,7 +17,7 @@ import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { namaPic } from "@/lib/kontak";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { tandaiKadaluarsa } from "./actions";
@@ -36,7 +36,7 @@ const STATUS = [
 ];
 
 export default async function HalamanPenawaran({ searchParams }: PageProps<"/penawaran">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("penawaran");
 
   // Menandai yang masa berlakunya lewat sebelum daftar digambar, supaya
   // status di layar tidak pernah bertentangan dengan tanggalnya.

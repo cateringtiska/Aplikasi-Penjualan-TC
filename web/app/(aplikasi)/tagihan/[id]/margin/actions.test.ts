@@ -35,8 +35,19 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+const SESI_ADMIN = {
+  id: "1",
+  nama: "Reza",
+  username: "reza",
+  email: null,
+  peran: "admin",
+};
+
+// Kedua penjaga dipalsukan: hak akses kini dibaca dari tabel izin, dan
+// yang diuji di berkas ini adalah aturan biayanya, bukan penjaganya.
 vi.mock("@/lib/rbac", () => ({
-  pastikanPeran: async () => ({ id: "1", nama: "Reza", username: "reza", email: null, peran: "admin" }),
+  pastikanPeran: async () => SESI_ADMIN,
+  pastikanIzin: async () => SESI_ADMIN,
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));

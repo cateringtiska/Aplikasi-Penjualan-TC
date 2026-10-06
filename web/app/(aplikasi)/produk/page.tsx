@@ -9,7 +9,7 @@ import {
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 import { AksiBaris } from "./aksi-baris";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Product" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanProduk({ searchParams }: PageProps<"/produk">) {
-  await wajibPeran("sales", "finance");
+  await wajibIzin("produk");
 
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";

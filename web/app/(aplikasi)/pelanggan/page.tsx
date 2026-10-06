@@ -10,7 +10,7 @@ import {
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 
 import { AksiBaris } from "./aksi-baris";
 import { DialogPelanggan } from "./dialog-pelanggan";
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanPelanggan({
   searchParams,
 }: PageProps<"/pelanggan">) {
-  await wajibPeran("sales", "finance");
+  await wajibIzin("pelanggan");
 
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";

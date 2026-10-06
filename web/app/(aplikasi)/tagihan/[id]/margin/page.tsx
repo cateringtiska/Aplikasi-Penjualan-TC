@@ -10,7 +10,7 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PanelBiaya } from "@/components/panel-biaya";
 import { keBarisTampil } from "@/lib/biaya";
 import { prisma } from "@/lib/prisma";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 import { hitungMargin, rupiah } from "@/lib/uang";
 
 import { bukaKembaliMargin, finalisasiMargin, hapusBiaya, simpanBiaya } from "./actions";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Biaya & margin" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanMargin({ params }: PageProps<"/tagihan/[id]/margin">) {
-  const sesi = await wajibPeran("finance");
+  const sesi = await wajibIzin("laporan-margin");
 
   const { id } = await params;
 

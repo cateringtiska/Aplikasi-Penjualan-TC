@@ -3,6 +3,8 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import { penggunaAktif, type Peran, type Sesi } from "./auth";
+import { bacaIzin } from "./izin";
+import { bolehBuka, type KunciMenu } from "./navigasi";
 
 /* ==========================================================================
    PENJAGA HAK AKSES
@@ -72,6 +74,40 @@ export async function pastikanPeran(...diizinkan: Peran[]): Promise<Sesi> {
   if (!sesi) throw new Error("Sesi berakhir atau akun dinonaktifkan. Silakan masuk kembali.");
   if (sesi.peran === "admin") return sesi;
   if (diizinkan.includes(sesi.peran)) return sesi;
+
+  throw new Error("Anda tidak punya akses untuk tindakan ini.");
+}
+
+/* -------------------------------------------------------------------------
+   PENJAGA BERDASARKAN IZIN YANG DIATUR ADMIN
+   ------------------------------------------------------------------------- */
+
+/**
+ * Memastikan pengguna boleh membuka halaman ini menurut tabel izin.
+ *
+ * Menggantikan wajibPeran() yang daftar perannya tertulis di dalam kode.
+ * Keduanya tetap ada: wajibPeran untuk yang memang tidak pernah berubah,
+ * wajibIzin untuk yang boleh diatur pemiliknya.
+ *
+ * Penjaga INILAH yang berlaku, bukan menu yang disembunyikan. Menyembunyikan
+ * menu tidak pernah cukup — siapa pun bisa mengetik alamatnya langsung.
+ */
+export async function wajibIzin(kunci: KunciMenu): Promise<Sesi> {
+  const sesi = await wajibSesi();
+  const izin = await bacaIzin();
+
+  if (bolehBuka(sesi.peran, kunci, izin)) return sesi;
+
+  redirect("/dasbor?akses=ditolak");
+}
+
+/** Versi untuk server action: melempar, bukan mengalihkan halaman. */
+export async function pastikanIzin(kunci: KunciMenu): Promise<Sesi> {
+  const sesi = await penggunaAktif();
+  if (!sesi) throw new Error("Sesi berakhir atau akun dinonaktifkan. Silakan masuk kembali.");
+
+  const izin = await bacaIzin();
+  if (bolehBuka(sesi.peran, kunci, izin)) return sesi;
 
   throw new Error("Anda tidak punya akses untuk tindakan ini.");
 }

@@ -12,7 +12,7 @@ import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import {
   d,
   labelStatusInvoice,
@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: "Detail invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function HalamanDetailTagihan({ params }: PageProps<"/tagihan/[id]">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("tagihan");
 
   const { id } = await params;
 

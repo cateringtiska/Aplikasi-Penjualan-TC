@@ -8,8 +8,11 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import type { Peran } from "@/lib/auth";
-import { LABEL_PERAN, MENU } from "@/lib/navigasi";
+import { bolehBuka, LABEL_PERAN, MENU, PERAN_DIATUR } from "@/lib/navigasi";
+import { bacaIzin } from "@/lib/izin";
 import { prisma } from "@/lib/prisma";
+
+import { type BarisIzin, TabelIzin } from "./tabel-izin";
 import { wajibPeran } from "@/lib/rbac";
 
 import { AksiBaris } from "./aksi-baris";
@@ -17,8 +20,6 @@ import { DialogPengguna } from "./dialog-pengguna";
 
 export const metadata: Metadata = { title: "User" };
 export const dynamic = "force-dynamic";
-
-const URUTAN_PERAN: Peran[] = ["admin", "sales", "finance"];
 
 export default async function HalamanPengguna() {
   const sesi = await wajibPeran();
@@ -42,8 +43,20 @@ export default async function HalamanPengguna() {
   // Matriks hak akses dibangun dari peta menu yang sama yang dipakai penjaga
   // akses, jadi tabel ini tidak bisa berbohong: kalau menunya berubah,
   // tampilannya ikut berubah.
-  const halaman = MENU.flatMap((k) =>
-    k.butir.map((b) => ({ kelompok: k.judul, label: b.label, peran: b.peran })),
+  // Izin dibaca dari tabelnya, bukan dari aturan bawaan di kode: yang
+  // ditampilkan harus keadaan yang BENAR-BENAR berlaku.
+  const izin = await bacaIzin();
+
+  const barisIzin: BarisIzin[] = MENU.flatMap((k) =>
+    k.butir.map((b) => ({
+      kunci: b.kunci,
+      label: b.label,
+      kelompok: k.judul,
+      hanyaAdmin: b.hanyaAdmin === true,
+      izin: Object.fromEntries(
+        PERAN_DIATUR.map((p) => [p, bolehBuka(p, b.kunci, izin)]),
+      ),
+    })),
   );
 
   return (
@@ -135,56 +148,17 @@ export default async function HalamanPengguna() {
         </RingkasanTabel>
       ) : null}
 
-      {/* Matriks hak akses */}
+      {/* Matriks hak akses — bisa diubah langsung oleh admin. */}
       <section className="mt-10">
         <h2 className="text-sm font-semibold tracking-[-0.01em]">Hak akses tiap peran</h2>
         <p className="mt-0.5 pb-3 text-xs text-muted-foreground">
-          Dibaca dari pengaturan menu yang sama yang dipakai penjaga akses di server, jadi tabel
-          ini selalu mencerminkan keadaan sebenarnya.
+          Centang halaman yang boleh dibuka tiap peran. Tabel ini dibaca penjaga akses di
+          server, jadi yang dicentang di sini benar-benar menentukan — bukan sekadar
+          menyembunyikan menunya.
         </p>
 
         <BingkaiTabel>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th>Halaman</Th>
-                {URUTAN_PERAN.map((p) => (
-                  <Th key={p} className="w-24 text-center">
-                    {LABEL_PERAN[p]}
-                  </Th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {halaman.map((h) => (
-                <tr key={h.label} className="border-b last:border-0">
-                  <Td>
-                    <span>{h.label}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{h.kelompok}</span>
-                  </Td>
-                  {URUTAN_PERAN.map((peran) => {
-                    // Admin selalu lolos, apa pun yang tertulis di peta menu.
-                    const boleh =
-                      peran === "admin" ||
-                      h.peran.includes(peran as Exclude<Peran, "admin">);
-                    return (
-                      <Td key={peran} className="text-center">
-                        {boleh ? (
-                          <span className="text-lunas" aria-label="boleh">
-                            ✓
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/40" aria-label="tidak boleh">
-                            —
-                          </span>
-                        )}
-                      </Td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TabelIzin baris={barisIzin} peranDiatur={PERAN_DIATUR} />
         </BingkaiTabel>
       </section>
     </Halaman>

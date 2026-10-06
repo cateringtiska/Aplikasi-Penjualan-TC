@@ -15,7 +15,7 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { ambilLaporanMargin } from "@/lib/laporan-margin";
-import { wajibPeran } from "@/lib/rbac";
+import { wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
 export const metadata: Metadata = { title: "Laporan margin" };
@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanLaporanMargin({
   searchParams,
 }: PageProps<"/laporan/margin">) {
-  await wajibPeran("finance");
+  await wajibIzin("laporan-margin");
 
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";

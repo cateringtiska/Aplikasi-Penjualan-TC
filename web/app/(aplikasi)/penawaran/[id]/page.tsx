@@ -12,7 +12,7 @@ import { StatusPenawaran } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
-import { hanyaMiliknya, wajibPeran } from "@/lib/rbac";
+import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
 import { AksiStatusPenawaran } from "./aksi-status";
 import { nilaiKelompok, perluTotalKelompok, romawi, rupiah } from "@/lib/uang";
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanDetailPenawaran({
   params,
 }: PageProps<"/penawaran/[id]">) {
-  const sesi = await wajibPeran("sales", "finance");
+  const sesi = await wajibIzin("penawaran");
 
   // Margin memperlihatkan biaya dan untung-rugi, jadi hanya untuk yang memang
   // mengurus uang. Sales melihat penawarannya, bukan marginnya.
