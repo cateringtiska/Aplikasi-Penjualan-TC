@@ -133,3 +133,66 @@ describe("FormDokumen — memilih customer", () => {
     expect(kontak.value).toBe("Pak Dedi dari WO");
   });
 });
+
+describe("FormDokumen — isian pax", () => {
+  /*
+   * Kolom pax PERNAH HILANG dari formulir ini tanpa satu pun galat.
+   *
+   * Kolomnya sudah ada di database, jalur simpannya sudah menerimanya, dan
+   * halaman ubah sudah mengirimkannya — tetapi isiannya tidak pernah
+   * terpasang di layar. Tipe BarisForm waktu itu belum menuntut pax, jadi
+   * nilai yang dikirim halaman ubah dibuang diam-diam, tsc tidak berkata
+   * apa-apa, dan seluruh tes tetap hijau. Yang akan menemukannya adalah
+   * orang yang membuka formulirnya dan tidak menemukan kolom yang
+   * dijanjikan.
+   *
+   * Tes ini memeriksa isiannya benar-benar ADA di layar, sebab tipe saja
+   * tidak cukup: tipe hanya menuntut datanya mengalir, bukan ada tempat
+   * untuk mengetiknya.
+   */
+  function pasangDenganSatuBaris() {
+    render(
+      <FormDokumen
+        isiAwal={{
+          ...ISI_AWAL,
+          items: [
+            {
+              kunci: "b1",
+              product_id: "",
+              day: "3",
+              item_name: "LUNCH BOX",
+              unit: "Box",
+              qty: "130",
+              pax: "",
+              price: "50000",
+              is_compliment: false,
+              charge_service: true,
+              charge_pb1: true,
+              children: [],
+            },
+          ],
+        }}
+        aksi={async () => ({})}
+        istilah={ISTILAH}
+        pelanggan={PELANGGAN}
+        produk={[]}
+        penandatangan={[]}
+      />,
+    );
+  }
+
+  it("menyediakan tempat mengetik pax pada tiap baris", () => {
+    pasangDenganSatuBaris();
+    expect(screen.getByLabelText(/jumlah pax baris 1/i)).toBeTruthy();
+  });
+
+  it("menawarkan hari x jumlah sebagai angka bawaannya", () => {
+    // 3 hari x 130 box = 390. Yang mengetik melihat apa yang akan tercetak
+    // di lembar dapur tanpa harus mencobanya dulu.
+    pasangDenganSatuBaris();
+
+    const isian = screen.getByLabelText(/jumlah pax baris 1/i) as HTMLInputElement;
+    expect(isian.placeholder).toBe("390");
+    expect(isian.value, "pax terisi sendiri, padahal seharusnya hanya tawaran").toBe("");
+  });
+});

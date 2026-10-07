@@ -66,6 +66,13 @@ export type BarisForm = {
   item_name: string;
   unit: string;
   qty: string;
+  /**
+   * Berapa orang yang dilayani baris ini. Kosong berarti tidak diisi, dan
+   * lembar dapur menghitungnya sendiri dari hari dikali jumlah.
+   *
+   * TIDAK PERNAH ikut menghitung uang — lihat lib/dokumen.ts.
+   */
+  pax: string;
   price: string;
   is_compliment: boolean;
   charge_service: boolean;
@@ -77,6 +84,7 @@ export type BarisForm = {
     day: string;
     unit: string;
     qty: string;
+    pax: string;
     price: string;
   }[];
 };
@@ -104,6 +112,7 @@ export function barisKosong(): BarisForm {
     unit: "",
     day: "1",
     qty: "1",
+    pax: "",
     price: "",
     is_compliment: false,
     charge_service: true,
@@ -281,6 +290,7 @@ export function FormDokumen({
       item_name: b.item_name,
       unit: b.unit || null,
       qty: b.qty,
+      pax: b.pax,
       price: b.price,
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
@@ -290,6 +300,7 @@ export function FormDokumen({
         unit: a.unit || null,
         day: a.day,
         qty: a.qty,
+        pax: a.pax,
         price: a.price,
       })),
     })),
@@ -798,6 +809,22 @@ export function FormDokumen({
    Satu baris item, lengkap dengan sub-itemnya
    ------------------------------------------------------------------------- */
 
+/**
+ * Pax yang akan dipakai lembar dapur kalau kolomnya dibiarkan kosong.
+ *
+ * Rumusnya SATU dengan yang dipakai lembar dapurnya — lihat paxBaris di
+ * lib/baris-cetak.ts. Placeholder yang menjanjikan angka berbeda dari yang
+ * tercetak lebih menyesatkan daripada tidak ada placeholder sama sekali.
+ */
+function paxOtomatis(hari: string, jumlah: string): string {
+  const h = uraikanRupiah(hari);
+  const j = uraikanRupiah(jumlah);
+  if (h === null || j === null) return "pax";
+
+  const hasil = h.times(j);
+  return hasil.gt(0) ? hasil.toNumber().toLocaleString("id-ID") : "pax";
+}
+
 function BarisItem({
   baris,
   nomor,
@@ -912,6 +939,23 @@ function BarisItem({
             aria-label={`Satuan baris ${nomor}`}
             className="mt-2 h-8 text-xs"
           />
+          {/* Pax TIDAK ikut menghitung uang. Qty beserta satuannya
+              menerangkan bentuk penyajiannya — 2 Tampah — sedangkan pax
+              berapa orang yang makan.
+
+              Dibiarkan kosong, lembar dapur mengisinya sendiri dengan hari
+              dikali jumlah. Angka itu ditampilkan sebagai placeholder supaya
+              yang mengetik melihat apa yang akan tercetak tanpa mencobanya
+              dulu. */}
+          <Input
+            inputMode="numeric"
+            value={baris.pax}
+            onChange={(e) => onUbah({ pax: e.target.value })}
+            placeholder={paxOtomatis(baris.day, baris.qty)}
+            aria-label={`Jumlah pax baris ${nomor}`}
+            title="Berapa orang yang dilayani, untuk lembar dapur. Kosong berarti hari x jumlah."
+            className="angka mt-2 h-8 text-xs tabular-nums"
+          />
         </div>
 
         <div className="sm:col-span-3">
@@ -976,7 +1020,15 @@ function BarisItem({
             onUbah({
               children: [
                 ...baris.children,
-                { kunci: crypto.randomUUID(), item_name: "", day: "", unit: "", qty: "", price: "" },
+                {
+                  kunci: crypto.randomUUID(),
+                  item_name: "",
+                  day: "",
+                  unit: "",
+                  qty: "",
+                  pax: "",
+                  price: "",
+                },
               ],
             })
           }
@@ -1023,6 +1075,15 @@ function BarisItem({
                 placeholder="Satuan"
                 aria-label={`Satuan sub-item ${j + 1} pada baris ${nomor}`}
                 className="h-8 w-24 text-sm"
+              />
+              <Input
+                value={anak.pax}
+                onChange={(e) => ubahAnak(j, { pax: e.target.value })}
+                inputMode="numeric"
+                placeholder={paxOtomatis(anak.day || baris.day, anak.qty)}
+                aria-label={`Jumlah pax sub-item ${j + 1} pada baris ${nomor}`}
+                title="Berapa orang yang dilayani. Kosong berarti hari x jumlah."
+                className="angka h-8 w-16 text-sm tabular-nums"
               />
               <Input
                 value={anak.price}

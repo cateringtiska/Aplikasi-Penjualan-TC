@@ -117,7 +117,7 @@ describe("sub-item", () => {
     // deskripsi induknya. Baris "Total - I" tetap ada, persis seperti di
     // dokumen sungguhan pemiliknya.
     expect(hasil.filter((x) => x.jenis === "item")).toHaveLength(1);
-    expect(item(hasil, 0).rincian).toEqual(["Nasi Putih", "Kerupuk"]);
+    expect(item(hasil, 0).rincian.map((r) => r.nama)).toEqual(["Nasi Putih", "Kerupuk"]);
   });
 });
 
@@ -234,5 +234,76 @@ describe("blok total", () => {
 
     const diskon = hasil.find((b) => b.label === "Diskon");
     expect(diskon?.nilaiAngka).toBe(-500000);
+  });
+});
+
+describe("pax otomatis", () => {
+  /*
+   * Permintaan pemiliknya: kolom pax di lembar dapur diisi sendiri dengan
+   * hari dikali jumlah. Untuk acara tiga hari berisi 130 box sehari, dapur
+   * perlu tahu 390 — bukan 130, dan bukan 3.
+   */
+  it("dihitung dari hari x jumlah ketika tidak diketik", () => {
+    const hasil = barisTabelDokumen([induk({ pax: null, day: "3", qty: "130" })]);
+    expect(item(hasil, 0).pax).toBe("390");
+  });
+
+  it("isian yang DIKETIK menang atas hitungannya", () => {
+    // Dua tampah untuk empat puluh orang: hari x jumlah hanya menghasilkan
+    // 2, dan dapur menyiapkan untuk dua orang.
+    const hasil = barisTabelDokumen([
+      induk({ item_name: "TAMPAH BATMAY", day: "1", qty: "2", pax: 40 }),
+    ]);
+    expect(item(hasil, 0).pax).toBe("40");
+  });
+
+  it("KOSONG untuk baris judul, bukan nol", () => {
+    // Judul kelompok tidak dimasak. Nol di lembar dapur terbaca sebagai
+    // perintah untuk tidak memasaknya.
+    const hasil = barisTabelDokumen([
+      induk({ qty: "0", price: "0", subtotal: "0", pax: null, anak: [anak()] }),
+    ]);
+    expect(item(hasil, 0).pax).toBe("");
+  });
+
+  it("tetap terisi untuk item yang harganya nol karena sudah termasuk paket", () => {
+    /*
+     * Dua puluh satu baris di data sungguhan berjumlah lebih dari nol
+     * tetapi berharga nol — "Stall Tambahan: Indomie, 300". Semuanya tetap
+     * harus dimasak, jadi pax-nya dinilai dari QTY-nya sendiri, bukan dari
+     * ada tidaknya harga.
+     */
+    const hasil = barisTabelDokumen([
+      induk({ item_name: "Stall Indomie", day: "1", qty: "300", price: "0", subtotal: "0", pax: null }),
+    ]);
+    expect(item(hasil, 0).pax).toBe("300");
+  });
+
+  it("ikut dihitung untuk sub-item berharga", () => {
+    const hasil = barisTabelDokumen([
+      induk({ anak: [anak({ day: "2", qty: "15", pax: null })] }),
+    ]);
+    expect(item(hasil, 1).pax).toBe("30");
+  });
+});
+
+describe("jumlah pada isi paket", () => {
+  it("dibawa serta, supaya lembar dapur bisa memakainya", () => {
+    // Sebagian isi paket punya jumlah sungguhan — tiga ratus porsi Indomie
+    // di stall tambahan. Tanpa angka itu lembar dapur tidak bisa dipakai
+    // memasak, walaupun dokumen customer memang tidak menggambarnya.
+    const hasil = barisTabelDokumen([
+      induk({
+        anak: [
+          anak({ id: "a1", item_name: "Keripik Kentang", qty: "30", unit: "pax", price: "0", subtotal: "0" }),
+          anak({ id: "a2", item_name: "Nasi Putih", qty: "0", price: "0", subtotal: "0" }),
+        ],
+      }),
+    ]);
+
+    expect(item(hasil, 0).rincian).toEqual([
+      { nama: "Keripik Kentang", qty: "30", satuan: "pax" },
+      { nama: "Nasi Putih", qty: "", satuan: "pax" },
+    ]);
   });
 });

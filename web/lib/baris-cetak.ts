@@ -62,7 +62,16 @@ export type BarisTabel =
       nomor: string;
       nama: string;
       /** Isi paket yang tidak berharga, ditulis di bawah namanya. */
-      rincian: string[];
+      /**
+       * Isi paket yang tidak berharga, ditulis di bawah nama induknya.
+       *
+       * Jumlahnya ikut dibawa walaupun dokumen customer tidak
+       * menggambarnya: sebagian isi paket punya jumlah sungguhan — tiga
+       * ratus porsi Indomie di stall tambahan — dan lembar dapur TIDAK
+       * BISA dipakai kalau angka itu hilang. Yang membedakan hanya siapa
+       * yang menggambarnya, bukan apa yang tersedia.
+       */
+      rincian: { nama: string; qty: string; satuan: string }[];
       /** Kosong berarti baris judul: kolomnya memang dikosongkan. */
       hari: string;
       qty: string;
@@ -125,6 +134,24 @@ function persen(nilai: string | null): string {
   return Number(nilai).toString().replace(".", ",");
 }
 
+/**
+ * Pax: berapa orang yang dilayani satu baris.
+ *
+ * Isian pax yang DIKETIK menang; kalau kosong, dihitung dari hari dikali
+ * jumlahnya — untuk acara tiga hari berisi 130 box sehari, dapur perlu tahu
+ * 390, bukan 130.
+ *
+ * Qty nol berarti baris judul kelompok, dan judul tidak dimasak. Angka nol
+ * di lembar dapur terbaca sebagai perintah untuk TIDAK memasaknya, jadi
+ * yang ditulis adalah kosong.
+ */
+function paxBaris(pax: number | null, hari: string, jumlah: string): string {
+  if (pax !== null) return angka(String(pax));
+
+  const otomatis = Number(hari) * Number(jumlah);
+  return otomatis > 0 ? otomatis.toLocaleString("id-ID") : "";
+}
+
 /** Baris tabel rincian, berurutan dari atas ke bawah. */
 export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
   const hasil: BarisTabel[] = [];
@@ -142,13 +169,20 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
       kunci: b.id,
       nomor: nomorInduk,
       nama: b.item_name,
-      rincian: anakRincian.map((a) => a.item_name),
+      rincian: anakRincian.map((a) => ({
+        nama: a.item_name,
+        // Jumlahnya ikut dibawa walaupun dokumen customer tidak
+        // menggambarnya. Lihat catatan pada tipenya.
+        qty: Number(a.qty) > 0 ? angka(a.qty) : "",
+        satuan: a.unit ?? "",
+      })),
       // Aturan 2: dikosongkan, bukan diisi nol.
       hari: bernilai ? angka(b.day) : "",
       qty: bernilai ? angka(b.qty) : "",
-      // Pax tidak ikut dikosongkan pada baris judul: judul kelompok yang
-      // memang melayani sekian orang tetap perlu menyebutkannya.
-      pax: b.pax === null ? "" : angka(String(b.pax)),
+      // Dihitung dari hari x jumlah kalau tidak diketik. Dinilai dari
+      // qty-nya sendiri, bukan dari bernilai: item yang harganya nol karena
+      // sudah termasuk paket tetap harus dimasak.
+      pax: paxBaris(b.pax, b.day, b.qty),
       satuan: bernilai ? (b.unit ?? "") : "",
       harga: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.price) : "",
       nilai: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.subtotal) : "",
@@ -170,7 +204,7 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
         rincian: [],
         hari: angka(a.day),
         qty: angka(a.qty),
-        pax: a.pax === null ? "" : angka(String(a.pax)),
+        pax: paxBaris(a.pax, a.day, a.qty),
         satuan: a.unit ?? "",
         harga: b.is_compliment ? "Compliment" : rupiah(a.price),
         nilai: b.is_compliment ? "Compliment" : rupiah(a.subtotal),
