@@ -183,3 +183,74 @@ describe("nama berkasnya", () => {
     );
   });
 });
+
+describe("syarat pembayaran di Excel", () => {
+  it("tiap klausa mendapat BARISNYA SENDIRI, bukan satu sel raksasa", async () => {
+    /*
+     * Syarat pembayaran pemiliknya delapan klausa, salah satunya dua ratus
+     * karakter. Seluruhnya dulu ditumpuk ke dalam satu sel yang digabung
+     * A-G: di kertas terlihat benar, tetapi di Excel satu sel berisi
+     * delapan klausa tidak bisa dibaca sebagian, tidak bisa disunting salah
+     * satunya, dan tidak bisa disalin per butir.
+     */
+    const satu = await prisma.invoices.findFirst({
+      where: { show_payment_terms: true, payment_terms: { not: null } },
+      orderBy: { id: "desc" },
+      select: { id: true },
+    });
+    if (!satu) return;
+
+    const isi = await isiDokumenTagihan(satu.id.toString(), {});
+    expect(isi?.syarat, "invoice ujinya tidak punya syarat").toBeTruthy();
+
+    const klausa = isi!
+      .syarat!.split(/\r?\n/)
+      .map((k) => k.trim())
+      .filter((k) => k !== "");
+    expect(klausa.length, "syaratnya hanya satu baris").toBeGreaterThan(2);
+
+    const lembar = await lembarDari(isi);
+
+    // Tiap klausa harus ketemu sebagai ISI SATU SEL yang utuh — bukan
+    // sebagai potongan di dalam sel yang memuat klausa lain juga.
+    const selTeks: string[] = [];
+    lembar.eachRow((baris) => {
+      const nilai = baris.getCell(1).value;
+      if (typeof nilai === "string") selTeks.push(nilai.trim());
+    });
+
+    for (const k of klausa) {
+      expect(selTeks, `klausa tidak berdiri sendiri: ${k.slice(0, 40)}…`).toContain(k);
+    }
+  });
+
+  it("sel syaratnya TIDAK digabung antar kolom", async () => {
+    // Sel gabungan di Excel tidak bisa disalin per kolom, memecah penyaring,
+    // dan menyulitkan siapa pun yang hendak menyuntingnya.
+    const satu = await prisma.invoices.findFirst({
+      where: { show_payment_terms: true, payment_terms: { not: null } },
+      orderBy: { id: "desc" },
+      select: { id: true },
+    });
+    if (!satu) return;
+
+    const isi = await isiDokumenTagihan(satu.id.toString(), {});
+    const lembar = await lembarDari(isi);
+
+    const klausaPertama = isi!
+      .syarat!.split(/\r?\n/)
+      .map((k) => k.trim())
+      .find((k) => k !== "")!;
+
+    let ketemu = false;
+    lembar.eachRow((baris) => {
+      if (String(baris.getCell(1).value ?? "").trim() !== klausaPertama) return;
+      ketemu = true;
+      // Sel B pada baris itu harus benar-benar sel tersendiri, bukan bagian
+      // dari gabungan dengan A.
+      expect(baris.getCell(2).isMerged, "sel syaratnya masih digabung").toBe(false);
+    });
+
+    expect(ketemu, "klausa pertamanya tidak ketemu di lembarnya").toBe(true);
+  });
+});

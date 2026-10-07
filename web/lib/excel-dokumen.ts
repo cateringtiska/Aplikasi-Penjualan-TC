@@ -345,13 +345,24 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
       font: { bold: true },
       border: GARIS,
     });
-    const b = barisPenuh(isi.syarat, {
-      alignment: { wrapText: true, vertical: "top" },
-      border: GARIS,
-    });
-    // Tinggi baris disesuaikan dengan banyaknya baris teksnya, sebab Excel
-    // tidak menghitung sendiri tinggi sel yang digabung.
-    b.height = Math.min(220, 14 * (isi.syarat.split("\n").length + 1));
+    /* --------------------------------------------------------------------
+       SATU KLAUSA, SATU BARIS
+
+       Seluruh syaratnya dulu ditumpuk ke dalam SATU sel yang digabung A–G.
+       Di kertas itu terlihat benar, tetapi di Excel satu sel berisi delapan
+       klausa tidak bisa dibaca sebagian, tidak bisa disunting salah satunya,
+       dan tidak bisa disalin per butir — yang membukanya harus menyeret satu
+       blok raksasa atau mengetik ulang seluruhnya.
+
+       Tiap klausa karena itu mendapat barisnya sendiri, dan selnya TIDAK
+       digabung: teksnya meluber ke kolom kosong di kanannya persis seperti
+       sel biasa, sementara tiap barisnya tetap bisa disunting sendiri.
+       -------------------------------------------------------------------- */
+    for (const klausa of isi.syarat.split(/\r?\n/)) {
+      const baris = lembar.addRow([klausa.trim()]);
+      baris.getCell(1).alignment = { vertical: "top" };
+      for (let i = 1; i <= 7; i += 1) baris.getCell(i).border = GARIS;
+    }
   }
 
   if (isi.perusahaan.bank_name) {
