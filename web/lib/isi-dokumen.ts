@@ -26,6 +26,7 @@ const KOLOM_ANAK = {
   unit: true,
   day: true,
   qty: true,
+  pax: true,
   price: true,
   subtotal: true,
 } as const;
@@ -36,6 +37,7 @@ type BarisMentah = {
   unit: string | null;
   day: { toString(): string };
   qty: { toString(): string };
+  pax: number | null;
   price: { toString(): string };
   subtotal: { toString(): string };
   is_compliment: boolean;
@@ -47,6 +49,7 @@ type AnakMentah = {
   unit: string | null;
   day: { toString(): string };
   qty: { toString(): string };
+  pax: number | null;
   price: { toString(): string };
   subtotal: { toString(): string };
 };
@@ -57,6 +60,7 @@ const susunBaris = (induk: BarisMentah, anak: AnakMentah[]) => ({
   unit: induk.unit,
   day: induk.day.toString(),
   qty: induk.qty.toString(),
+  pax: induk.pax,
   price: induk.price.toString(),
   subtotal: induk.subtotal.toString(),
   is_compliment: induk.is_compliment,
@@ -66,6 +70,7 @@ const susunBaris = (induk: BarisMentah, anak: AnakMentah[]) => ({
     unit: a.unit,
     day: a.day.toString(),
     qty: a.qty.toString(),
+    pax: a.pax,
     price: a.price.toString(),
     subtotal: a.subtotal.toString(),
   })),

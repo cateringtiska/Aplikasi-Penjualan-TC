@@ -37,6 +37,8 @@ export type ItemCetak = {
   unit: string | null;
   day: string;
   qty: string;
+  /** Berapa orang yang dilayani. Null berarti tidak diisi. */
+  pax: number | null;
   price: string;
   subtotal: string;
   is_compliment: boolean;
@@ -46,6 +48,7 @@ export type ItemCetak = {
     unit: string | null;
     day: string;
     qty: string;
+    pax: number | null;
     price: string;
     subtotal: string;
   }[];
@@ -63,6 +66,13 @@ export type BarisTabel =
       /** Kosong berarti baris judul: kolomnya memang dikosongkan. */
       hari: string;
       qty: string;
+      /**
+       * Berapa orang yang dilayani, untuk lembar dapur.
+       *
+       * Kosong berarti TIDAK DIISI, bukan nol orang. Nol di lembar dapur
+       * terbaca sebagai perintah untuk tidak memasaknya.
+       */
+      pax: string;
       satuan: string;
       harga: string;
       nilai: string;
@@ -136,6 +146,9 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
       // Aturan 2: dikosongkan, bukan diisi nol.
       hari: bernilai ? angka(b.day) : "",
       qty: bernilai ? angka(b.qty) : "",
+      // Pax tidak ikut dikosongkan pada baris judul: judul kelompok yang
+      // memang melayani sekian orang tetap perlu menyebutkannya.
+      pax: b.pax === null ? "" : angka(String(b.pax)),
       satuan: bernilai ? (b.unit ?? "") : "",
       harga: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.price) : "",
       nilai: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.subtotal) : "",
@@ -157,6 +170,7 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
         rincian: [],
         hari: angka(a.day),
         qty: angka(a.qty),
+        pax: a.pax === null ? "" : angka(String(a.pax)),
         satuan: a.unit ?? "",
         harga: b.is_compliment ? "Compliment" : rupiah(a.price),
         nilai: b.is_compliment ? "Compliment" : rupiah(a.subtotal),

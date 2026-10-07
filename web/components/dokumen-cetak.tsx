@@ -3,7 +3,7 @@ import { Fragment } from "react";
 import { format } from "date-fns";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
-import { barisTabelDokumen, barisTotalDokumen } from "@/lib/baris-cetak";
+import { barisTabelDokumen, barisTotalDokumen, type ItemCetak } from "@/lib/baris-cetak";
 
 /* ==========================================================================
    DOKUMEN CETAK
@@ -17,25 +17,13 @@ import { barisTabelDokumen, barisTotalDokumen } from "@/lib/baris-cetak";
    rekening dan tanda tangan.
    ========================================================================== */
 
-export type BarisCetak = {
-  id: string;
-  item_name: string;
-  unit: string | null;
-  day: string;
-  qty: string;
-  price: string;
-  subtotal: string;
-  is_compliment: boolean;
-  anak: {
-    id: string;
-    item_name: string;
-    unit: string | null;
-    day: string;
-    qty: string;
-    price: string;
-    subtotal: string;
-  }[];
-};
+/**
+ * Satu baris item. Bentuknya SATU dengan yang dipakai lib/baris-cetak.ts,
+ * bukan salinan: dua bentuk yang kembar akan menyimpang begitu salah
+ * satunya bertambah kolom, dan tidak ada yang memberi tahu sampai kolomnya
+ * hilang dari salah satu dokumen.
+ */
+export type BarisCetak = ItemCetak;
 
 export type Perusahaan = {
   company_name: string;

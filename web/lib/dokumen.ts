@@ -27,6 +27,7 @@ const barisAnak = z.object({
   day: z.string().optional(),
   unit: z.string().trim().max(255).nullable().optional(),
   qty: z.string().optional(),
+  pax: z.string().optional(),
   price: z.string().optional(),
 });
 
@@ -36,6 +37,18 @@ const barisItem = z.object({
   item_name: z.string().trim().min(1, "Nama item belum diisi.").max(255),
   unit: z.string().trim().max(255).nullable().optional(),
   qty: z.string(),
+  /**
+   * Berapa ORANG yang dilayani baris ini.
+   *
+   * Berbeda dari qty, dan sengaja: qty beserta satuannya menerangkan bentuk
+   * penyajiannya — 2 Tampah, 35 Box — sedangkan pax menerangkan berapa orang
+   * yang makan. Satu tampah bisa untuk dua puluh orang.
+   *
+   * TIDAK PERNAH IKUT MENGHITUNG UANG. Nilainya murni keterangan untuk
+   * dapur. Kalau ia sampai ikut dikalikan, nilai dokumen berubah tanpa ada
+   * satu pun angka harga yang disentuh.
+   */
+  pax: z.string().optional(),
   price: z.string(),
   is_compliment: z.boolean().default(false),
   charge_service: z.boolean().default(true),
@@ -87,12 +100,15 @@ export type AnakSiap = {
   dayD: Decimal;
   qtyD: Decimal;
   priceD: Decimal;
+  /** Null berarti tidak diisi — bukan nol orang. */
+  pax: number | null;
 };
 
 export type BarisSiap = z.infer<typeof barisItem> & {
   dayD: Decimal;
   qtyD: Decimal;
   priceD: Decimal;
+  paxAngka: number | null;
   anakSiap: AnakSiap[];
 };
 
@@ -322,6 +338,7 @@ export function siapkanDokumen(
       dayD: hari,
       qtyD: qty ?? d(0),
       priceD: price ?? d(0),
+      paxAngka: bacaPax(baris.pax),
       anakSiap: baris.children.map((a) => ({
         item_name: a.item_name,
         unit: a.unit ?? null,
@@ -329,6 +346,7 @@ export function siapkanDokumen(
         dayD: uraikanRupiah(String(a.day ?? "").trim()) ?? hari,
         qtyD: uraikanRupiah(a.qty ?? "") ?? d(0),
         priceD: uraikanRupiah(a.price ?? "") ?? d(0),
+        pax: bacaPax(a.pax),
       })),
     });
   }
@@ -502,6 +520,23 @@ export function siapkanDokumen(
   };
 }
 
+/**
+ * Membaca isian pax: bilangan bulat tidak negatif, atau null.
+ *
+ * KOSONG BERARTI TIDAK DIISI, bukan nol orang. Nol yang tersimpan akan
+ * tercetak di lembar dapur sebagai "0", dan itu terbaca sebagai perintah
+ * untuk tidak memasaknya.
+ */
+export function bacaPax(nilai: string | undefined): number | null {
+  const teks = String(nilai ?? "").trim();
+  if (teks === "") return null;
+
+  const angka = uraikanRupiah(teks);
+  if (angka === null || angka.isNegative() || !angka.isInteger()) return null;
+
+  return angka.toNumber();
+}
+
 /** Baris item siap simpan, beserta daftar nama sub-itemnya. */
 export function barisUntukDisimpan(items: BarisSiap[]) {
   return items.map((b) => ({
@@ -511,6 +546,8 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       unit: b.unit || null,
       day: b.dayD.toFixed(2),
       qty: b.qtyD.toFixed(2),
+      // Keterangan untuk dapur, tidak ikut ke dalam subtotal di bawah.
+      pax: b.paxAngka,
       price: b.priceD.toFixed(2),
       subtotal: (b.is_compliment ? d(0) : b.dayD.times(b.qtyD).times(b.priceD)).toFixed(2),
       is_compliment: b.is_compliment,
@@ -530,6 +567,7 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
         // nilainya sendiri.
         day: a.dayD.toFixed(2),
         qty: a.qtyD.toFixed(2),
+        pax: a.pax,
         price: a.priceD.toFixed(2),
         // Compliment menurun dari induknya; hari sudah diselesaikan di atas.
         subtotal: (b.is_compliment ? d(0) : a.dayD.times(a.qtyD).times(a.priceD)).toFixed(2),

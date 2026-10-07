@@ -47,6 +47,7 @@ const ISI: IsiDapur = {
       unit: null,
       day: "1",
       qty: "0",
+      pax: null,
       price: "0",
       subtotal: "0",
       is_compliment: false,
@@ -57,10 +58,26 @@ const ISI: IsiDapur = {
           unit: "pax",
           day: "1",
           qty: "40",
+          pax: 40,
           price: HARGA_ANAK,
           subtotal: NILAI_ANAK,
         },
       ],
+    },
+    // Kasus yang justru menjadi alasan kolom pax ada: dua tampah untuk
+    // empat puluh orang. Qty dan pax-nya berbeda jauh, dan selama belum ada
+    // kolomnya angka 20 itu dititipkan di dalam nama itemnya.
+    {
+      id: "3",
+      item_name: "TAMPAH BATMAY",
+      unit: "Tampah",
+      day: "2",
+      qty: "2",
+      pax: 40,
+      price: "300000",
+      subtotal: "1200000",
+      is_compliment: false,
+      anak: [],
     },
     {
       id: "2",
@@ -68,6 +85,7 @@ const ISI: IsiDapur = {
       unit: "box",
       day: "1",
       qty: "40",
+      pax: 40,
       price: HARGA_SATUAN,
       subtotal: NILAI_BARIS,
       is_compliment: false,
@@ -78,6 +96,7 @@ const ISI: IsiDapur = {
           unit: null,
           day: "1",
           qty: "0",
+          pax: null,
           price: "0",
           subtotal: "0",
         },
@@ -142,16 +161,17 @@ describe("yang memang harus ada", () => {
       (td.textContent ?? "").trim(),
     );
 
-    // No, Menu, Hari, Jumlah, Satuan — lima kolom, tidak lebih.
-    expect(kolom).toHaveLength(5);
-    expect(kolom[0]).toBe("II");
+    // No, Menu, Day, Qty, Pax, Vol. — enam kolom, tidak lebih.
+    expect(kolom).toHaveLength(6);
+    expect(kolom[0]).toBe("III");
     expect(kolom[2]).toBe("1");
     expect(kolom[3]).toBe("40");
-    expect(kolom[4]).toBe("box");
+    expect(kolom[4]).toBe("40");
+    expect(kolom[5]).toBe("box");
   });
 
-  it("tabel menunya hanya punya LIMA kolom", () => {
-    // Kolom keenam di tabel ini hampir pasti harga. Dihitung dari kepala
+  it("tabel menunya persis berkolom No, Menu, Day, Qty, Pax, Vol.", () => {
+    // Kolom ketujuh di tabel ini hampir pasti harga. Dihitung dari kepala
     // tabelnya, supaya penambahan kolom apa pun harus disengaja.
     render(<DokumenDapur isi={ISI} />);
 
@@ -160,7 +180,42 @@ describe("yang memang harus ada", () => {
       (th.textContent ?? "").trim(),
     );
 
-    expect(judul).toEqual(["No", "Menu", "Hari", "Jumlah", "Satuan"]);
+    expect(judul).toEqual(["No", "Menu", "Day", "Qty", "Pax", "Vol."]);
+  });
+
+  it("membedakan Qty dari Pax: dua tampah untuk empat puluh orang", () => {
+    /*
+     * Inti kolom pax. Qty beserta Vol. menerangkan BENTUK PENYAJIANNYA —
+     * 2 Tampah — sedangkan Pax menerangkan BERAPA ORANG yang makan.
+     *
+     * Kalau keduanya tertukar, dapur menyiapkan dua porsi untuk empat
+     * puluh orang, atau empat puluh tampah untuk dua. Tidak ada satu pun
+     * layar yang akan memberi tahu; yang menemukannya adalah tamu.
+     */
+    render(<DokumenDapur isi={ISI} />);
+
+    const baris = screen.getByText("TAMPAH BATMAY").closest("tr");
+    const kolom = Array.from(baris?.querySelectorAll("td") ?? []).map((td) =>
+      (td.textContent ?? "").trim(),
+    );
+
+    expect(kolom[2], "Day").toBe("2");
+    expect(kolom[3], "Qty").toBe("2");
+    expect(kolom[4], "Pax").toBe("40");
+    expect(kolom[5], "Vol.").toBe("Tampah");
+  });
+
+  it("membiarkan Pax KOSONG ketika tidak diisi, bukan menulis nol", () => {
+    // Nol di lembar dapur terbaca sebagai perintah untuk tidak memasaknya.
+    // Seluruh dokumen yang dibuat sebelum kolom ini ada memang kosong.
+    render(<DokumenDapur isi={ISI} />);
+
+    const baris = screen.getByText("ANEKA STALL").closest("tr");
+    const kolom = Array.from(baris?.querySelectorAll("td") ?? []).map((td) =>
+      (td.textContent ?? "").trim(),
+    );
+
+    expect(kolom[4]).toBe("");
   });
 
   it("menyebutkan isi paket yang tidak berharga, sebab dapur memasaknya", () => {

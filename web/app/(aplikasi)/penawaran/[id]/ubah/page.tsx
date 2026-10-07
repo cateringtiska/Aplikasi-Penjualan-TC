@@ -33,7 +33,7 @@ export default async function HalamanUbahPenawaran({
           orderBy: { id: "asc" },
           include: {
             other_quotation_items: { orderBy: { id: "asc" },
-              select: { item_name: true, unit: true, day: true, qty: true, price: true },
+              select: { item_name: true, unit: true, day: true, qty: true, pax: true, price: true },
              },
           },
         },
@@ -107,6 +107,7 @@ export default async function HalamanUbahPenawaran({
             item_name: b.item_name,
             unit: b.unit ?? "",
             qty: Number(b.qty).toLocaleString("id-ID"),
+            pax: b.pax === null ? "" : String(b.pax),
             price: Number(b.price).toLocaleString("id-ID"),
             is_compliment: b.is_compliment,
             charge_service: b.charge_service,
@@ -120,6 +121,7 @@ export default async function HalamanUbahPenawaran({
               // ia terpisah dari induknya.
               day: Number(a.day) === Number(b.day) ? "" : Number(a.day).toString(),
               qty: a.qty && Number(a.qty) > 0 ? Number(a.qty).toString() : "",
+              pax: a.pax === null ? "" : String(a.pax),
               price: a.price && Number(a.price) > 0 ? Number(a.price).toString() : "",
             })),
           })),

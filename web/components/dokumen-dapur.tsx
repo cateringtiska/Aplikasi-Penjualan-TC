@@ -116,14 +116,17 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
           <tr className="bg-[#eee]">
             <Th lebar="6%">No</Th>
             <Th>Menu</Th>
-            <Th lebar="10%" tengah>
-              Hari
+            <Th lebar="8%" tengah>
+              Day
             </Th>
-            <Th lebar="12%" tengah>
-              Jumlah
+            <Th lebar="9%" tengah>
+              Qty
             </Th>
-            <Th lebar="14%" tengah>
-              Satuan
+            <Th lebar="9%" tengah>
+              Pax
+            </Th>
+            <Th lebar="13%" tengah>
+              Vol.
             </Th>
           </tr>
         </thead>
@@ -154,6 +157,9 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
                 <Td tengah>{b.hari}</Td>
                 <Td tengah tebal>
                   {b.qty}
+                </Td>
+                <Td tengah tebal>
+                  {b.pax}
                 </Td>
                 <Td tengah>{b.satuan}</Td>
               </tr>
