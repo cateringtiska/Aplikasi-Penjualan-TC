@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
 import { StatusTagihan } from "@/components/lencana-status";
+import { KunciDokumen } from "@/components/kunci-dokumen";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
@@ -153,6 +154,22 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           keterangan={labelStatusInvoice(t.status, t.paid_amount.toString())}
         />
       </section>
+
+      {/* Alasannya ditulis di halamannya, bukan hanya di pesan galat yang
+          cuma muncul kalau orangnya sempat sampai ke formulirnya. */}
+      {Number(t.paid_amount) > 0 && t.status !== "cancelled" ? (
+        <KunciDokumen>
+          Rinciannya terkunci karena invoice ini sudah menerima payment. Untuk mengubahnya,
+          hapus dulu payment-nya di <b>Riwayat payment</b> di samping, ubah rinciannya, lalu
+          catat kembali payment-nya.
+        </KunciDokumen>
+      ) : null}
+
+      {t.status === "cancelled" ? (
+        <KunciDokumen>
+          Invoice ini sudah dibatalkan, jadi rinciannya tidak bisa diubah lagi.
+        </KunciDokumen>
+      ) : null}
 
       {t.quotations ? (
         <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-sm">

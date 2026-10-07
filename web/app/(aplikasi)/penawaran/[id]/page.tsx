@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 
 import { Halaman } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
+import { KunciDokumen } from "@/components/kunci-dokumen";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
@@ -134,6 +135,14 @@ export default async function HalamanDetailPenawaran({
           ) : null}
         </div>
       </header>
+
+      {p.status === "approved" ? (
+        <KunciDokumen>
+          Rinciannya terkunci karena quotation ini sudah ditandai <b>disetujui</b> — angkanya
+          sudah menjadi dasar invoice. Kalau rinciannya masih perlu berubah, buat quotation
+          baru untuk customer yang sama.
+        </KunciDokumen>
+      ) : null}
 
       {tagihan ? (
         <p className="mb-6 rounded-md border bg-muted/40 px-3.5 py-3 text-sm">

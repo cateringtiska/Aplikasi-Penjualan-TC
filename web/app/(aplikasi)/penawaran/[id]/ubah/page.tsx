@@ -47,7 +47,7 @@ export default async function HalamanUbahPenawaran({
   // Penawaran yang sudah disetujui adalah kesepakatan dengan pelanggan.
   // Mengubahnya diam-diam membuat dokumen yang sudah dikirim tidak cocok lagi.
   if (penawaran.status === "approved") {
-    redirect(`/penawaran/${id}?terkunci=1`);
+    redirect(`/penawaran/${id}`);
   }
 
   const penandatangan = await penandatanganAktif();
