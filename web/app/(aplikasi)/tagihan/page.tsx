@@ -18,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { BarisKontak } from "@/components/baris-kontak";
 import { namaPic } from "@/lib/kontak";
+import {
+  cocokSaringPengakuan,
+  LABEL_SARING_PENGAKUAN,
+  pengakuanDokumen,
+  saringPengakuanSah,
+} from "@/lib/pengakuan";
+import { tanggalAcaraDokumen } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
@@ -41,11 +48,18 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
 
   await tandaiJatuhTempo();
 
-  const { cari, status } = await searchParams;
+  const { cari, status, pengakuan } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
   const saring = typeof status === "string" ? status : "";
 
-  const daftar = await prisma.invoices.findMany({
+  // Penyaring dari kartu Dashboard. Keputusannya diambil di lib/pengakuan.ts,
+  // modul yang sama yang dipakai Dashboard untuk menghitung kartunya —
+  // kalau keduanya menyaring sendiri-sendiri, kartunya menyebut sebelas
+  // sementara daftarnya berisi sembilan, tanpa galat apa pun.
+  const saringPengakuan =
+    typeof pengakuan === "string" && saringPengakuanSah(pengakuan) ? pengakuan : null;
+
+  const semua = await prisma.invoices.findMany({
     where: {
       ...hanyaMiliknya(sesi),
       ...(saring ? { status: saring } : {}),
@@ -71,8 +85,45 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
       status: true,
       contact_person: true,
       customers: { select: { name: true, pic_name: true } },
+      // Hanya dibutuhkan penyaring pengakuan. Kolom lamanya ikut diambil:
+      // sebagian besar invoice menyimpan tanggal acaranya HANYA di situ.
+      event_date: true,
+      event_days: true,
+      invoice_event_dates: { select: { event_date: true } },
     },
   });
+
+  // Disaring SESUDAH terambil, bukan di dalam kueri: pengakuan adalah
+  // keputusan per dokumen yang tidak bisa dinyatakan sebagai syarat SQL.
+  const sekarang = new Date();
+  const daftar = saringPengakuan
+    ? semua.filter((t) =>
+        cocokSaringPengakuan(
+          saringPengakuan,
+          {
+            hasil: pengakuanDokumen(
+              {
+                grand_total: t.grand_total,
+                paid_amount: t.paid_amount,
+                tanggalAcara: tanggalAcaraDokumen(
+                  t.invoice_event_dates,
+                  t.event_date,
+                  t.event_days,
+                ),
+              },
+              sekarang,
+            ),
+            dueDate: t.due_date,
+            acaraTerakhir: tanggalAcaraDokumen(
+              t.invoice_event_dates,
+              t.event_date,
+              t.event_days,
+            ).reduce<Date | null>((a, b) => (a === null || b > a ? b : a), null),
+          },
+          sekarang,
+        ),
+      )
+    : semua;
 
   const bolehKelolaUang = sesi.peran === "admin" || sesi.peran === "finance";
 
@@ -92,6 +143,25 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
           </Button>
         }
       />
+
+      {/* Datang dari kartu Dashboard. Tanpa keterangan ini, daftar yang
+          isinya lebih sedikit daripada biasanya terbaca sebagai dokumen
+          yang hilang — dan tidak ada petunjuk bahwa ia sedang disaring,
+          apalagi cara melepasnya. */}
+      {saringPengakuan ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border bg-muted/40 px-3.5 py-3 text-sm">
+          <span>
+            Menampilkan <b>{LABEL_SARING_PENGAKUAN[saringPengakuan]}</b> —{" "}
+            {daftar.length} invoice.
+          </span>
+          <Link
+            href="/tagihan"
+            className="text-xs underline underline-offset-4 hover:text-foreground"
+          >
+            Tampilkan semua
+          </Link>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-3 pb-4">
         <Pencarian placeholder="Cari nomor, customer, atau jenis acara…" />

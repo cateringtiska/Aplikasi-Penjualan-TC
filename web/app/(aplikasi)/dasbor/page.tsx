@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { PemberitahuanAkses } from "@/components/pemberitahuan-akses";
 import { StatusPenawaran, StatusTagihan } from "@/components/lencana-status";
-import { pengakuanDokumen } from "@/lib/pengakuan";
+import { type BarisPengakuan, cocokSaringPengakuan, pengakuanDokumen } from "@/lib/pengakuan";
 import { ringkasTanggalAcara, tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import { bacaIzin } from "@/lib/izin";
@@ -45,8 +45,6 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
   const awalHariIni = new Date(sekarang);
   awalHariIni.setHours(0, 0, 0, 0);
 
-  const awalBulan = new Date(sekarang.getFullYear(), sekarang.getMonth(), 1);
-  const awalBulanDepan = new Date(sekarang.getFullYear(), sekarang.getMonth() + 1, 1);
 
   // Status "jatuh tempo" hanya berpindah ketika ada yang menyentuhnya —
   // sampai sekarang itu terjadi saat daftar Invoice dibuka. Dashboard adalah
@@ -120,39 +118,37 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
     const tanggalAcara = tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days);
 
     return {
-      due_date: t.due_date,
+      dueDate: t.due_date,
       hasil: pengakuanDokumen({ grand_total: t.grand_total, paid_amount: t.paid_amount, tanggalAcara }, sekarang),
       acaraTerakhir: tanggalAcara.reduce<Date | null>((a, b) => (a === null || b > a ? b : a), null),
-    };
+    } satisfies BarisPengakuan;
   });
+
+  // Dihitung dengan penyaring yang SAMA PERSIS dengan yang dipakai daftar
+  // invoice saat kartunya diklik. Angka di kartu dan banyaknya baris di
+  // daftar itu tidak boleh berbeda. Lihat lib/pengakuan.ts.
+  const cocok = (saring: Parameters<typeof cocokSaringPengakuan>[0]) =>
+    pengakuan.filter((x) => cocokSaringPengakuan(saring, x, sekarang));
 
   const totalPiutang = pengakuan.reduce((j, x) => j.plus(x.hasil.piutang), d(0));
   const totalUangMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.uangMuka), d(0));
   const totalDiMuka = pengakuan.reduce((j, x) => j.plus(x.hasil.diterimaDiMuka), d(0));
   const totalProyeksi = pengakuan.reduce((j, x) => j.plus(x.hasil.proyeksi), d(0));
 
-  const jumlahUangMuka = pengakuan.filter((x) => x.hasil.keadaan === "uang_muka").length;
-  const jumlahDiMuka = pengakuan.filter((x) => x.hasil.keadaan === "diterima_di_muka").length;
-  const jumlahProyeksi = pengakuan.filter((x) => x.hasil.keadaan === "proyeksi").length;
+  const jumlahUangMuka = cocok("uang-muka").length;
+  const jumlahDiMuka = cocok("diterima-di-muka").length;
+  const jumlahProyeksi = cocok("proyeksi").length;
 
-  const jumlahBelumLunas = pengakuan.filter((x) => x.hasil.piutang.gt(0)).length;
+  const jumlahBelumLunas = cocok("piutang").length;
 
   // "Bulan ini" kini berarti ACARANYA terjadi bulan ini, bukan invoicenya
   // terbit bulan ini. Itulah bulan penjualannya benar-benar diakui.
-  const diakuiBulanIni = pengakuan.filter(
-    (x) =>
-      x.hasil.sudahTerjadi &&
-      x.acaraTerakhir !== null &&
-      x.acaraTerakhir >= awalBulan &&
-      x.acaraTerakhir < awalBulanDepan,
-  );
+  const diakuiBulanIni = cocok("diakui-bulan-ini");
   const nilaiBulanIni = diakuiBulanIni.reduce((j, x) => j.plus(x.hasil.diakui), d(0));
 
   // Jatuh tempo dihitung dari due_date, bukan dari kolom status: kolom status
   // adalah salinan yang perlu disegarkan, tanggalnya adalah sumbernya.
-  const jatuhTempo = pengakuan.filter(
-    (x) => x.hasil.piutang.gt(0) && x.due_date < awalHariIni,
-  ).length;
+  const jatuhTempo = cocok("jatuh-tempo").length;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
@@ -169,6 +165,7 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           terpisah — supaya terbaca sebagai satu ringkasan. */}
       <PapanAngka className="mt-7">
         <KartuAngka
+          href="/tagihan?pengakuan=piutang"
           label="Piutang berjalan"
           nilai={rupiah(totalPiutang)}
           keterangan={`${jumlahBelumLunas} invoice, acaranya sudah terjadi`}
@@ -176,30 +173,35 @@ export default async function HalamanDasbor({ searchParams }: PageProps<"/dasbor
           menonjol
         />
         <KartuAngka
+          href="/tagihan?pengakuan=diakui-bulan-ini"
           label="Penjualan diakui bulan ini"
           nilai={rupiah(nilaiBulanIni)}
           keterangan={`${diakuiBulanIni.length} acara sudah terjadi`}
           warna="hijau"
         />
         <KartuAngka
+          href="/tagihan?pengakuan=uang-muka"
           label="Uang muka"
           nilai={rupiah(totalUangMuka)}
           keterangan={`${jumlahUangMuka} invoice dipanjar, belum lunas`}
           warna="toska"
         />
         <KartuAngka
+          href="/tagihan?pengakuan=diterima-di-muka"
           label="Diterima di muka"
           nilai={rupiah(totalDiMuka)}
           keterangan={`${jumlahDiMuka} invoice lunas, acaranya belum terjadi`}
           warna="biru"
         />
         <KartuAngka
+          href="/tagihan?pengakuan=proyeksi"
           label="Proyeksi penjualan"
           nilai={rupiah(totalProyeksi)}
           keterangan={`${jumlahProyeksi} dokumen · ${penawaranMenunggu} quotation menunggu`}
           warna="ungu"
         />
         <KartuAngka
+          href="/tagihan?pengakuan=jatuh-tempo"
           label="Jatuh tempo"
           nilai={String(jatuhTempo)}
           keterangan={jatuhTempo > 0 ? "perlu ditagih" : "tidak ada"}

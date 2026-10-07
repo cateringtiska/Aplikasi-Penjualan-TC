@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 /* ==========================================================================
    PAPAN ANGKA RINGKASAN
 
@@ -44,6 +46,9 @@ export type WarnaKartu =
   | "biru"
   | "ungu"
   | "toska";
+
+/** Penegasan latar saat kartu yang bertautan disentuh kursor. */
+const SOROT = "hover:brightness-[0.97] dark:hover:brightness-[1.12]";
 
 const WARNA: Record<WarnaKartu, { angka: string; latar: string; keterangan: string }> = {
   hijau: { angka: "text-lunas", latar: "bg-lunas-halus", keterangan: "text-lunas/80" },
@@ -92,6 +97,7 @@ export function KartuAngka({
   warna,
   menonjol,
   teks,
+  href,
 }: {
   label: string;
   nilai: string;
@@ -101,12 +107,22 @@ export function KartuAngka({
   menonjol?: boolean;
   /** Nilainya bukan angka — nama customer, misalnya. Tanpa tabular-nums. */
   teks?: boolean;
+  /**
+   * Daftar dokumen yang dihitung kartu ini.
+   *
+   * Angka ringkasan tanpa jalan menuju barisnya memaksa orang mencarinya
+   * sendiri di daftar penuh, dan menebak-nebak dokumen mana saja yang ikut
+   * terhitung. Kartu yang punya tautan dibuat KELIHATAN bisa diklik, bukan
+   * hanya bisa diklik — kursor, garis bawah pada labelnya, dan latar yang
+   * menegas saat disentuh.
+   */
+  href?: string;
 }) {
   const w = WARNA[warna];
 
-  return (
-    <div className={`px-4 py-4 sm:px-5 ${w.latar}`}>
-      <p className="eyebrow">{label}</p>
+  const isi = (
+    <>
+      <p className={`eyebrow ${href ? "group-hover:underline" : ""}`}>{label}</p>
       <p
         className={`mt-1.5 font-semibold tracking-[-0.025em] ${
           teks ? "text-base" : `angka tabular-nums ${menonjol ? "text-[1.375rem]" : "text-lg"}`
@@ -115,6 +131,19 @@ export function KartuAngka({
         {nilai}
       </p>
       {keterangan ? <p className={`mt-0.5 text-xs ${w.keterangan}`}>{keterangan}</p> : null}
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`group block px-4 py-4 transition-colors sm:px-5 ${w.latar} ${SOROT} focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none`}
+      >
+        {isi}
+      </Link>
+    );
+  }
+
+  return <div className={`px-4 py-4 sm:px-5 ${w.latar}`}>{isi}</div>;
 }

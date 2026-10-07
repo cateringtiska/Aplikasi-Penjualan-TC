@@ -196,3 +196,96 @@ export const LABEL_PENGAKUAN: Record<KeadaanPengakuan, string> = {
   diterima_di_muka: "Diterima di muka",
   proyeksi: "Proyeksi",
 };
+
+/* ==========================================================================
+   MENYARING DAFTAR MENURUT KARTU DASHBOARD
+
+   Tiap kartu di Dashboard bisa diklik, dan membuka daftar invoice yang
+   dihitungnya. Angka di kartu dan banyaknya baris di daftar itu HARUS SAMA.
+
+   Kalau keduanya menyaring sendiri-sendiri, perbedaannya tidak akan
+   menimbulkan galat apa pun: kartunya tetap menyebut sebelas, daftarnya
+   tetap terbuka berisi sembilan, dan tidak ada yang tahu mana yang benar.
+   Yang membukanya justru sedang mencari dokumen yang hilang itu.
+
+   Jadi keputusannya diambil SEKALI di sini, dan dipakai keduanya.
+   ========================================================================== */
+
+export const SARING_PENGAKUAN = [
+  "piutang",
+  "diakui-bulan-ini",
+  "uang-muka",
+  "diterima-di-muka",
+  "proyeksi",
+  "jatuh-tempo",
+] as const;
+
+export type SaringPengakuan = (typeof SARING_PENGAKUAN)[number];
+
+export function saringPengakuanSah(nilai: string): nilai is SaringPengakuan {
+  return (SARING_PENGAKUAN as readonly string[]).includes(nilai);
+}
+
+export const LABEL_SARING_PENGAKUAN: Record<SaringPengakuan, string> = {
+  piutang: "Piutang berjalan",
+  "diakui-bulan-ini": "Penjualan diakui bulan ini",
+  "uang-muka": "Uang muka",
+  "diterima-di-muka": "Diterima di muka",
+  proyeksi: "Proyeksi penjualan",
+  "jatuh-tempo": "Jatuh tempo",
+};
+
+export type BarisPengakuan = {
+  hasil: HasilPengakuan;
+  dueDate: Date;
+  /** Tanggal acara paling akhir, null kalau dokumennya tidak bertanggal. */
+  acaraTerakhir: Date | null;
+};
+
+/** Awal bulan dan awal bulan depan dari satu saat. */
+export function rentangBulan(sekarang: Date): { awal: Date; akhir: Date } {
+  return {
+    awal: new Date(sekarang.getFullYear(), sekarang.getMonth(), 1),
+    akhir: new Date(sekarang.getFullYear(), sekarang.getMonth() + 1, 1),
+  };
+}
+
+/**
+ * Apakah satu dokumen termasuk hitungan kartu ini.
+ *
+ * Dipakai Dashboard untuk MENGHITUNG dan daftar invoice untuk MENYARING.
+ */
+export function cocokSaringPengakuan(
+  saring: SaringPengakuan,
+  baris: BarisPengakuan,
+  sekarang = new Date(),
+): boolean {
+  const { awal, akhir } = rentangBulan(sekarang);
+
+  switch (saring) {
+    case "piutang":
+      return baris.hasil.piutang.gt(0);
+
+    case "diakui-bulan-ini":
+      return (
+        baris.hasil.sudahTerjadi &&
+        baris.acaraTerakhir !== null &&
+        baris.acaraTerakhir >= awal &&
+        baris.acaraTerakhir < akhir
+      );
+
+    case "uang-muka":
+      return baris.hasil.keadaan === "uang_muka";
+
+    case "diterima-di-muka":
+      return baris.hasil.keadaan === "diterima_di_muka";
+
+    case "proyeksi":
+      return baris.hasil.keadaan === "proyeksi";
+
+    case "jatuh-tempo":
+      // Dihitung dari due_date, bukan dari kolom status: kolom status adalah
+      // salinan yang perlu disegarkan, tanggalnya adalah sumbernya.
+      return baris.hasil.piutang.gt(0) && baris.dueDate < awalHari(sekarang);
+  }
+}
