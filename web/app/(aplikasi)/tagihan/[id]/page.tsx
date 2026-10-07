@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, Calculator, PencilLine, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Calculator, FileSpreadsheet, PencilLine, Printer, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -116,6 +116,14 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           >
             <Printer className="size-4" />
             Cetak
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<a href={`/tagihan/${t.id}/excel`} />}
+          >
+            <FileSpreadsheet className="size-4" />
+            Excel
           </Button>
           {t.status !== "cancelled" ? (
             <Button variant="outline" size="sm" render={<Link href={`/tagihan/${t.id}/ubah`} />}>

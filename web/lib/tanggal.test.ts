@@ -15,13 +15,13 @@ const t = (teks: string) => new Date(`${teks}T00:00:00`);
 
 describe("ringkasTanggalAcara", () => {
   it("satu hari ditulis apa adanya", () => {
-    expect(ringkasTanggalAcara([t("2026-05-10")])).toBe("10 Mei 2026");
+    expect(ringkasTanggalAcara([t("2026-05-10")])).toBe("Minggu, 10 Mei 2026");
   });
 
   it("tanggal berurutan menjadi rentang", () => {
     expect(
       ringkasTanggalAcara([t("2026-05-10"), t("2026-05-11"), t("2026-05-12")]),
-    ).toBe("10 – 12 Mei 2026");
+    ).toBe("Minggu 10 – Selasa 12 Mei 2026");
   });
 
   it("tanggal MELONCAT didaftar, bukan dijadikan rentang", () => {
@@ -29,32 +29,32 @@ describe("ringkasTanggalAcara", () => {
     // enam hari kepada customer untuk acara yang hanya tiga hari.
     expect(
       ringkasTanggalAcara([t("2026-05-10"), t("2026-05-12"), t("2026-05-15")]),
-    ).toBe("10, 12 & 15 Mei 2026");
+    ).toBe("Minggu 10, Selasa 12 & Jumat 15 Mei 2026");
   });
 
   it("dua hari berurutan tetap rentang", () => {
-    expect(ringkasTanggalAcara([t("2026-05-10"), t("2026-05-11")])).toBe("10 – 11 Mei 2026");
+    expect(ringkasTanggalAcara([t("2026-05-10"), t("2026-05-11")])).toBe("Minggu 10 – Senin 11 Mei 2026");
   });
 
   it("dua hari meloncat memakai dan", () => {
-    expect(ringkasTanggalAcara([t("2026-05-10"), t("2026-05-12")])).toBe("10 & 12 Mei 2026");
+    expect(ringkasTanggalAcara([t("2026-05-10"), t("2026-05-12")])).toBe("Minggu 10 & Selasa 12 Mei 2026");
   });
 
   it("rentang yang menyeberang bulan menyebut kedua bulannya", () => {
     expect(
       ringkasTanggalAcara([t("2026-04-30"), t("2026-05-01"), t("2026-05-02")]),
-    ).toBe("30 April – 2 Mei 2026");
+    ).toBe("Kamis 30 April – Sabtu 2 Mei 2026");
   });
 
   it("rentang yang menyeberang tahun menyebut kedua tahunnya", () => {
     expect(ringkasTanggalAcara([t("2026-12-31"), t("2027-01-01")])).toBe(
-      "31 Desember 2026 – 1 Januari 2027",
+      "Kamis 31 Desember 2026 – Jumat 1 Januari 2027",
     );
   });
 
   it("tanggal meloncat lintas bulan ditulis lengkap", () => {
     expect(ringkasTanggalAcara([t("2026-04-28"), t("2026-05-02")])).toBe(
-      "28 April 2026 & 2 Mei 2026",
+      "Selasa 28 April 2026 & Sabtu 2 Mei 2026",
     );
   });
 
@@ -62,14 +62,14 @@ describe("ringkasTanggalAcara", () => {
     // Orang menambahkan tanggal sesuai ingatannya, bukan berurutan.
     expect(
       ringkasTanggalAcara([t("2026-05-15"), t("2026-05-10"), t("2026-05-12")]),
-    ).toBe("10, 12 & 15 Mei 2026");
+    ).toBe("Minggu 10, Selasa 12 & Jumat 15 Mei 2026");
   });
 
   it("tanggal kembar dihitung sekali", () => {
     // Dua baris tanggal yang sama akan membuat acara tiga hari terbaca
     // empat hari, dan itu angka yang ikut tercetak.
     const daftar = [t("2026-05-10"), t("2026-05-10"), t("2026-05-11")];
-    expect(ringkasTanggalAcara(daftar)).toBe("10 – 11 Mei 2026");
+    expect(ringkasTanggalAcara(daftar)).toBe("Minggu 10 – Senin 11 Mei 2026");
     expect(jumlahHariAcara(daftar)).toBe(2);
   });
 
@@ -80,7 +80,7 @@ describe("ringkasTanggalAcara", () => {
 
   it("membuang tanggal yang tidak sah tanpa merusak sisanya", () => {
     const daftar = [new Date("bukan tanggal"), t("2026-05-10")];
-    expect(ringkasTanggalAcara(daftar)).toBe("10 Mei 2026");
+    expect(ringkasTanggalAcara(daftar)).toBe("Minggu, 10 Mei 2026");
   });
 });
 
@@ -94,5 +94,50 @@ describe("rapikanTanggal", () => {
     const asli = [t("2026-05-12"), t("2026-05-10")];
     rapikanTanggal(asli);
     expect(asli.map((x) => x.getDate())).toEqual([12, 10]);
+  });
+});
+
+describe("nama hari", () => {
+  /*
+   * Yang memesan katering memikirkan acaranya sebagai "hari Sabtu", bukan
+   * sebagai "tanggal 10". Salah hari adalah kesalahan yang tidak bisa
+   * diperbaiki pada hari kejadiannya, dan tanggal sendirian menuntut
+   * penerimanya membuka kalender untuk memastikan.
+   */
+  it("disebut untuk SETIAP tanggal, bukan hanya yang pertama", () => {
+    const hasil = ringkasTanggalAcara([t("2026-05-10"), t("2026-05-12"), t("2026-05-15")]);
+
+    expect(hasil).toContain("Minggu");
+    expect(hasil).toContain("Selasa");
+    expect(hasil).toContain("Jumat");
+  });
+
+  it("menyebut hari yang BENAR menurut kalender", () => {
+    // Nama hari yang salah lebih buruk daripada tidak ada sama sekali:
+    // ia terbaca meyakinkan, dan tidak ada yang akan memeriksanya ulang.
+    const harapan: [string, string][] = [
+      ["2026-10-08", "Kamis"], // Invoice Telkomsat, acara 8 Oktober 2026.
+      ["2026-01-01", "Kamis"],
+      ["2026-05-10", "Minggu"],
+      ["2026-12-31", "Kamis"],
+      ["2027-01-01", "Jumat"],
+    ];
+
+    for (const [tanggal, hari] of harapan) {
+      expect(ringkasTanggalAcara([t(tanggal)]), tanggal).toBe(
+        `${hari}, ${new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(t(tanggal))}`,
+      );
+    }
+  });
+
+  it("satu tanggal memakai koma, yang lebih dari satu tidak", () => {
+    // Koma pada bentuk jamak akan bertabrakan dengan koma pemisah antar
+    // tanggal: "Minggu, 10, Selasa, 12 & Jumat, 15 Mei" tidak terbaca.
+    expect(ringkasTanggalAcara([t("2026-05-10")])).toContain("Minggu, ");
+    expect(ringkasTanggalAcara([t("2026-05-10"), t("2026-05-12")])).not.toContain("Minggu, ");
   });
 });

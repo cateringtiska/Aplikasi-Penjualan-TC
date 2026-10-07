@@ -102,7 +102,7 @@ describe("tanggal acara tersimpan", () => {
     ]);
 
     const daftar = tersimpan.map((b) => b.event_date);
-    expect(ringkasTanggalAcara(daftar)).toBe("10, 12 & 15 Mei 2026");
+    expect(ringkasTanggalAcara(daftar)).toBe("Minggu 10, Selasa 12 & Jumat 15 Mei 2026");
     expect(jumlahHariAcara(daftar)).toBe(3);
   });
 
@@ -119,7 +119,7 @@ describe("tanggal acara tersimpan", () => {
     });
 
     expect(sesudah).toHaveLength(2);
-    expect(ringkasTanggalAcara(sesudah.map((b) => b.event_date))).toBe("10 – 11 Mei 2026");
+    expect(ringkasTanggalAcara(sesudah.map((b) => b.event_date))).toBe("Minggu 10 – Senin 11 Mei 2026");
 
     // Tanggal yang dihapus dari formulir harus benar-benar hilang.
     await prisma.$transaction((tx) => tulisTanggalAcaraTagihan(jejak.tagihan!, [], tx));

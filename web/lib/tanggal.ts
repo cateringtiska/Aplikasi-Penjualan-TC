@@ -10,9 +10,14 @@ import { id as localeId } from "date-fns/locale";
 
    Tiga bentuk, dipilih dari tanggalnya sendiri:
 
-     satu hari       10 Mei 2026
-     berurutan       10 – 12 Mei 2026
-     meloncat        10, 12 & 15 Mei 2026
+     satu hari       Minggu, 10 Mei 2026
+     berurutan       Minggu 10 – Selasa 12 Mei 2026
+     meloncat        Minggu 10, Selasa 12 & Jumat 15 Mei 2026
+
+   NAMA HARINYA IKUT DISEBUT. Yang memesan katering memikirkan acaranya
+   sebagai "hari Sabtu", bukan sebagai "tanggal 10", dan salah hari adalah
+   kesalahan yang tidak bisa diperbaiki pada hari kejadiannya. Tanggal
+   sendirian menuntut penerimanya membuka kalender untuk memastikan.
 
    Bagian yang sama tidak diulang. "10, 12 & 15 Mei 2026" lebih mudah dibaca
    daripada "10 Mei 2026, 12 Mei 2026 & 15 Mei 2026", dan di dokumen yang
@@ -55,6 +60,9 @@ function samaBulan(a: Date, b: Date): boolean {
 
 const panjang = (t: Date) => format(t, "d MMMM yyyy", { locale: localeId });
 
+/** Nama hari, misalnya "Kamis". */
+const namaHari = (t: Date) => format(t, "EEEE", { locale: localeId });
+
 /**
  * Menyusun daftar tanggal menjadi satu kalimat siap cetak.
  *
@@ -64,7 +72,10 @@ const panjang = (t: Date) => format(t, "d MMMM yyyy", { locale: localeId });
 export function ringkasTanggalAcara(daftar: Date[]): string | null {
   const t = rapikanTanggal(daftar);
   if (t.length === 0) return null;
-  if (t.length === 1) return panjang(t[0]);
+  // Satu tanggal memakai koma, sebagaimana orang menuliskannya sehari-hari:
+  // "Kamis, 8 Oktober 2026". Bentuk yang lebih dari satu tidak memakainya,
+  // supaya komanya tidak bertabrakan dengan koma pemisah antar tanggal.
+  if (t.length === 1) return `${namaHari(t[0])}, ${panjang(t[0])}`;
 
   const awal = t[0];
   const akhir = t[t.length - 1];
@@ -72,20 +83,26 @@ export function ringkasTanggalAcara(daftar: Date[]): string | null {
   if (berurutan(t)) {
     // Bagian yang sama disebut sekali, di ujung kanan: "10 – 12 Mei 2026",
     // "30 April – 2 Mei 2026", "30 Desember 2026 – 1 Januari 2027".
+    const habis = `${namaHari(akhir)} ${panjang(akhir)}`;
+
     if (samaBulan(awal, akhir)) {
-      return `${format(awal, "d", { locale: localeId })} – ${panjang(akhir)}`;
+      return `${namaHari(awal)} ${format(awal, "d", { locale: localeId })} – ${habis}`;
     }
     if (awal.getFullYear() === akhir.getFullYear()) {
-      return `${format(awal, "d MMMM", { locale: localeId })} – ${panjang(akhir)}`;
+      return `${namaHari(awal)} ${format(awal, "d MMMM", { locale: localeId })} – ${habis}`;
     }
-    return `${panjang(awal)} – ${panjang(akhir)}`;
+    return `${namaHari(awal)} ${panjang(awal)} – ${habis}`;
   }
 
   // Meloncat. Kalau seluruhnya dalam satu bulan, cukup angka tanggalnya.
   const seragam = t.every((x) => samaBulan(x, awal));
   const bagian = seragam
-    ? t.map((x, i) => (i === t.length - 1 ? panjang(x) : format(x, "d", { locale: localeId })))
-    : t.map(panjang);
+    ? t.map((x, i) =>
+        i === t.length - 1
+          ? `${namaHari(x)} ${panjang(x)}`
+          : `${namaHari(x)} ${format(x, "d", { locale: localeId })}`,
+      )
+    : t.map((x) => `${namaHari(x)} ${panjang(x)}`);
 
   return `${bagian.slice(0, -1).join(", ")} & ${bagian[bagian.length - 1]}`;
 }

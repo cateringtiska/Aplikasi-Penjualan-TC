@@ -3,7 +3,7 @@ import { Fragment } from "react";
 import { format } from "date-fns";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
-import { nilaiKelompok, perluTotalKelompok, romawi, rupiah } from "@/lib/uang";
+import { barisTabelDokumen, barisTotalDokumen } from "@/lib/baris-cetak";
 
 /* ==========================================================================
    DOKUMEN CETAK
@@ -120,14 +120,6 @@ const LATAR_JUDUL = "#eef1f6";
 const LATAR_TOTAL = "#eaf2e4";
 const LATAR_TOTAL_AKHIR = "#cfe3c2";
 const LATAR_PITA = "#dce6f1";
-
-/** Membuang nol di belakang koma: 5.00 -> 5, 7.50 -> 7,5 */
-function persen(nilai: string | null): string {
-  if (!nilai) return "0";
-  return Number(nilai)
-    .toString()
-    .replace(".", ",");
-}
 
 /**
  * Gambar hanya ditampilkan kalau alamatnya berupa tautan penuh.
@@ -266,120 +258,58 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           </tr>
         </thead>
         <tbody>
-          {isi.baris.map((b, i) => {
-            // Sub-item berharga mendapat barisnya sendiri, bernomor V.1, V.2;
-            // yang tak berharga tetap menumpang di kolom deskripsi induknya
-            // sebagai rincian isi paket. Keduanya dipakai di dokumen katering:
-            // "ANEKA STALL" adalah judul kelompok yang anaknya berharga,
-            // sedangkan "LUNCH BOX" adalah paket berharga yang anaknya hanya
-            // menyebutkan isinya.
-            const anakBerharga = b.anak.filter((a) => Number(a.subtotal) > 0);
-            const anakRincian = b.anak.filter((a) => Number(a.subtotal) <= 0);
-            // Baris JUDUL adalah baris yang tidak menagih apa pun —
-            // ditentukan oleh angkanya sendiri, BUKAN oleh anaknya. Induk
-            // yang punya qty dan harga tetap menampilkannya walaupun
-            // sub-itemnya juga berharga: "LUNCH BUFFET 35 pax" dengan
-            // tambahan "VEGETARIAN 2 pax" adalah 37 porsi yang ditagihkan.
-            //
-            // Menampilkan "0" dan "Rp 0" di baris judul membuat pembacanya
-            // mencari-cari apa yang berharga nol.
-            const indukBernilai = Number(b.qty) * Number(b.price) > 0;
-
-            // Dinilai dengan aturan yang sama persis dengan halaman detailnya.
-            const kelompok = { subtotal: b.subtotal, anak: b.anak };
-
-            return (
-              <Fragment key={b.id}>
-                <tr
-                  className="break-inside-avoid"
-                  style={indukBernilai ? undefined : { backgroundColor: LATAR_JUDUL }}
-                >
-                  <Td>{romawi(i + 1)}</Td>
-                  <Td>
+          {/* Susunan barisnya ada di lib/baris-cetak.ts, dipakai bersama
+              dengan unduhan Excel dokumen ini. Yang di sini hanya
+              menggambarnya. */}
+          {barisTabelDokumen(isi.baris).map((b) =>
+            b.jenis === "totalKelompok" ? (
+              <tr
+                key={b.kunci}
+                className="break-inside-avoid font-bold"
+                style={{ backgroundColor: LATAR_JUDUL }}
+              >
+                <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
+                  {b.label}
+                </td>
+                <td className="border border-[#999] px-1.5 py-1 text-right">{b.nilai}</td>
+              </tr>
+            ) : (
+              <tr
+                key={b.kunci}
+                className="break-inside-avoid"
+                style={b.judul ? { backgroundColor: LATAR_JUDUL } : undefined}
+              >
+                <Td>{b.nomor}</Td>
+                <Td>
+                  {b.menjorok ? (
+                    <span className="ml-3">{b.nama}</span>
+                  ) : (
                     <span className="font-bold" style={{ color: BIRU }}>
-                      {b.item_name}
+                      {b.nama}
                     </span>
-                    {anakRincian.length > 0 ? (
-                      <div className="mt-0.5">
-                        {anakRincian.map((a) => (
-                          <div key={a.id} className="ml-3 text-[10px] text-[#666]">
-                            - {a.item_name}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </Td>
-                  {/* Judul kelompok dibiarkan kosong, bukan diisi angka nol —
-                      nol terbaca sebagai harga, kosong terbaca sebagai judul. */}
-                  <Td>{indukBernilai ? Number(b.day).toLocaleString("id-ID") : ""}</Td>
-                  <Td>{indukBernilai ? Number(b.qty).toLocaleString("id-ID") : ""}</Td>
-                  <Td>{indukBernilai ? (b.unit ?? "") : ""}</Td>
-                  <Td kanan>
-                    {b.is_compliment ? "Compliment" : indukBernilai ? rupiah(b.price) : ""}
-                  </Td>
-                  <Td kanan>
-                    {b.is_compliment ? "Compliment" : indukBernilai ? rupiah(b.subtotal) : ""}
-                  </Td>
-                </tr>
+                  )}
+                  {b.rincian.length > 0 ? (
+                    <div className="mt-0.5">
+                      {b.rincian.map((r) => (
+                        <div key={r} className="ml-3 text-[10px] text-[#666]">
+                          - {r}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </Td>
+                <Td>{b.hari}</Td>
+                <Td>{b.qty}</Td>
+                <Td>{b.satuan}</Td>
+                <Td kanan>{b.harga}</Td>
+                <Td kanan>{b.nilai}</Td>
+              </tr>
+            ),
+          )}
 
-                {anakBerharga.map((a, j) => (
-                  <tr key={a.id} className="break-inside-avoid">
-                    <Td>{`${romawi(i + 1)}.${j + 1}`}</Td>
-                    <Td>
-                      <span className="ml-3">{a.item_name}</span>
-                    </Td>
-                    <Td>{Number(a.day).toLocaleString("id-ID")}</Td>
-                    <Td>{Number(a.qty).toLocaleString("id-ID")}</Td>
-                    <Td>{a.unit ?? ""}</Td>
-                    <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.price)}</Td>
-                    <Td kanan>{b.is_compliment ? "Compliment" : rupiah(a.subtotal)}</Td>
-                  </tr>
-                ))}
-
-                {/* Total kelompok. Isinya baris-baris kelompok ini saja —
-                    PB1, service charge, delivery, dan biaya tambahan tetap
-                    dihitung sekali di bawah. Dengan begitu Sub Total SELALU
-                    sama persis dengan jumlah seluruh total kelompok, tanpa
-                    perlu mencocokkan pembulatan di dua tempat. */}
-                {perluTotalKelompok(kelompok) ? (
-                  <tr
-                    className="break-inside-avoid font-bold"
-                    style={{ backgroundColor: LATAR_JUDUL }}
-                  >
-                    <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
-                      Total - {romawi(i + 1)}
-                    </td>
-                    <td className="border border-[#999] px-1.5 py-1 text-right">
-                      {rupiah(nilaiKelompok(kelompok))}
-                    </td>
-                  </tr>
-                ) : null}
-              </Fragment>
-            );
-          })}
-
-          <TrTotal label="Sub Total" nilai={rupiah(isi.subtotal)} />
-          {Number(isi.service_charge_amount) > 0 ? (
-            <TrTotal
-              label={`Service Charge (${persen(isi.service_charge_percent)}%)`}
-              nilai={rupiah(isi.service_charge_amount)}
-            />
-          ) : null}
-          {isi.pb1_enabled && Number(isi.pb1_amount) > 0 ? (
-            <TrTotal label={`PB1 (${persen(isi.pb1_percent)}%)`} nilai={rupiah(isi.pb1_amount)} />
-          ) : null}
-          {/* Delivery ditaruh SESUDAH kedua pungutan, supaya pembaca dokumen
-              bisa menelusuri perhitungannya dari atas ke bawah dan melihat
-              sendiri bahwa ongkos kirim ini tidak ikut dipajaki. */}
-          {Number(isi.delivery_amount) > 0 ? (
-            <TrTotal label="Delivery" nilai={rupiah(isi.delivery_amount)} />
-          ) : null}
-          {/* Biaya tambahan bernama, urutannya persis seperti yang diketik.
-              Sama kedudukannya dengan delivery: di luar kedua pungutan. */}
-          {isi.biaya_tambahan.map((b) => (
-            <TrTotal key={b.id} label={b.label} nilai={rupiah(b.amount)} />
+          {barisTotalDokumen(isi).map((b) => (
+            <TrTotal key={b.kunci} label={b.label} nilai={b.nilai} akhir={b.akhir} />
           ))}
-          <TrTotal label="TOTAL" nilai={rupiah(isi.grand_total)} akhir />
         </tbody>
       </table>
 

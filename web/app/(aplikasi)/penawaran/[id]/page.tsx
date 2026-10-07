@@ -106,6 +106,14 @@ export default async function HalamanDetailPenawaran({
             <Printer className="size-4" />
             Cetak
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<a href={`/penawaran/${p.id}/excel`} />}
+          >
+            <FileSpreadsheet className="size-4" />
+            Excel
+          </Button>
           {p.status !== "approved" ? (
             <Button variant="outline" size="sm" render={<Link href={`/penawaran/${p.id}/ubah`} />}>
               <PencilLine className="size-4" />
