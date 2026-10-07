@@ -4,7 +4,7 @@ import { barisTabelDokumen, type ItemCetak } from "@/lib/baris-cetak";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
 /* ==========================================================================
-   SURAT PESANAN DAPUR
+   PO TO KITCHEN
 
    Lembar kerja untuk dapur dan pengantaran: apa yang dimasak, berapa
    banyak, untuk siapa, kapan, dan diantar ke mana.
@@ -20,6 +20,19 @@ import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
    pernah memegang daftar item yang berbeda — hanya kolom harganya yang
    tidak ikut digambar di sini.
    ========================================================================== */
+
+/**
+ * Nama yang dipakai lembar dapur.
+ *
+ * SENGAJA BERBEDA dari nama di pengaturan perusahaan. Yang tercetak di
+ * quotation dan invoice adalah nama badan hukumnya, karena dokumen itu
+ * dasar penagihan. Lembar ini tidak pernah keluar sebagai tagihan; yang
+ * dikenali dapur dan pengantar adalah nama dagangnya.
+ *
+ * Ditulis di sini, bukan diambil dari pengaturan perusahaan, justru supaya
+ * mengubah nama di sana TIDAK ikut mengubah yang ini — dan sebaliknya.
+ */
+const NAMA_DAPUR = "Tiska Catering";
 
 export type IsiDapur = {
   nomor: string;
@@ -40,8 +53,6 @@ export type IsiDapur = {
 
   baris: ItemCetak[];
   catatan: string | null;
-
-  namaPerusahaan: string;
 };
 
 export function DokumenDapur({ isi }: { isi: IsiDapur }) {
@@ -52,8 +63,8 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
     <div className="text-[12px] leading-[1.5] text-black">
       <div className="mb-3 flex items-end justify-between gap-4 border-b-2 border-black pb-2">
         <div>
-          <div className="text-[18px] font-bold tracking-wide">SURAT PESANAN DAPUR</div>
-          <div className="text-[11px] text-[#555]">{isi.namaPerusahaan}</div>
+          <div className="text-[18px] font-bold tracking-wide">PO TO KITCHEN</div>
+          <div className="text-[11px] text-[#555]">{NAMA_DAPUR}</div>
         </div>
         <div className="text-right text-[11px]">
           <div>

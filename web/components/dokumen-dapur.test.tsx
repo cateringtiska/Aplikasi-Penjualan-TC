@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { DokumenDapur, type IsiDapur } from "./dokumen-dapur";
 
 /* ==========================================================================
-   SURAT PESANAN DAPUR TIDAK BOLEH MEMBAWA ANGKA UANG
+   PO TO KITCHEN TIDAK BOLEH MEMBAWA ANGKA UANG
 
    Lembar ini beredar di dapur, ikut dibawa pengantar, dan tidak jarang
    tertinggal di tempat acara — di tangan tamu, pengelola gedung, atau
@@ -85,7 +85,6 @@ const ISI: IsiDapur = {
     },
   ],
   catatan: "Tanpa pedas untuk 5 box.",
-  namaPerusahaan: "PT. Tiska Cipta Imaji",
 };
 
 /** Seluruh teks lembarnya, tanpa pemisah ribuan dan spasi. */
@@ -184,5 +183,28 @@ describe("yang memang harus ada", () => {
     );
 
     expect(kolom[3]).toBe("");
+  });
+});
+
+describe("nama dan judul lembarnya", () => {
+  it("berjudul PO TO KITCHEN", () => {
+    render(<DokumenDapur isi={ISI} />);
+    expect(screen.getByText("PO TO KITCHEN")).toBeTruthy();
+  });
+
+  it("memakai nama dagang Tiska Catering, BUKAN nama badan hukumnya", () => {
+    /*
+     * Keduanya sengaja berbeda. Yang tercetak di quotation dan invoice
+     * adalah nama badan hukumnya, karena dokumen itu dasar penagihan.
+     * Lembar ini tidak pernah keluar sebagai tagihan.
+     *
+     * Namanya ditulis di komponennya, bukan diambil dari pengaturan
+     * perusahaan — justru supaya mengubah nama di sana tidak ikut menyeret
+     * yang ini. Tes ini yang menjaga pemisahan itu tetap berlaku.
+     */
+    render(<DokumenDapur isi={ISI} />);
+
+    expect(screen.getByText("Tiska Catering")).toBeTruthy();
+    expect(document.body.textContent ?? "").not.toContain("Tiska Cipta Imaji");
   });
 });

@@ -16,7 +16,7 @@ export async function generateMetadata({
     where: { id: BigInt(id) },
     select: { quotation_number: true },
   });
-  return { title: p ? `Dapur ${p.quotation_number}` : "Surat pesanan dapur" };
+  return { title: p ? `PO To Kitchen ${p.quotation_number}` : "PO To Kitchen" };
 }
 
 export default async function DapurPenawaran({ params }: PageProps<"/penawaran/[id]/dapur">) {
@@ -48,7 +48,6 @@ export default async function DapurPenawaran({ params }: PageProps<"/penawaran/[
         },
         baris: isi.baris,
         catatan: isi.catatan,
-        namaPerusahaan: isi.perusahaan.company_name,
       }}
     />
   );

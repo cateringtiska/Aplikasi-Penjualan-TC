@@ -16,7 +16,7 @@ export async function generateMetadata({
     where: { id: BigInt(id) },
     select: { invoice_number: true },
   });
-  return { title: t ? `Dapur ${t.invoice_number}` : "Surat pesanan dapur" };
+  return { title: t ? `PO To Kitchen ${t.invoice_number}` : "PO To Kitchen" };
 }
 
 export default async function DapurTagihan({ params }: PageProps<"/tagihan/[id]/dapur">) {
@@ -48,7 +48,6 @@ export default async function DapurTagihan({ params }: PageProps<"/tagihan/[id]/
         },
         baris: isi.baris,
         catatan: isi.catatan,
-        namaPerusahaan: isi.perusahaan.company_name,
       }}
     />
   );
