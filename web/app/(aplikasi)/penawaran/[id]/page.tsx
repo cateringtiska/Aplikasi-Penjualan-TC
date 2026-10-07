@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, Calculator, FileSpreadsheet, PencilLine, Printer } from "lucide-react";
+import { ArrowLeft, Calculator, ChefHat, FileSpreadsheet, PencilLine, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -113,6 +113,14 @@ export default async function HalamanDetailPenawaran({
           >
             <FileSpreadsheet className="size-4" />
             Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<a href={`/penawaran/${p.id}/dapur`} target="_blank" rel="noopener" />}
+          >
+            <ChefHat className="size-4" />
+            Dapur
           </Button>
           {p.status !== "approved" ? (
             <Button variant="outline" size="sm" render={<Link href={`/penawaran/${p.id}/ubah`} />}>
