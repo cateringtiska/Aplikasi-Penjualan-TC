@@ -199,6 +199,46 @@ describe("warna pada dokumen cetak", () => {
   });
 });
 
+describe("penanda revisi", () => {
+  /*
+   * Invoice yang sudah dikirim bisa bertambah nilainya karena ada tambahan
+   * menu saat acara berlangsung. NOMORNYA TETAP SAMA PERSIS, jadi tanpa
+   * penanda ini dua orang bisa duduk berhadapan memegang kertas yang
+   * sama-sama bernama INV-2026-0001 dengan total yang berbeda — dan tidak
+   * ada cara membedakan mana yang terbaru selain mengingat-ingat.
+   */
+  it("tercetak di sebelah nomornya, beserta tanggalnya", () => {
+    pasang({}, { revisi: 2, tanggalRevisi: new Date("2026-05-20") });
+
+    const sel = screen.getByText("No. Invoice:").closest("td");
+    const teks = (sel?.textContent ?? "").replace(/\s+/g, " ");
+
+    expect(teks).toContain("INV-2026-0001");
+    expect(teks).toContain("Revisi 2");
+    expect(teks).toContain("20/05/2026");
+  });
+
+  it("TIDAK muncul pada dokumen yang belum pernah direvisi", () => {
+    // Setiap invoice biasa akan membawanya kalau penjaganya terlepas, dan
+    // "Revisi 0" pada dokumen yang dikirim ke customer menimbulkan
+    // pertanyaan yang tidak perlu.
+    pasang({}, { revisi: 0, tanggalRevisi: null });
+    expect(screen.queryByText(/Revisi/)).toBeNull();
+
+    pasang({}, {});
+    expect(screen.queryByText(/Revisi/)).toBeNull();
+  });
+
+  it("tetap tercetak walaupun tanggalnya belum ada", () => {
+    pasang({}, { revisi: 1, tanggalRevisi: null });
+
+    const teks = (screen.getByText("No. Invoice:").closest("td")?.textContent ?? "").replace(/\s+/g,
+      " ",
+    );
+    expect(teks).toContain("Revisi 1");
+  });
+});
+
 /** Isi satu baris tabel rincian, sebagai teks per kolom. */
 function barisTabel(namaItem: string): string[] {
   const sel = screen.getByText(namaItem).closest("tr");

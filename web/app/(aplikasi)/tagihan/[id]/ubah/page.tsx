@@ -44,7 +44,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
 
   // Mengubah rincian tagihan yang sudah dibayar akan membuat catatan
   // pembayaran tidak lagi cocok dengan nilainya.
-  if (Number(tagihan.paid_amount) > 0 || tagihan.status === "cancelled") {
+  if (tagihan.status === "cancelled") {
     redirect(`/tagihan/${id}`);
   }
 

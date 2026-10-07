@@ -117,7 +117,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
             <Printer className="size-4" />
             Cetak
           </Button>
-          {Number(t.paid_amount) === 0 && t.status !== "cancelled" ? (
+          {t.status !== "cancelled" ? (
             <Button variant="outline" size="sm" render={<Link href={`/tagihan/${t.id}/ubah`} />}>
               <PencilLine className="size-4" />
               Ubah
@@ -155,13 +155,25 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
         />
       </section>
 
-      {/* Alasannya ditulis di halamannya, bukan hanya di pesan galat yang
-          cuma muncul kalau orangnya sempat sampai ke formulirnya. */}
+      {/* Dokumen yang sudah dipegang customer bukan lagi yang terbaru, dan
+          nomornya sama persis. Tanpa keterangan ini tidak ada cara
+          membedakan keduanya selain membandingkan angkanya satu per satu. */}
+      {t.revision > 0 ? (
+        <KunciDokumen>
+          Invoice ini sudah <b>direvisi {t.revision} kali</b>
+          {t.revised_at
+            ? `, terakhir ${format(t.revised_at, "d MMMM yyyy", { locale: localeId })}`
+            : ""}
+          . Dokumen yang sudah dipegang customer bukan lagi yang terbaru — cetak ulang
+          sebelum menagihkan sisanya.
+        </KunciDokumen>
+      ) : null}
+
       {Number(t.paid_amount) > 0 && t.status !== "cancelled" ? (
         <KunciDokumen>
-          Rinciannya terkunci karena invoice ini sudah menerima payment. Untuk mengubahnya,
-          hapus dulu payment-nya di <b>Riwayat payment</b> di samping, ubah rinciannya, lalu
-          catat kembali payment-nya.
+          Invoice ini sudah menerima payment, jadi rinciannya masih boleh diubah hanya
+          selama nilainya <b>tidak turun di bawah {rupiah(t.paid_amount)}</b> yang sudah
+          masuk. Kalau nilainya memang harus turun, kurangi dulu payment-nya.
         </KunciDokumen>
       ) : null}
 

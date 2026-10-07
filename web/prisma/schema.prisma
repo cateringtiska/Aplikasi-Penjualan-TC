@@ -171,6 +171,8 @@ model invoices {
   pb1_amount             Decimal               @default(0) @db.Decimal(15, 2)
   delivery_amount        Decimal               @default(0) @db.Decimal(15, 2)
   signatory_id           BigInt?
+  revision               Int                   @default(0)
+  revised_at             DateTime?             @db.Timestamp(0)
   invoice_charges        invoice_charges[]
   invoice_costs          invoice_costs[]
   invoice_event_dates    invoice_event_dates[]

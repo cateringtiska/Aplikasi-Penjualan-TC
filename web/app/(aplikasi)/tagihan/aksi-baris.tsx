@@ -43,7 +43,11 @@ export function AksiBaris({
     });
   }
 
-  const bolehUbah = status !== "cancelled" && !sudahDibayar;
+  // Invoice yang sudah menerima payment TETAP boleh diubah: tambahan menu
+  // saat acara berlangsung adalah kejadian biasa. Yang menjaga adalah aturan
+  // di simpan.ts — nilainya tidak boleh jatuh di bawah uang yang sudah
+  // masuk. Lihat catatan di sana.
+  const bolehUbah = status !== "cancelled";
   const belumLunas = ["unpaid", "partial", "overdue"].includes(status);
 
   return (

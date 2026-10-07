@@ -54,6 +54,16 @@ export type IsiDokumen = {
   judul: string;
   labelNomor: string;
   nomor: string;
+  /**
+   * Nomor revisi, 0 atau tidak diisi kalau belum pernah direvisi.
+   *
+   * Invoice yang sudah dikirim bisa bertambah nilainya karena ada tambahan
+   * menu saat acara berlangsung. Nomornya tetap sama persis, jadi tanpa
+   * penanda ini dua orang bisa duduk berhadapan memegang kertas yang
+   * sama-sama bernama INV-2026-0016 dengan total yang berbeda.
+   */
+  revisi?: number;
+  tanggalRevisi?: Date | null;
   tanggal: Date;
   labelTanggalKedua: string;
   tanggalKedua: Date;
@@ -162,6 +172,12 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
             </TdKepala>
             <TdKepala lebar="25%">
               <b>{isi.labelNomor}:</b> {isi.nomor}
+              {isi.revisi && isi.revisi > 0 ? (
+                <span className="ml-1 font-bold">
+                  (Revisi {isi.revisi}
+                  {isi.tanggalRevisi ? " · " + format(isi.tanggalRevisi, "dd/MM/yyyy") : ""})
+                </span>
+              ) : null}
             </TdKepala>
           </tr>
           <tr>

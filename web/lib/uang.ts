@@ -331,6 +331,27 @@ export function hitungStatusInvoice(argumen: {
   return "unpaid";
 }
 
+/**
+ * Apakah satu invoice boleh disimpan pada nilai yang baru ini.
+ *
+ * Invoice yang sudah menerima payment BOLEH diubah: tambahan menu saat
+ * acara berlangsung adalah kejadian biasa di katering, dan invoice-nya
+ * sudah telanjur dikirim beserta DP yang sudah dibayar.
+ *
+ * Yang menahannya hanya satu: nilainya tidak boleh jatuh DI BAWAH uang yang
+ * sudah masuk. Kalau terlepas, yang dibayar menjadi lebih besar daripada
+ * yang ditagihkan — kelebihannya tidak punya tempat, invoice-nya terbaca
+ * "Lunas" padahal ada uang menggantung, dan tidak ada satu pun layar yang
+ * memperlihatkan bahwa itu terjadi.
+ *
+ * Nilai yang PAS SAMA tetap boleh: itu pelunasan yang benar.
+ */
+export function revisiInvoiceSah(nilaiBaru: NilaiUang, sudahDibayar: NilaiUang): boolean {
+  const dibayar = d(sudahDibayar);
+  if (dibayar.lte(0)) return true;
+  return d(nilaiBaru).gte(dibayar);
+}
+
 export function labelStatusInvoice(status: string, sudahDibayar: NilaiUang): string {
   if (status === "overdue" && d(sudahDibayar).gt(0)) {
     return "Jatuh Tempo — Sebagian Terbayar";

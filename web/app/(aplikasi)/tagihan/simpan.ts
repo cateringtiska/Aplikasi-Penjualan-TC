@@ -20,7 +20,13 @@ import {
 } from "@/lib/nomor";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya, pastikanIzin } from "@/lib/rbac";
-import { hitungStatusInvoice, type StatusInvoice } from "@/lib/uang";
+import {
+  d,
+  hitungStatusInvoice,
+  revisiInvoiceSah,
+  rupiah,
+  type StatusInvoice,
+} from "@/lib/uang";
 
 // `klien` wajib diisi klien transaksi: lihat catatan di lib/nomor.ts.
 const nomorTagihanBerikutnya = (klien: PenjalanKueri) =>
@@ -56,17 +62,45 @@ export async function simpanTagihan(
         // nomor dokumennya, dan nomor bisa diganti sendiri sebelum dikirim.
         const ada = await tx.invoices.findFirst({
           where: { id: BigInt(f.id), ...hanyaMiliknya(sesi) },
-          select: { status: true, paid_amount: true, due_date: true },
+          select: { status: true, paid_amount: true, due_date: true, revision: true },
         });
         if (!ada) throw new Error("Invoice tidak ditemukan.");
         if (ada.status === "cancelled") {
           throw new Error("Invoice yang sudah dibatalkan tidak bisa diubah.");
         }
-        if (Number(ada.paid_amount) > 0) {
+
+        /* ------------------------------------------------------------------
+           REVISI HANYA BOLEH NAIK
+
+           Tambahan menu saat acara berlangsung adalah kejadian biasa di
+           katering, dan invoice-nya sudah telanjur dikirim beserta DP yang
+           sudah dibayar. Jadi invoice yang sudah menerima payment BOLEH
+           diubah — tetapi nilainya tidak boleh jatuh di bawah uang yang
+           sudah masuk.
+
+           Kalau boleh turun, yang dibayar menjadi lebih besar daripada yang
+           ditagihkan: kelebihannya tidak punya tempat, invoice-nya terbaca
+           "Lunas" padahal ada uang menggantung, dan tidak ada satu pun layar
+           yang memperlihatkan bahwa itu terjadi. Alokasi pembayarannya
+           sendiri tetap utuh — yang berubah hanya nilai invoice-nya, dan
+           sisanya dihitung ulang di bawah.
+           ------------------------------------------------------------------ */
+        const sudahDibayar = d(ada.paid_amount);
+        const nilaiBaru = d(kolom.grand_total);
+
+        if (!revisiInvoiceSah(nilaiBaru, sudahDibayar)) {
           throw new Error(
-            "Invoice ini sudah menerima payment, jadi rinciannya tidak bisa diubah. Batalkan payment-nya lebih dulu.",
+            `Nilai invoice barunya ${rupiah(nilaiBaru)}, lebih kecil daripada payment ` +
+              `yang sudah diterima ${rupiah(sudahDibayar)}. Kurangi atau hapus payment-nya ` +
+              "lebih dulu kalau nilainya memang harus turun.",
           );
         }
+
+        // Penanda revisi hanya naik ketika memang SUDAH ADA PAYMENT, yang
+        // berarti dokumennya sudah beredar dan uangnya sudah bergerak.
+        // Membetulkan invoice yang belum dibayar bukan revisi — tidak ada
+        // siapa pun di luar sana yang memegang versi lamanya.
+        const direvisi = sudahDibayar.gt(0);
 
         await tx.invoices.update({
           where: { id: BigInt(f.id) },
@@ -74,6 +108,7 @@ export async function simpanTagihan(
             ...kolom,
             invoice_date: new Date(f.tanggal),
             due_date: new Date(f.tanggal_akhir),
+            ...(direvisi ? { revision: ada.revision + 1, revised_at: new Date() } : {}),
           },
         });
         await tx.invoice_items.deleteMany({ where: { invoice_id: BigInt(f.id) } });
