@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { finalisasiMargin } from "./actions";
+
 /* ==========================================================================
    MARGIN TIDAK BOLEH DIKUNCI SELAGI KOSONG
 
@@ -52,8 +54,17 @@ vi.mock("@/lib/rbac", () => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
+/*
+ * Modulnya diimpor SEKALI, bukan lewat import() dinamis sesudah
+ * vi.resetModules().
+ *
+ * actions.ts tidak menyimpan keadaan apa pun antar pemanggilan, jadi
+ * memuatnya ulang tiap tes tidak melindungi apa pun — sementara
+ * mengaduk-aduk daftar modul vitest selagi berkas lain berjalan bersamaan
+ * adalah sumber kegagalan yang muncul sesekali tanpa bisa diulang. Tes ini
+ * memang pernah gugur dua kali tanpa sebab yang bisa ditemukan.
+ */
 beforeEach(() => {
-  vi.resetModules();
   hitungBiaya.mockReset();
   ubahMargin.mockReset();
   upsertMargin.mockReset();
@@ -70,7 +81,6 @@ describe("finalisasiMargin", () => {
   it("menolak invoice yang belum punya satu pun baris biaya", async () => {
     hitungBiaya.mockResolvedValue(0);
 
-    const { finalisasiMargin } = await import("./actions");
 
     await expect(finalisasiMargin("7")).rejects.toThrow(/[Bb]elum ada biaya/);
 
@@ -83,7 +93,6 @@ describe("finalisasiMargin", () => {
   it("menyebut cara keluarnya, bukan sekadar menolak", async () => {
     hitungBiaya.mockResolvedValue(0);
 
-    const { finalisasiMargin } = await import("./actions");
 
     await expect(finalisasiMargin("7")).rejects.toThrow(/Tambah biaya/);
   });
@@ -92,7 +101,6 @@ describe("finalisasiMargin", () => {
     hitungBiaya.mockResolvedValue(1);
     cariBiaya.mockResolvedValue([{ estimated_amount: "500000", actual_amount: null }]);
 
-    const { finalisasiMargin } = await import("./actions");
     await finalisasiMargin("7");
 
     expect(upsertMargin).toHaveBeenCalled();

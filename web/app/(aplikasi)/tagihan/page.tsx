@@ -212,6 +212,14 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
                       >
                         {t.invoice_number}
                       </Link>
+                      {/* Tanggal terbitnya ditaruh di bawah nomornya, bukan
+                          sebagai kolom tersendiri: kolom Jatuh tempo justru
+                          disembunyikan di layar sempit, dan tanggal invoice
+                          adalah keterangan yang dicari bersama nomornya —
+                          "invoice bulan lalu yang mana". */}
+                      <span className="block text-xs text-muted-foreground">
+                        {format(t.invoice_date, "d MMM yyyy", { locale: localeId })}
+                      </span>
                     </Td>
                     <Td>
                       <span className="font-medium">{t.customers.name}</span>
