@@ -234,14 +234,15 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
           <tr className="bg-[#f0f0f0]">
             <Th lebar="5%">No</Th>
             <Th>Deskripsi</Th>
-            <Th lebar="7%">Hari</Th>
-            <Th lebar="8%">Qty</Th>
-            <Th lebar="10%">Satuan</Th>
-            <Th lebar="15%" kanan>
-              Harga
+            <Th lebar="6%">Day</Th>
+            <Th lebar="6%">Qty</Th>
+            <Th lebar="7%">Pax</Th>
+            <Th lebar="9%">Vol.</Th>
+            <Th lebar="14%" kanan>
+              Harga Satuan
             </Th>
             <Th lebar="15%" kanan>
-              Subtotal
+              Total
             </Th>
           </tr>
         </thead>
@@ -256,7 +257,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                 className="break-inside-avoid font-bold"
                 style={{ backgroundColor: LATAR_JUDUL }}
               >
-                <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
+                <td className="border border-[#999] px-1.5 py-1" colSpan={7}>
                   {b.label}
                 </td>
                 <td className="border border-[#999] px-1.5 py-1 text-right">{b.nilai}</td>
@@ -291,6 +292,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                 </Td>
                 <Td>{b.hari}</Td>
                 <Td>{b.qty}</Td>
+                <Td>{b.pax}</Td>
                 <Td>{b.satuan}</Td>
                 <Td kanan>{b.harga}</Td>
                 <Td kanan>{b.nilai}</Td>
@@ -452,7 +454,7 @@ function TrTotal({
       className="break-inside-avoid font-bold"
       style={{ backgroundColor: akhir ? LATAR_TOTAL_AKHIR : LATAR_TOTAL }}
     >
-      <td className="border border-[#999] px-1.5 py-1" colSpan={6}>
+      <td className="border border-[#999] px-1.5 py-1" colSpan={7}>
         {label}
       </td>
       <td className="border border-[#999] px-1.5 py-1 text-right">{nilai}</td>

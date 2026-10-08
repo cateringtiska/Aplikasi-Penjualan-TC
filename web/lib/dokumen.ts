@@ -449,11 +449,17 @@ export function siapkanDokumen(
     items: items.map((b) => ({
       day: b.dayD,
       qty: b.qtyD,
+      pax: b.paxAngka,
       price: b.priceD,
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
-      children: b.anakSiap.map((a) => ({ day: a.dayD, qty: a.qtyD, price: a.priceD })),
+      children: b.anakSiap.map((a) => ({
+        day: a.dayD,
+        qty: a.qtyD,
+        pax: a.pax,
+        price: a.priceD,
+      })),
     })),
     service_charge_percent: f.service_charge_percent ?? null,
     pb1_enabled: f.pb1_enabled,
@@ -537,6 +543,19 @@ export function bacaPax(nilai: string | undefined): number | null {
   return angka.toNumber();
 }
 
+/**
+ * Pengali pax, dengan aturan yang SAMA PERSIS dengan paksBaris di
+ * lib/uang.ts: kosong atau nol berarti satu.
+ *
+ * Dua tempat menghitung nilai baris — rumus dokumen di lib/uang.ts dan
+ * angka yang DISIMPAN di sini. Keduanya harus memperlakukan pax kosong
+ * dengan cara yang sama; kalau tidak, dokumen menagih angka yang tidak
+ * sama dengan jumlah rinciannya sendiri.
+ */
+function paksSiap(pax: number | null): Decimal {
+  return pax === null || pax === 0 ? d(1) : d(pax);
+}
+
 /** Baris item siap simpan, beserta daftar nama sub-itemnya. */
 export function barisUntukDisimpan(items: BarisSiap[]) {
   return items.map((b) => ({
@@ -546,10 +565,16 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
       unit: b.unit || null,
       day: b.dayD.toFixed(2),
       qty: b.qtyD.toFixed(2),
-      // Keterangan untuk dapur, tidak ikut ke dalam subtotal di bawah.
+      // Pengali nilai barisnya, lihat subtotal di bawah.
       pax: b.paxAngka,
       price: b.priceD.toFixed(2),
-      subtotal: (b.is_compliment ? d(0) : b.dayD.times(b.qtyD).times(b.priceD)).toFixed(2),
+      // Hari x qty x pax x harga satuan. Pax kosong berarti satu, jadi
+      // dokumen yang terbit sebelum kolom ini ada bernilai sama persis.
+      subtotal: (
+        b.is_compliment
+          ? d(0)
+          : b.dayD.times(b.qtyD).times(paksSiap(b.paxAngka)).times(b.priceD)
+      ).toFixed(2),
       is_compliment: b.is_compliment,
       charge_service: b.charge_service,
       charge_pb1: b.charge_pb1,
@@ -570,7 +595,11 @@ export function barisUntukDisimpan(items: BarisSiap[]) {
         pax: a.pax,
         price: a.priceD.toFixed(2),
         // Compliment menurun dari induknya; hari sudah diselesaikan di atas.
-        subtotal: (b.is_compliment ? d(0) : a.dayD.times(a.qtyD).times(a.priceD)).toFixed(2),
+        subtotal: (
+          b.is_compliment
+            ? d(0)
+            : a.dayD.times(a.qtyD).times(paksSiap(a.pax)).times(a.priceD)
+        ).toFixed(2),
       })),
   }));
 }

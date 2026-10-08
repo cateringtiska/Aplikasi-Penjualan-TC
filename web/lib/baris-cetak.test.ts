@@ -237,53 +237,46 @@ describe("blok total", () => {
   });
 });
 
-describe("pax otomatis", () => {
+describe("pax yang tercetak", () => {
   /*
-   * Permintaan pemiliknya: kolom pax di lembar dapur diisi sendiri dengan
-   * hari dikali jumlah. Untuk acara tiga hari berisi 130 box sehari, dapur
-   * perlu tahu 390 — bukan 130, dan bukan 3.
+   * Nilai barisnya HARI x QTY x PAX x HARGA SATUAN, jadi pax ikut tercetak
+   * supaya perkaliannya bisa ditelusuri sendiri oleh yang membaca
+   * dokumennya.
+   *
+   * Kolom ini sempat berarti lain — "berapa orang yang dilayani", diisi
+   * sendiri dari hari dikali jumlah. Pemiliknya mendefinisikan ulang: pax
+   * adalah BANYAKNYA PESANAN, dan ia mengalikan.
    */
-  it("dihitung dari hari x jumlah ketika tidak diketik", () => {
-    const hasil = barisTabelDokumen([induk({ pax: null, day: "3", qty: "130" })]);
-    expect(item(hasil, 0).pax).toBe("390");
+  it("mencetak angka yang diketik", () => {
+    const hasil = barisTabelDokumen([induk({ day: "1", qty: "1", pax: 236 })]);
+    expect(item(hasil, 0).pax).toBe("236");
   });
 
-  it("isian yang DIKETIK menang atas hitungannya", () => {
-    // Dua tampah untuk empat puluh orang: hari x jumlah hanya menghasilkan
-    // 2, dan dapur menyiapkan untuk dua orang.
-    const hasil = barisTabelDokumen([
-      induk({ item_name: "TAMPAH BATMAY", day: "1", qty: "2", pax: 40 }),
-    ]);
-    expect(item(hasil, 0).pax).toBe("40");
+  it("mencetak 1 ketika tidak diketik, BUKAN dikosongkan", () => {
+    // Kosong di kolom pengali membuat pembacanya mengira ada angka yang
+    // disembunyikan. Nilainya memang dikali satu.
+    const hasil = barisTabelDokumen([induk({ pax: null })]);
+    expect(item(hasil, 0).pax).toBe("1");
   });
 
-  it("KOSONG untuk baris judul, bukan nol", () => {
-    // Judul kelompok tidak dimasak. Nol di lembar dapur terbaca sebagai
-    // perintah untuk tidak memasaknya.
+  it("DIKOSONGKAN pada baris judul, bersama kolom angka yang lain", () => {
+    // Judul kelompok tidak menagih apa pun, jadi tidak ada perkalian untuk
+    // ditelusuri — dan "1" di situ hanya mengundang pertanyaan.
     const hasil = barisTabelDokumen([
       induk({ qty: "0", price: "0", subtotal: "0", pax: null, anak: [anak()] }),
     ]);
     expect(item(hasil, 0).pax).toBe("");
+    expect(item(hasil, 0).paxAngka).toBeNull();
   });
 
-  it("tetap terisi untuk item yang harganya nol karena sudah termasuk paket", () => {
-    /*
-     * Dua puluh satu baris di data sungguhan berjumlah lebih dari nol
-     * tetapi berharga nol — "Stall Tambahan: Indomie, 300". Semuanya tetap
-     * harus dimasak, jadi pax-nya dinilai dari QTY-nya sendiri, bukan dari
-     * ada tidaknya harga.
-     */
-    const hasil = barisTabelDokumen([
-      induk({ item_name: "Stall Indomie", day: "1", qty: "300", price: "0", subtotal: "0", pax: null }),
-    ]);
-    expect(item(hasil, 0).pax).toBe("300");
+  it("membawa angka mentahnya untuk Excel", () => {
+    const hasil = barisTabelDokumen([induk({ pax: 236 })]);
+    expect(item(hasil, 0).paxAngka).toBe(236);
   });
 
-  it("ikut dihitung untuk sub-item berharga", () => {
-    const hasil = barisTabelDokumen([
-      induk({ anak: [anak({ day: "2", qty: "15", pax: null })] }),
-    ]);
-    expect(item(hasil, 1).pax).toBe("30");
+  it("ikut tercetak pada sub-item berharga", () => {
+    const hasil = barisTabelDokumen([induk({ anak: [anak({ pax: 3 })] })]);
+    expect(item(hasil, 1).pax).toBe("3");
   });
 });
 

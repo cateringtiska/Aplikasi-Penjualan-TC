@@ -186,13 +186,14 @@ describe("FormDokumen — isian pax", () => {
     expect(screen.getByLabelText(/jumlah pax baris 1/i)).toBeTruthy();
   });
 
-  it("menawarkan hari x jumlah sebagai angka bawaannya", () => {
-    // 3 hari x 130 box = 390. Yang mengetik melihat apa yang akan tercetak
-    // di lembar dapur tanpa harus mencobanya dulu.
+  it("menawarkan 1 sebagai pengali bawaannya", () => {
+    // Pax ikut mengalikan nilai baris, dan kosong berarti satu. Angka itu
+    // ditampilkan supaya yang mengetik tahu barisnya tidak akan bernilai
+    // nol kalau kolomnya dibiarkan kosong.
     pasangDenganSatuBaris();
 
     const isian = screen.getByLabelText(/jumlah pax baris 1/i) as HTMLInputElement;
-    expect(isian.placeholder).toBe("390");
+    expect(isian.placeholder).toBe("1");
     expect(isian.value, "pax terisi sendiri, padahal seharusnya hanya tawaran").toBe("");
   });
 });

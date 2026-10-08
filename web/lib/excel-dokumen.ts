@@ -44,7 +44,10 @@ const GARIS: Partial<ExcelJS.Borders> = {
 };
 
 /** Lebar kolom mengikuti lebar kolom dokumen cetaknya. */
-const LEBAR = [6, 44, 7, 8, 10, 16, 18];
+const LEBAR = [6, 42, 7, 7, 8, 10, 16, 18];
+
+/** Banyaknya kolom tabel rincian: No, Deskripsi, Day, Qty, Pax, Vol., Harga, Total. */
+const KOLOM = LEBAR.length;
 
 export type IsiExcelDokumen = {
   judul: string;
@@ -113,13 +116,13 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
     const n = b.number;
 
     lembar.mergeCells(n, 1, n, 3);
-    lembar.mergeCells(n, 4, n, 5);
-    lembar.mergeCells(n, 6, n, 7);
+    lembar.mergeCells(n, 4, n, 6);
+    lembar.mergeCells(n, 7, n, KOLOM);
 
     for (const [kolom, [label, nilai]] of [
       [1, kiri],
       [4, tengah],
-      [6, kanan],
+      [7, kanan],
     ] as const) {
       const sel = b.getCell(kolom);
       // Labelnya tebal, isinya tidak — seperti di kertasnya.
@@ -131,7 +134,7 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
       sel.border = GARIS;
     }
 
-    for (const kolom of [2, 3, 5, 7]) b.getCell(kolom).border = GARIS;
+    for (const kolom of [2, 3, 5, 6, 8]) b.getCell(kolom).border = GARIS;
     return b;
   };
 
@@ -139,14 +142,14 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
   const barisPenuh = (nilai: ExcelJS.CellValue, gaya?: Partial<ExcelJS.Style>) => {
     const b = lembar.addRow([]);
     const n = b.number;
-    lembar.mergeCells(n, 1, n, 7);
+    lembar.mergeCells(n, 1, n, KOLOM);
 
     const sel = b.getCell(1);
     sel.value = nilai;
     if (gaya?.font) sel.font = gaya.font;
     if (gaya?.alignment) sel.alignment = gaya.alignment;
     if (gaya?.fill) sel.fill = gaya.fill;
-    if (gaya?.border) for (let i = 1; i <= 7; i += 1) b.getCell(i).border = gaya.border;
+    if (gaya?.border) for (let i = 1; i <= KOLOM; i += 1) b.getCell(i).border = gaya.border;
 
     return b;
   };
@@ -234,11 +237,12 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
   const kepala = lembar.addRow([
     "No",
     "Deskripsi",
-    "Hari",
+    "Day",
     "Qty",
-    "Satuan",
-    "Harga",
-    "Subtotal",
+    "Pax",
+    "Vol.",
+    "Harga Satuan",
+    "Total",
   ]);
   kepala.eachCell((sel) => {
     sel.font = { bold: true };
@@ -246,21 +250,21 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
     sel.border = GARIS;
     sel.alignment = { horizontal: "center", vertical: "middle" };
   });
-  kepala.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
   kepala.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
+  kepala.getCell(8).alignment = { horizontal: "right", vertical: "middle" };
 
   for (const b of barisTabelDokumen(isi.baris)) {
     if (b.jenis === "totalKelompok") {
-      const baris = lembar.addRow([b.label, "", "", "", "", "", b.nilaiAngka]);
+      const baris = lembar.addRow([b.label, "", "", "", "", "", "", b.nilaiAngka]);
       const n = baris.number;
-      lembar.mergeCells(n, 1, n, 6);
+      lembar.mergeCells(n, 1, n, KOLOM - 1);
 
       baris.eachCell({ includeEmpty: true }, (sel) => {
         sel.font = { bold: true };
         sel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LATAR_JUDUL } };
         sel.border = GARIS;
       });
-      baris.getCell(7).numFmt = FORMAT_RUPIAH;
+      baris.getCell(KOLOM).numFmt = FORMAT_RUPIAH;
       continue;
     }
 
@@ -278,6 +282,7 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
       deskripsi,
       b.hariAngka,
       b.qtyAngka,
+      b.paxAngka,
       b.satuan,
       // "Compliment" memang teks, dan itu yang tercetak di kertasnya.
       b.hargaAngka ?? (b.harga || null),
@@ -291,10 +296,10 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
 
     baris.getCell(1).alignment = { horizontal: "center", vertical: "top" };
     baris.getCell(2).alignment = { vertical: "top", wrapText: true };
-    for (const kolom of [3, 4, 5]) {
+    for (const kolom of [3, 4, 5, 6]) {
       baris.getCell(kolom).alignment = { horizontal: "center", vertical: "top" };
     }
-    for (const kolom of [6, 7]) {
+    for (const kolom of [7, 8]) {
       baris.getCell(kolom).alignment = { horizontal: "right", vertical: "top" };
       if (typeof baris.getCell(kolom).value === "number") {
         baris.getCell(kolom).numFmt = FORMAT_RUPIAH;
@@ -312,9 +317,9 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
   }
 
   for (const b of barisTotalDokumen(isi)) {
-    const baris = lembar.addRow([b.label, "", "", "", "", "", b.nilaiAngka]);
+    const baris = lembar.addRow([b.label, "", "", "", "", "", "", b.nilaiAngka]);
     const n = baris.number;
-    lembar.mergeCells(n, 1, n, 6);
+    lembar.mergeCells(n, 1, n, KOLOM - 1);
 
     baris.eachCell({ includeEmpty: true }, (sel) => {
       sel.font = { bold: true };
@@ -325,8 +330,8 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
       };
       sel.border = GARIS;
     });
-    baris.getCell(7).numFmt = FORMAT_RUPIAH;
-    baris.getCell(7).alignment = { horizontal: "right" };
+    baris.getCell(KOLOM).numFmt = FORMAT_RUPIAH;
+    baris.getCell(KOLOM).alignment = { horizontal: "right" };
   }
 
   /* ---------- Catatan, syarat, pembayaran ---------- */
@@ -361,7 +366,7 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
     for (const klausa of isi.syarat.split(/\r?\n/)) {
       const baris = lembar.addRow([klausa.trim()]);
       baris.getCell(1).alignment = { vertical: "top" };
-      for (let i = 1; i <= 7; i += 1) baris.getCell(i).border = GARIS;
+      for (let i = 1; i <= KOLOM; i += 1) baris.getCell(i).border = GARIS;
     }
   }
 

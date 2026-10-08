@@ -56,6 +56,18 @@ export type BarisItem = {
    */
   day?: NilaiUang;
   qty: NilaiUang;
+  /**
+   * Berapa banyak pesanan pada baris ini — 236 box, 150 porsi, 3 ekor.
+   *
+   * Satu baris dokumen katering dihitung sebagai
+   * HARI x QTY x PAX x HARGA SATUAN. Qty adalah pengalinya, dan hampir
+   * selalu satu; pax yang membawa banyaknya.
+   *
+   * KOSONG BERARTI SATU, bukan nol. Itulah yang membuat seluruh dokumen
+   * yang terbit sebelum kolom ini ada menghasilkan angka yang sama persis
+   * seperti sebelumnya — nilainya tetap hari x qty x harga.
+   */
+  pax?: NilaiUang | null;
   price: NilaiUang;
   /** Item compliment tetap tercetak di dokumen, tetapi dihitung nol. */
   is_compliment?: boolean;
@@ -99,6 +111,9 @@ export function ratakanBaris(items: BarisBerAnak[]): BarisItem[] {
       // seluruh isinya disajikan tiga hari; meminta angka hari di setiap
       // sub-item hanya membuka peluang keduanya menyimpang.
       day: a.day ?? induk.day,
+      // Pax TIDAK diwarisi: tiap sub-item punya banyaknya sendiri. Satu
+      // stall berisi 150 porsi sate dan 3 ekor kambing guling.
+      pax: a.pax,
     }));
 
     // ANGKA INDUKNYA TIDAK PERNAH DIABAIKAN. Baris induk yang punya
@@ -142,9 +157,24 @@ export function hariBaris(item: BarisItem): Decimal {
   return hari.isZero() ? new Decimal(1) : hari;
 }
 
-/** Nilai satu baris SEBELUM compliment diperhitungkan: hari x jumlah x harga. */
+/**
+ * Pengali pax satu baris.
+ *
+ * Kosong, nol, atau tidak terbaca berarti SATU. Aturan itu yang membuat
+ * seluruh dokumen yang terbit sebelum kolom pax ada tetap bernilai sama
+ * persis — dan nol yang ikut terkali akan membuat nilainya menjadi nol
+ * tanpa ada satu pun angka harga yang berubah.
+ */
+export function paksBaris(item: BarisItem): Decimal {
+  if (item.pax === null || item.pax === undefined || item.pax === "") return new Decimal(1);
+
+  const pax = d(item.pax);
+  return pax.isZero() ? new Decimal(1) : pax;
+}
+
+/** Nilai satu baris SEBELUM compliment: hari x qty x pax x harga satuan. */
 function nilaiPenuh(item: BarisItem): Decimal {
-  return hariBaris(item).times(d(item.qty)).times(d(item.price));
+  return hariBaris(item).times(d(item.qty)).times(paksBaris(item)).times(d(item.price));
 }
 
 /** Nilai satu baris. Compliment selalu nol. */

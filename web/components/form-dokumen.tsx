@@ -218,6 +218,7 @@ export function FormDokumen({
         items: f.items.map((b) => ({
           day: uraikanRupiah(b.day) ?? 1,
           qty: uraikanRupiah(b.qty) ?? 0,
+          pax: uraikanRupiah(b.pax) ?? null,
           price: uraikanRupiah(b.price) ?? 0,
           is_compliment: b.is_compliment,
           charge_service: b.charge_service,
@@ -225,6 +226,7 @@ export function FormDokumen({
           children: b.children.map((a) => ({
             day: uraikanRupiah(a.day) ?? uraikanRupiah(b.day) ?? 1,
             qty: uraikanRupiah(a.qty) ?? 0,
+            pax: uraikanRupiah(a.pax) ?? null,
             price: uraikanRupiah(a.price) ?? 0,
           })),
         })),
@@ -809,22 +811,6 @@ export function FormDokumen({
    Satu baris item, lengkap dengan sub-itemnya
    ------------------------------------------------------------------------- */
 
-/**
- * Pax yang akan dipakai lembar dapur kalau kolomnya dibiarkan kosong.
- *
- * Rumusnya SATU dengan yang dipakai lembar dapurnya — lihat paxBaris di
- * lib/baris-cetak.ts. Placeholder yang menjanjikan angka berbeda dari yang
- * tercetak lebih menyesatkan daripada tidak ada placeholder sama sekali.
- */
-function paxOtomatis(hari: string, jumlah: string): string {
-  const h = uraikanRupiah(hari);
-  const j = uraikanRupiah(jumlah);
-  if (h === null || j === null) return "pax";
-
-  const hasil = h.times(j);
-  return hasil.gt(0) ? hasil.toNumber().toLocaleString("id-ID") : "pax";
-}
-
 function BarisItem({
   baris,
   nomor,
@@ -939,21 +925,19 @@ function BarisItem({
             aria-label={`Satuan baris ${nomor}`}
             className="mt-2 h-8 text-xs"
           />
-          {/* Pax TIDAK ikut menghitung uang. Qty beserta satuannya
-              menerangkan bentuk penyajiannya — 2 Tampah — sedangkan pax
-              berapa orang yang makan.
+          {/* Satu baris dihitung HARI x QTY x PAX x HARGA SATUAN. Pax
+              membawa banyaknya pesanan — 236 box, 150 porsi, 3 ekor —
+              sedangkan qty pengalinya, dan hampir selalu satu.
 
-              Dibiarkan kosong, lembar dapur mengisinya sendiri dengan hari
-              dikali jumlah. Angka itu ditampilkan sebagai placeholder supaya
-              yang mengetik melihat apa yang akan tercetak tanpa mencobanya
-              dulu. */}
+              Kosong berarti satu, bukan nol. Itulah yang membuat dokumen
+              yang terbit sebelum kolom ini ada bernilai sama persis. */}
           <Input
             inputMode="numeric"
             value={baris.pax}
             onChange={(e) => onUbah({ pax: e.target.value })}
-            placeholder={paxOtomatis(baris.day, baris.qty)}
+            placeholder="1"
             aria-label={`Jumlah pax baris ${nomor}`}
-            title="Berapa orang yang dilayani, untuk lembar dapur. Kosong berarti hari x jumlah."
+            title="Banyaknya pesanan. Nilai baris = hari x qty x pax x harga satuan. Kosong berarti 1."
             className="angka mt-2 h-8 text-xs tabular-nums"
           />
         </div>
@@ -1080,9 +1064,9 @@ function BarisItem({
                 value={anak.pax}
                 onChange={(e) => ubahAnak(j, { pax: e.target.value })}
                 inputMode="numeric"
-                placeholder={paxOtomatis(anak.day || baris.day, anak.qty)}
+                placeholder="1"
                 aria-label={`Jumlah pax sub-item ${j + 1} pada baris ${nomor}`}
-                title="Berapa orang yang dilayani. Kosong berarti hari x jumlah."
+                title="Banyaknya pesanan. Kosong berarti 1."
                 className="angka h-8 w-16 text-sm tabular-nums"
               />
               <Input

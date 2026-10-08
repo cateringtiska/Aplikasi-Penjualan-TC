@@ -177,16 +177,18 @@ describe("warna pada dokumen cetak", () => {
   it("judul kelompok tetap dikenali tanpa warna: kolom angkanya kosong", () => {
     pasang({}, { baris: [BARIS_BERHARGA, JUDUL_KELOMPOK] });
 
-    // Kolomnya: No, Deskripsi, Hari, Qty, Satuan, Harga, Subtotal.
+    // Kolomnya: No, Deskripsi, Day, Qty, Pax, Vol., Harga Satuan, Total.
     const judul = barisTabel("ANEKA STALL");
     // Seluruh kolom angkanya kosong — ITU yang membedakannya dari baris
-    // berharga, bukan latar abunya.
-    expect(judul.slice(2)).toEqual(["", "", "", "", ""]);
+    // berharga, bukan latar abunya. Termasuk Pax: judul kelompok tidak
+    // menagih apa pun, jadi tidak ada perkalian untuk ditelusuri.
+    expect(judul.slice(2)).toEqual(["", "", "", "", "", ""]);
 
     const berharga = barisTabel("INDONESIAN BUFFET");
-    expect(berharga[2]).toBe("1"); // hari
+    expect(berharga[2]).toBe("1"); // day
     expect(berharga[3]).toBe("50"); // qty
-    expect(berharga[6]).toBe("Rp 8.000.000");
+    expect(berharga[4]).toBe("1"); // pax, kosong berarti satu
+    expect(berharga[7]).toBe("Rp 8.000.000");
   });
 
   it("baris TOTAL tetap dikenali tanpa warna: tebal dan bernama TOTAL", () => {

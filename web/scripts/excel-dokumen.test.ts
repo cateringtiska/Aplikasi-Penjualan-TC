@@ -27,6 +27,22 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
+/**
+ * Nomor kolom menurut JUDULNYA.
+ *
+ * Nomornya pernah ditulis langsung di tes ini, dan menambah satu kolom
+ * membuat tesnya menuduh hal yang salah — yang gugur adalah "uang bukan
+ * angka", padahal yang bergeser letaknya. Yang dijaga adalah isinya, bukan
+ * posisinya.
+ */
+function kolomJudul(lembar: ExcelJS.Worksheet, judul: string): number {
+  const kepala = lembar.getRow(barisKepala(lembar));
+  for (let i = 1; i <= kepala.cellCount; i += 1) {
+    if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
+  }
+  throw new Error(`Kolom "${judul}" tidak ada.`);
+}
+
 /** Nomor baris kepala tabel rincian, dikenali dari isinya. */
 function barisKepala(lembar: ExcelJS.Worksheet): number {
   for (let i = 1; i <= lembar.rowCount; i += 1) {
@@ -71,7 +87,10 @@ describe("baris Excel mengikuti baris kertasnya", () => {
 
       if (b.jenis === "totalKelompok") {
         expect(String(baris.getCell(1).value ?? ""), `baris ke-${i}`).toBe(b.label);
-        expect(Number(baris.getCell(7).value), b.label).toBeCloseTo(b.nilaiAngka, 2);
+        expect(Number(baris.getCell(kolomJudul(lembar, "Total")).value), b.label).toBeCloseTo(
+          b.nilaiAngka,
+          2,
+        );
         return;
       }
 
@@ -98,9 +117,9 @@ describe("baris Excel mengikuti baris kertasnya", () => {
       if (b.jenis !== "item" || !b.judul) return;
       const baris = lembar.getRow(mulai + i);
 
-      for (const kolom of [3, 4, 6, 7]) {
-        const nilai = baris.getCell(kolom).value;
-        expect(nilai ?? "", `${b.nama} kolom ${kolom}`).toBe("");
+      for (const judul of ["Day", "Qty", "Pax", "Harga Satuan", "Total"]) {
+        const nilai = baris.getCell(kolomJudul(lembar, judul)).value;
+        expect(nilai ?? "", `${b.nama} kolom ${judul}`).toBe("");
       }
     });
   });
@@ -118,7 +137,7 @@ describe("baris Excel mengikuti baris kertasnya", () => {
     let diperiksa = 0;
     diharapkan.forEach((b, i) => {
       if (b.jenis !== "item" || b.nilaiAngka === null) return;
-      const sel = lembar.getRow(mulai + i).getCell(7);
+      const sel = lembar.getRow(mulai + i).getCell(kolomJudul(lembar, "Total"));
 
       expect(typeof sel.value, `${b.nama} nilainya bukan angka`).toBe("number");
       expect(Number(sel.value)).toBeCloseTo(b.nilaiAngka, 2);
@@ -143,7 +162,10 @@ describe("blok total", () => {
     total.forEach((b, i) => {
       const baris = lembar.getRow(mulai + i);
       expect(String(baris.getCell(1).value ?? ""), `label total ke-${i}`).toBe(b.label);
-      expect(Number(baris.getCell(7).value), b.label).toBeCloseTo(b.nilaiAngka, 2);
+      expect(Number(baris.getCell(kolomJudul(lembar, "Total")).value), b.label).toBeCloseTo(
+        b.nilaiAngka,
+        2,
+      );
     });
 
     const terakhir = total[total.length - 1];

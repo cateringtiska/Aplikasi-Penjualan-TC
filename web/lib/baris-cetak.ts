@@ -82,6 +82,8 @@ export type BarisTabel =
        * terbaca sebagai perintah untuk tidak memasaknya.
        */
       pax: string;
+      /** Angka mentahnya, untuk berkas Excel. */
+      paxAngka: number | null;
       satuan: string;
       harga: string;
       nilai: string;
@@ -135,21 +137,29 @@ function persen(nilai: string | null): string {
 }
 
 /**
- * Pax: berapa orang yang dilayani satu baris.
+ * Pax: banyaknya pesanan pada satu baris — 236 box, 150 porsi, 3 ekor.
  *
- * Isian pax yang DIKETIK menang; kalau kosong, dihitung dari hari dikali
- * jumlahnya — untuk acara tiga hari berisi 130 box sehari, dapur perlu tahu
- * 390, bukan 130.
+ * Nilai barisnya HARI x QTY x PAX x HARGA SATUAN, jadi pax yang kosong
+ * dicetak sebagai 1, bukan dikosongkan: perkaliannya harus bisa ditelusuri
+ * sendiri oleh yang membaca dokumennya. Baris yang kosong di situ membuat
+ * pembacanya mengira ada pengali yang disembunyikan.
  *
- * Qty nol berarti baris judul kelompok, dan judul tidak dimasak. Angka nol
- * di lembar dapur terbaca sebagai perintah untuk TIDAK memasaknya, jadi
- * yang ditulis adalah kosong.
+ * Aturannya sama persis dengan paksBaris di lib/uang.ts — kosong atau nol
+ * berarti satu.
  */
-function paxBaris(pax: number | null, hari: string, jumlah: string): string {
-  if (pax !== null) return angka(String(pax));
+function paxBaris(pax: number | null): string {
+  return angka(String(paxAngkaBaris(pax)));
+}
 
-  const otomatis = Number(hari) * Number(jumlah);
-  return otomatis > 0 ? otomatis.toLocaleString("id-ID") : "";
+/**
+ * Pengali pax sebagai angka, untuk berkas Excel.
+ *
+ * Dihitung langsung dari nilainya, bukan dengan membaca balik teks yang
+ * sudah diberi pemisah ribuan: "1.200" yang dibaca sebagai angka akan
+ * menjadi 1,2 — dan itu mengalikan nilai baris dengan satu koma dua.
+ */
+function paxAngkaBaris(pax: number | null): number {
+  return pax === null || pax === 0 ? 1 : pax;
 }
 
 /** Baris tabel rincian, berurutan dari atas ke bawah. */
@@ -179,10 +189,11 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
       // Aturan 2: dikosongkan, bukan diisi nol.
       hari: bernilai ? angka(b.day) : "",
       qty: bernilai ? angka(b.qty) : "",
-      // Dihitung dari hari x jumlah kalau tidak diketik. Dinilai dari
-      // qty-nya sendiri, bukan dari bernilai: item yang harganya nol karena
-      // sudah termasuk paket tetap harus dimasak.
-      pax: paxBaris(b.pax, b.day, b.qty),
+      // Dikosongkan pada baris judul bersama kolom angka yang lain: judul
+      // kelompok tidak menagih apa pun, jadi tidak ada perkalian untuk
+      // ditelusuri.
+      pax: bernilai ? paxBaris(b.pax) : "",
+      paxAngka: bernilai ? paxAngkaBaris(b.pax) : null,
       satuan: bernilai ? (b.unit ?? "") : "",
       harga: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.price) : "",
       nilai: b.is_compliment ? "Compliment" : bernilai ? rupiah(b.subtotal) : "",
@@ -204,7 +215,8 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
         rincian: [],
         hari: angka(a.day),
         qty: angka(a.qty),
-        pax: paxBaris(a.pax, a.day, a.qty),
+        pax: paxBaris(a.pax),
+        paxAngka: paxAngkaBaris(a.pax),
         satuan: a.unit ?? "",
         harga: b.is_compliment ? "Compliment" : rupiah(a.price),
         nilai: b.is_compliment ? "Compliment" : rupiah(a.subtotal),
