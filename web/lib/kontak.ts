@@ -56,3 +56,28 @@ export function labelPelanggan(p: {
   const pic = (p.pic ?? "").trim();
   return `${p.nama} (${p.kode})${pic === "" ? "" : ` · ${pic}`}`;
 }
+
+/**
+ * Potongan syarat pencarian untuk nama PIC.
+ *
+ * MENGIKUTI ATURAN TAMPILANNYA, bukan sekadar mencocokkan kedua kolom.
+ * Kalau dokumen ini menyebut kontaknya sendiri, yang tercari adalah nama
+ * itu saja; PIC tetap customernya baru ikut dicari ketika dokumennya tidak
+ * menyebut siapa pun — persis seperti namaPic() memilih yang ditampilkan.
+ *
+ * Mencocokkan kedua kolom sekaligus akan memunculkan baris yang nama
+ * PIC-nya di layar TIDAK memuat kata yang dicari: pengguna mengetik
+ * "Dewi", mendapat baris bertuliskan "Ibu Reka", dan tidak ada apa pun di
+ * layar yang menjelaskan kenapa baris itu ada di sana.
+ */
+export function cariPic(kunci: string) {
+  return [
+    { contact_person: { contains: kunci, mode: "insensitive" as const } },
+    {
+      AND: [
+        { OR: [{ contact_person: null }, { contact_person: "" }] },
+        { customers: { pic_name: { contains: kunci, mode: "insensitive" as const } } },
+      ],
+    },
+  ];
+}

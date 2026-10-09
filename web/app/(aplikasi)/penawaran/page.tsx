@@ -17,7 +17,7 @@ import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { BarisKontak } from "@/components/baris-kontak";
-import { namaPic } from "@/lib/kontak";
+import { cariPic, namaPic } from "@/lib/kontak";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
@@ -57,6 +57,9 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
               { quotation_number: { contains: kunci, mode: "insensitive" } },
               { customers: { name: { contains: kunci, mode: "insensitive" } } },
               { event_type: { contains: kunci, mode: "insensitive" } },
+              // Nama PIC ikut dicari, dengan aturan yang sama persis dengan
+              // yang menentukan nama mana yang TAMPIL di barisnya.
+              ...cariPic(kunci),
             ],
           }
         : {}),
