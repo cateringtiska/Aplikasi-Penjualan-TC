@@ -7,6 +7,7 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { tanggalSiapDisaring } from "@/lib/bentuk-form";
 import { labelPelanggan } from "@/lib/kontak";
 
 /**
@@ -25,6 +26,19 @@ export function SaringLaporan({
   const jalur = usePathname();
   const params = useSearchParams();
   const [, mulai] = useTransition();
+
+  /**
+   * Isian tanggal baru dikirim setelah tahunnya SELESAI diketik.
+   *
+   * Tanpa ini, mengetik "2026" angka demi angka memindahkan halaman pada
+   * angka pertama — browser melaporkan tahunnya sebagai 0002 — lalu
+   * isiannya digambar ulang dari alamat yang baru dan tiga angka sisanya
+   * tidak pernah sampai. Lihat tanggalSiapDisaring di lib/bentuk-form.ts.
+   */
+  function ubahTanggal(kunci: string, nilai: string) {
+    if (!tanggalSiapDisaring(nilai)) return;
+    ubah(kunci, nilai);
+  }
 
   function ubah(kunci: string, nilai: string) {
     const baru = new URLSearchParams(params.toString());
@@ -45,7 +59,7 @@ export function SaringLaporan({
           id="dari"
           type="date"
           value={params.get("dari") ?? ""}
-          onChange={(e) => ubah("dari", e.target.value)}
+          onChange={(e) => ubahTanggal("dari", e.target.value)}
           className="h-9 w-40"
         />
       </div>
@@ -58,7 +72,7 @@ export function SaringLaporan({
           id="sampai"
           type="date"
           value={params.get("sampai") ?? ""}
-          onChange={(e) => ubah("sampai", e.target.value)}
+          onChange={(e) => ubahTanggal("sampai", e.target.value)}
           className="h-9 w-40"
         />
       </div>
