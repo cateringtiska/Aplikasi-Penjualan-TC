@@ -146,8 +146,14 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
               <tr className="border-b bg-muted/40">
                 <Th>Customer</Th>
                 <Th className="hidden w-28 sm:table-cell">Invoice</Th>
-                <Th className="hidden w-36 md:table-cell">Tanggal invoice</Th>
-                <Th className="hidden w-36 md:table-cell">Jatuh tempo</Th>
+                {/* Keduanya menyebut yang TERTUA di antara invoice customer
+                    ini, bukan tanggal satu dokumen. Berlabel "Tanggal
+                    invoice" saja, baris Telkomsat yang merangkum lima
+                    invoice terbaca seolah punya satu invoice tertanggal
+                    30 Juni — dan itu tidak cocok dengan daftar invoicenya,
+                    yang memuat empat tanggal lain. */}
+                <Th className="hidden w-36 md:table-cell">Invoice tertua</Th>
+                <Th className="hidden w-36 md:table-cell">Tempo tertua</Th>
                 <Th className="w-32 text-right">Terlambat</Th>
                 <Th className="w-40 text-right">Sisa piutang</Th>
               </tr>
