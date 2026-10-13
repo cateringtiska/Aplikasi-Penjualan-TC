@@ -1,7 +1,7 @@
 import "server-only";
 
 import { differenceInCalendarDays } from "date-fns";
-import type { Decimal } from "decimal.js";
+import { Decimal } from "decimal.js";
 
 import { pengakuanDokumen } from "./pengakuan";
 import { tanggalAcaraDokumen } from "./tanggal";
@@ -55,6 +55,11 @@ export type BarisPiutang = {
   tanggal: Date;
   tempo: Date;
   hariTerlambat: number;
+  /** Nilai penuh invoicenya. */
+  penjualan: Decimal;
+  /** Uang muka atau cicilan yang sudah masuk. Nol kalau belum ada. */
+  dibayar: Decimal;
+  /** Yang masih harus ditagih: penjualan dikurangi yang sudah dibayar. */
   sisa: Decimal;
 };
 
@@ -191,6 +196,10 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       tanggal: t.invoice_date,
       tempo: t.due_date,
       hariTerlambat: Math.max(0, terlambat),
+      penjualan: d(t.grand_total),
+      // Dibatasi nilai invoicenya: pembayaran berlebih tidak boleh membuat
+      // kolom uang muka menyebut angka yang lebih besar daripada tagihannya.
+      dibayar: Decimal.min(d(t.paid_amount), d(t.grand_total)),
       sisa,
     });
   }

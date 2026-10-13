@@ -62,209 +62,218 @@ async function unduh(
 }
 
 describe("unduhan kartu piutang", () => {
-  it("menghasilkan berkas yang bisa dibuka, dengan uang sebagai angka", async () => {
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const buku = await unduh(modul, "http://localhost/laporan/piutang/excel");
-
-    const lembar = buku.getWorksheet("Kartu Piutang");
-    expect(lembar, "lembar Kartu Piutang harus ada").toBeDefined();
-    expect(lembar!.getCell("A1").value).toBe("Kartu Piutang");
-
-    // Ringkasan umur piutang di baris 5 harus berupa angka, bukan teks.
-    for (let i = 1; i <= 4; i++) {
-      expect(typeof lembar!.getRow(5).getCell(i).value).toBe("number");
+  /** Nomor kolom menurut judulnya, dari baris kepala tabelnya. */
+  function kolomKartu(lembar: ExcelJS.Worksheet, judul: string): number {
+    const kepala = lembar.getRow(8);
+    for (let i = 1; i <= kepala.cellCount; i += 1) {
+      if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
     }
+    throw new Error(`Kolom "${judul}" tidak ada.`);
+  }
 
-    // Baris 8 adalah kepala tabel.
-    const kepala = lembar!.getRow(8);
+  async function lembarKartu(alamat = "http://localhost/laporan/piutang/excel") {
+    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
+    return (await unduh(modul, alamat)).getWorksheet("Kartu Piutang")!;
+  }
+
+  it("berbentuk buku besar: NO, tanggal, nomor, pelanggan, penjualan, uang muka, sisa, saldo", async () => {
+    const lembar = await lembarKartu();
+    expect(lembar.getCell("A1").value).toBe("Kartu Piutang");
+
+    const kepala = lembar.getRow(8);
     const judul: string[] = [];
     for (let i = 1; i <= kepala.cellCount; i += 1) {
       judul.push(String(kepala.getCell(i).value ?? "").trim());
     }
 
     expect(judul).toEqual([
-      "Kode Customer",
-      "Customer",
-      "PIC",
-      "No. Invoice",
-      "Tanggal Invoice",
-      "Jatuh Tempo",
-      "Hari Terlambat",
-      "Sisa Piutang",
+      "NO",
+      "TANGGAL INVOICE",
+      "NO INVOICE",
+      "NAMA PELANGGAN",
+      "PENJUALAN",
+      "UANG MUKA/CICILAN",
+      "SISA PELUNASAN",
+      "SALDO",
     ]);
   });
 
-  it("membawa nama PIC tiap customer", async () => {
+  it("memuat invoice yang SAMA dengan layarnya, walaupun urutannya berbeda", async () => {
     /*
-     * Berkas ini dibuka orang yang menagih, di tempat lain, tanpa layar
-     * aplikasinya. Nama PIC yang ada di layar tetapi hilang dari berkasnya
-     * memaksa penagih kembali membuka aplikasinya satu customer per
-     * customer — dan tidak ada apa pun di berkas itu yang memberitahu
-     * bahwa namanya memang ada di tempat lain.
-     */
-    const { ambilPiutang } = await import("../lib/laporan-piutang");
-    const { daftar } = await ambilPiutang("", {});
-
-    const berpic = daftar.filter((p) => p.pic);
-    if (berpic.length === 0) return;
-
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
-      "Kartu Piutang",
-    )!;
-
-    // Dicari dari judulnya, bukan dari nomor kolomnya.
-    const kepala = lembar.getRow(8);
-    let kolomPic = 0;
-    for (let i = 1; i <= kepala.cellCount; i += 1) {
-      if (String(kepala.getCell(i).value ?? "").trim() === "PIC") kolomPic = i;
-    }
-    expect(kolomPic, "kolom PIC tidak ada").toBeGreaterThan(0);
-
-    for (const p of berpic) {
-      const baris = lembar.getRow(8 + daftar.indexOf(p) + 1);
-      expect(String(baris.getCell(kolomPic).value ?? ""), p.nama).toBe(p.pic);
-    }
-  });
-
-  it("memberi format angka pada kolom angkanya, bukan pada kolom teks", async () => {
-    // Menyisipkan satu kolom pernah menggeser seluruh format tanpa galat
-    // apa pun: kolom teks mendapat format rupiah, kolom uang kehilangan
-    // pemisah ribuannya, dan berkasnya tetap terbuka seolah tidak terjadi
-    // apa-apa.
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
-      "Kartu Piutang",
-    )!;
-
-    const kepala = lembar.getRow(8);
-    const nomor = (judul: string) => {
-      for (let i = 1; i <= kepala.cellCount; i += 1) {
-        if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
-      }
-      throw new Error(`Kolom "${judul}" tidak ada.`);
-    };
-
-    for (const judul of ["Hari Terlambat", "Sisa Piutang"]) {
-      expect(lembar.getColumn(nomor(judul)).numFmt, judul).toBe("#,##0");
-    }
-
-    // Nomor invoice dan tanggalnya adalah TEKS. Format rupiah di situ akan
-    // mengubah "INV-2026-0023" menjadi sesuatu yang tidak bisa dibaca.
-    for (const judul of ["Kode Customer", "Customer", "PIC", "No. Invoice", "Tanggal Invoice"]) {
-      expect(lembar.getColumn(nomor(judul)).numFmt, judul).not.toBe("#,##0");
-    }
-  });
-
-  it("mencocokkan jumlah barisnya dengan isi database", async () => {
-    const { ambilPiutang } = await import("../lib/laporan-piutang");
-    const { daftar, jumlahPelanggan, totalSemua } = await ambilPiutang("", {});
-
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
-      "Kartu Piutang",
-    )!;
-
-    // Baris 8 kepala, lalu satu baris per customer, lalu satu baris TOTAL.
-    const barisTotal = lembar.getRow(8 + daftar.length + 1);
-    expect(barisTotal.getCell(1).value).toBe("TOTAL");
-    expect(barisTotal.getCell(2).value).toBe(`${jumlahPelanggan} customer`);
-    expect(barisTotal.getCell(4).value).toBe(`${daftar.length} invoice`);
-
-    // Kolomnya dicari dari judulnya: nomor yang ditulis langsung membuat
-    // tes ini menuduh totalnya salah padahal yang bergeser letaknya.
-    const kepalaTotal = lembar.getRow(8);
-    let kolomSisa = 0;
-    for (let i = 1; i <= kepalaTotal.cellCount; i += 1) {
-      if (String(kepalaTotal.getCell(i).value ?? "").trim() === "Sisa Piutang") kolomSisa = i;
-    }
-    expect(kolomSisa, "kolom Sisa Piutang tidak ada").toBeGreaterThan(0);
-
-    expect(Number(barisTotal.getCell(kolomSisa).value)).toBeCloseTo(
-      Number(totalSemua.toFixed(2)),
-      2,
-    );
-  });
-
-  it("menulis TIAP BARIS sama persis dengan yang ada di layar", async () => {
-    /*
-     * Baris TOTAL saja tidak cukup. Totalnya dihitung dari sumber yang
-     * sama, jadi ia tetap cocok walaupun setiap barisnya digeser — berkas
-     * yang barisnya salah tetapi totalnya benar justru yang paling sulit
-     * disadari, sebab yang pertama diperiksa orang adalah totalnya.
-     *
-     * Dibandingkan nomor invoice, tanggal, jatuh tempo, dan sisanya, baris
-     * per baris, menurut urutan yang sama dengan layar.
+     * Urutannya sengaja berbeda: layar mengurutkan per customer supaya bisa
+     * ditagih dengan satu telepon, berkas ini menurut terbitnya supaya
+     * saldonya bisa ditelusuri. Yang tidak boleh berbeda adalah ISINYA,
+     * jadi dibandingkan menurut nomor invoice — bukan posisi barisnya.
      */
     const { ambilPiutang } = await import("../lib/laporan-piutang");
     const { daftar } = await ambilPiutang("", {});
     if (daftar.length === 0) return;
 
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
-      "Kartu Piutang",
-    )!;
+    const lembar = await lembarKartu();
+    const kNomor = kolomKartu(lembar, "NO INVOICE");
 
-    const kepala = lembar.getRow(8);
-    const nomorKolom = (judul: string) => {
-      for (let i = 1; i <= kepala.cellCount; i += 1) {
-        if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
-      }
-      throw new Error(`Kolom "${judul}" tidak ada.`);
-    };
+    const diBerkas: string[] = [];
+    for (let i = 0; i < daftar.length; i += 1) {
+      diBerkas.push(String(lembar.getRow(8 + 1 + i).getCell(kNomor).value ?? ""));
+    }
 
-    const kNomor = nomorKolom("No. Invoice");
-    const kTanggal = nomorKolom("Tanggal Invoice");
-    const kTempo = nomorKolom("Jatuh Tempo");
-    const kSisa = nomorKolom("Sisa Piutang");
-    const kTerlambat = nomorKolom("Hari Terlambat");
+    expect(diBerkas.slice().sort()).toEqual(daftar.map((p) => p.nomor).sort());
+  });
 
-    const tgl = (x: Date) =>
-      `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}/${x.getFullYear()}`;
+  it("menulis angka TIAP BARIS sama persis dengan sumbernya", async () => {
+    /*
+     * Baris TOTAL saja tidak cukup. Totalnya dihitung dari sumber yang
+     * sama, jadi ia tetap cocok walaupun setiap barisnya digeser — berkas
+     * yang barisnya salah tetapi totalnya benar justru yang paling sulit
+     * disadari, sebab yang pertama diperiksa orang adalah totalnya.
+     */
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar } = await ambilPiutang("", {});
+    if (daftar.length === 0) return;
 
-    daftar.forEach((p, i) => {
-      const baris = lembar.getRow(8 + i + 1);
+    const { namaPelangganKartu } = await import(
+      "../app/(aplikasi)/laporan/piutang/excel/route"
+    );
 
-      expect(String(baris.getCell(kNomor).value ?? ""), `nomor baris ke-${i}`).toBe(p.nomor);
-      expect(String(baris.getCell(kTanggal).value ?? ""), `tanggal ${p.nomor}`).toBe(
-        tgl(p.tanggal),
+    const lembar = await lembarKartu();
+    const kNomor = kolomKartu(lembar, "NO INVOICE");
+    const kNama = kolomKartu(lembar, "NAMA PELANGGAN");
+    const kJual = kolomKartu(lembar, "PENJUALAN");
+    const kMuka = kolomKartu(lembar, "UANG MUKA/CICILAN");
+    const kSisa = kolomKartu(lembar, "SISA PELUNASAN");
+
+    const sumber = new Map(daftar.map((p) => [p.nomor, p]));
+    let diperiksa = 0;
+
+    for (let i = 0; i < daftar.length; i += 1) {
+      const baris = lembar.getRow(8 + 1 + i);
+      const nomor = String(baris.getCell(kNomor).value ?? "");
+      const p = sumber.get(nomor);
+      expect(p, `baris ke-${i} memuat nomor asing: ${nomor}`).toBeDefined();
+      if (!p) continue;
+
+      expect(String(baris.getCell(kNama).value ?? ""), `nama ${nomor}`).toBe(
+        namaPelangganKartu(p),
       );
-      expect(String(baris.getCell(kTempo).value ?? ""), `tempo ${p.nomor}`).toBe(tgl(p.tempo));
-      expect(Number(baris.getCell(kTerlambat).value), `terlambat ${p.nomor}`).toBe(
-        p.hariTerlambat,
+      expect(Number(baris.getCell(kJual).value), `penjualan ${nomor}`).toBeCloseTo(
+        Number(p.penjualan.toFixed(2)),
+        2,
       );
-      expect(Number(baris.getCell(kSisa).value), `sisa ${p.nomor}`).toBeCloseTo(
+      expect(Number(baris.getCell(kSisa).value), `sisa ${nomor}`).toBeCloseTo(
         Number(p.sisa.toFixed(2)),
         2,
       );
-    });
+
+      // Uang muka DIKOSONGKAN ketika belum ada pembayaran. Nol terbaca
+      // sebagai "sudah diperiksa, memang tidak ada".
+      const muka = baris.getCell(kMuka).value;
+      if (p.dibayar.gt(0)) {
+        expect(Number(muka), `uang muka ${nomor}`).toBeCloseTo(Number(p.dibayar.toFixed(2)), 2);
+      } else {
+        expect(muka ?? "", `uang muka ${nomor} seharusnya kosong`).toBe("");
+      }
+
+      diperiksa += 1;
+    }
+
+    expect(diperiksa).toBe(daftar.length);
+  });
+
+  it("SALDO menumpuk, dan baris terakhirnya sama dengan total piutang", async () => {
+    /*
+     * Inti bentuk buku besar. Saldo yang tidak menumpuk hanya mengulang
+     * kolom di sebelahnya, dan yang membacanya tidak punya cara mengetahui
+     * berapa yang tertagih sampai baris tertentu.
+     */
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar, totalSemua } = await ambilPiutang("", {});
+    if (daftar.length === 0) return;
+
+    const lembar = await lembarKartu();
+    const kSisa = kolomKartu(lembar, "SISA PELUNASAN");
+    const kSaldo = kolomKartu(lembar, "SALDO");
+
+    let berjalan = 0;
+    for (let i = 0; i < daftar.length; i += 1) {
+      const baris = lembar.getRow(8 + 1 + i);
+      berjalan += Number(baris.getCell(kSisa).value);
+
+      expect(Number(baris.getCell(kSaldo).value), `saldo baris ke-${i + 1}`).toBeCloseTo(
+        berjalan,
+        2,
+      );
+    }
+
+    expect(berjalan).toBeCloseTo(Number(totalSemua.toFixed(2)), 2);
+  });
+
+  it("diurutkan menurut nomor invoice, yaitu urutan terbitnya", async () => {
+    // Saldo berjalan hanya bisa ditelusuri kalau barisnya berurutan terbit.
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar } = await ambilPiutang("", {});
+    if (daftar.length < 2) return;
+
+    const lembar = await lembarKartu();
+    const kNomor = kolomKartu(lembar, "NO INVOICE");
+
+    const nomor: string[] = [];
+    for (let i = 0; i < daftar.length; i += 1) {
+      nomor.push(String(lembar.getRow(8 + 1 + i).getCell(kNomor).value ?? ""));
+    }
+
+    expect(nomor).toEqual([...nomor].sort());
+  });
+
+  it("menomori barisnya 1, 2, 3 berurutan", async () => {
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar } = await ambilPiutang("", {});
+    if (daftar.length === 0) return;
+
+    const lembar = await lembarKartu();
+    const kNo = kolomKartu(lembar, "NO");
+
+    for (let i = 0; i < daftar.length; i += 1) {
+      expect(Number(lembar.getRow(8 + 1 + i).getCell(kNo).value)).toBe(i + 1);
+    }
+  });
+
+  it("memberi format rupiah pada kolom uang, bukan pada kolom teks", async () => {
+    const lembar = await lembarKartu();
+
+    for (const judul of ["PENJUALAN", "UANG MUKA/CICILAN", "SISA PELUNASAN", "SALDO"]) {
+      expect(lembar.getColumn(kolomKartu(lembar, judul)).numFmt, judul).toContain("Rp");
+    }
+
+    // Nomor invoice dan tanggalnya teks. Format rupiah di situ mengubah
+    // "INV-2026-0023" menjadi sesuatu yang tidak bisa dibaca.
+    for (const judul of ["NO", "TANGGAL INVOICE", "NO INVOICE", "NAMA PELANGGAN"]) {
+      expect(lembar.getColumn(kolomKartu(lembar, judul)).numFmt ?? "", judul).not.toContain("Rp");
+    }
   });
 
   it("hanya membawa yang cocok ketika pencariannya diisi", async () => {
-    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
-    const lembar = (
-      await unduh(modul, "http://localhost/laporan/piutang/excel?cari=TIDAK-ADA-YANG-BEGINI")
-    ).getWorksheet("Kartu Piutang")!;
+    const lembar = await lembarKartu(
+      "http://localhost/laporan/piutang/excel?cari=TIDAK-ADA-YANG-BEGINI",
+    );
 
-    expect(lembar.getRow(9).getCell(1).value).toBe("TOTAL");
-    expect(lembar.getRow(9).getCell(2).value).toBe("0 customer");
+    expect(String(lembar.getCell("A2").value)).toContain("TIDAK-ADA-YANG-BEGINI");
+    expect(String(lembar.getRow(9).getCell(1).value ?? "")).toBe("TOTAL");
   });
 });
 
 /**
- * Nomor kolom menurut JUDULNYA di baris kepala.
+ * Nomor kolom menurut JUDULNYA, untuk lembar laporan margin.
  *
- * Dulu nomornya ditulis langsung di tesnya, dan menyisipkan satu kolom
- * membuat tes ini menuduh hal yang salah: yang gugur adalah "kolom Margin %
- * harus berdesimal", padahal yang bergeser kolomnya. Yang ingin dijaga
- * adalah formatnya, bukan letaknya.
+ * Nomornya pernah ditulis langsung di tes ini, dan menambah satu kolom
+ * membuat tesnya menuduh hal yang salah — yang gugur adalah "uang bukan
+ * angka", padahal yang bergeser letaknya.
  */
 function kolomBerjudul(lembar: ExcelJS.Worksheet, judul: string): number {
   const kepala = lembar.getRow(7);
   for (let i = 1; i <= kepala.cellCount; i += 1) {
     if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
   }
-  throw new Error(`Kolom "${judul}" tidak ada di lembar ${lembar.name}.`);
+  throw new Error("Kolom \"" + judul + "\" tidak ada di lembar " + lembar.name + ".");
 }
 
 describe("unduhan laporan margin", () => {
