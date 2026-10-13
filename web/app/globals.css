@@ -278,6 +278,14 @@
 /* Dokumen cetak: A4 dengan tepi 12mm, dan warna latar tabel tetap tercetak.
    Tanpa print-color-adjust, browser membuang latar abu pada bilah judul dan
    baris total — persis bagian yang membuat dokumen terbaca sebagai dokumen. */
+/* Skala dokumen cetak, diatur dari halaman cetaknya sendiri.
+   Dipakai zoom, bukan transform: transform tidak mengubah tinggi yang
+   dipakai browser memotong halaman, jadi dokumen yang terlihat mengecil
+   di layar tetap tercetak dua lembar. */
+.lembar-cetak {
+  zoom: var(--skala-cetak, 1);
+}
+
 @media print {
   @page {
     size: A4;

@@ -1,3 +1,4 @@
+import { SkalaCetak } from "@/components/skala-cetak";
 import { TombolCetak } from "@/components/tombol-cetak";
 
 /**
@@ -19,10 +20,13 @@ export default function LayoutCetak({ children }: LayoutProps<"/">) {
             Tekan Cetak, lalu pilih <strong className="text-foreground">Save as PDF</strong> pada
             tujuan pencetak.
           </p>
-          <TombolCetak />
+          <div className="flex items-center gap-3">
+            <SkalaCetak />
+            <TombolCetak />
+          </div>
         </div>
 
-        <article className="rounded-lg border bg-white p-[12mm] text-black shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none">
+        <article className="lembar-cetak rounded-lg border bg-white p-[12mm] text-black shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none">
           {children}
         </article>
       </div>
