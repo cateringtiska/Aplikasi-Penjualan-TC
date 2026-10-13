@@ -61,11 +61,29 @@ export async function GET(request: NextRequest) {
   const KEPALA = [
     "Kode Customer",
     "Customer",
+    // Siapa yang ditelepon saat menagih. Berkas ini dibuka orang yang
+    // menagih, di tempat lain, tanpa layar aplikasinya — tanpa nama ini ia
+    // harus kembali membuka aplikasinya satu per satu.
+    "PIC",
     "Jumlah Invoice",
     "Jatuh Tempo Tertua",
     "Hari Terlambat",
     "Sisa Piutang",
   ];
+
+  /**
+   * Nomor kolom menurut judulnya.
+   *
+   * Nomornya pernah ditulis langsung, dan menyisipkan satu kolom menggeser
+   * seluruh format angkanya tanpa galat apa pun: kolom teks mendapat format
+   * rupiah, kolom uang kehilangan pemisah ribuannya, dan berkasnya tetap
+   * terbuka seolah tidak terjadi apa-apa.
+   */
+  const kolom = (judul: string) => {
+    const i = KEPALA.indexOf(judul);
+    if (i < 0) throw new Error(`Kolom "${judul}" tidak ada di kepala tabel.`);
+    return i + 1;
+  };
 
   const barisKepala = lembar.getRow(8);
   barisKepala.values = KEPALA;
@@ -81,6 +99,7 @@ export async function GET(request: NextRequest) {
     lembar.addRow([
       p.kode,
       p.nama,
+      p.pic ?? "",
       p.jumlahTagihan,
       format(p.tempoTertua, "dd/MM/yyyy"),
       p.hariTerlambat,
@@ -91,6 +110,7 @@ export async function GET(request: NextRequest) {
   const barisTotal = lembar.addRow([
     "TOTAL",
     `${daftar.length} customer`,
+    "",
     daftar.reduce((j, p) => j + p.jumlahTagihan, 0),
     "",
     "",
@@ -99,14 +119,14 @@ export async function GET(request: NextRequest) {
   barisTotal.font = { bold: true };
   barisTotal.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  const lebar = [16, 34, 16, 20, 16, 18];
+  const lebar = [16, 32, 24, 16, 20, 16, 18];
   lebar.forEach((w, i) => {
     lembar.getColumn(i + 1).width = w;
   });
 
-  for (const kolom of [3, 5, 6]) {
-    lembar.getColumn(kolom).numFmt = "#,##0";
-    lembar.getColumn(kolom).alignment = { horizontal: "right" };
+  for (const judul of ["Jumlah Invoice", "Hari Terlambat", "Sisa Piutang"]) {
+    lembar.getColumn(kolom(judul)).numFmt = "#,##0";
+    lembar.getColumn(kolom(judul)).alignment = { horizontal: "right" };
   }
   for (let i = 1; i <= KELOMPOK.length; i++) {
     lembar.getRow(5).getCell(i).numFmt = "#,##0";

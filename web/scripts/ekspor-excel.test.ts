@@ -76,8 +76,81 @@ describe("unduhan kartu piutang", () => {
     }
 
     // Baris 8 adalah kepala tabel.
-    expect(lembar!.getRow(8).getCell(1).value).toBe("Kode Customer");
-    expect(lembar!.getRow(8).getCell(6).value).toBe("Sisa Piutang");
+    const kepala = lembar!.getRow(8);
+    const judul: string[] = [];
+    for (let i = 1; i <= kepala.cellCount; i += 1) {
+      judul.push(String(kepala.getCell(i).value ?? "").trim());
+    }
+
+    expect(judul).toEqual([
+      "Kode Customer",
+      "Customer",
+      "PIC",
+      "Jumlah Invoice",
+      "Jatuh Tempo Tertua",
+      "Hari Terlambat",
+      "Sisa Piutang",
+    ]);
+  });
+
+  it("membawa nama PIC tiap customer", async () => {
+    /*
+     * Berkas ini dibuka orang yang menagih, di tempat lain, tanpa layar
+     * aplikasinya. Nama PIC yang ada di layar tetapi hilang dari berkasnya
+     * memaksa penagih kembali membuka aplikasinya satu customer per
+     * customer — dan tidak ada apa pun di berkas itu yang memberitahu
+     * bahwa namanya memang ada di tempat lain.
+     */
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar } = await ambilPiutang("", {});
+
+    const berpic = daftar.filter((p) => p.pic);
+    if (berpic.length === 0) return;
+
+    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
+    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
+      "Kartu Piutang",
+    )!;
+
+    // Dicari dari judulnya, bukan dari nomor kolomnya.
+    const kepala = lembar.getRow(8);
+    let kolomPic = 0;
+    for (let i = 1; i <= kepala.cellCount; i += 1) {
+      if (String(kepala.getCell(i).value ?? "").trim() === "PIC") kolomPic = i;
+    }
+    expect(kolomPic, "kolom PIC tidak ada").toBeGreaterThan(0);
+
+    for (const p of berpic) {
+      const baris = lembar.getRow(8 + daftar.indexOf(p) + 1);
+      expect(String(baris.getCell(kolomPic).value ?? ""), p.nama).toBe(p.pic);
+    }
+  });
+
+  it("memberi format angka pada kolom angkanya, bukan pada kolom teks", async () => {
+    // Menyisipkan satu kolom pernah menggeser seluruh format tanpa galat
+    // apa pun: kolom teks mendapat format rupiah, kolom uang kehilangan
+    // pemisah ribuannya, dan berkasnya tetap terbuka seolah tidak terjadi
+    // apa-apa.
+    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
+    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
+      "Kartu Piutang",
+    )!;
+
+    const kepala = lembar.getRow(8);
+    const nomor = (judul: string) => {
+      for (let i = 1; i <= kepala.cellCount; i += 1) {
+        if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
+      }
+      throw new Error(`Kolom "${judul}" tidak ada.`);
+    };
+
+    for (const judul of ["Jumlah Invoice", "Hari Terlambat", "Sisa Piutang"]) {
+      expect(lembar.getColumn(nomor(judul)).numFmt, judul).toBe("#,##0");
+    }
+
+    for (const judul of ["Kode Customer", "Customer", "PIC"]) {
+      expect(lembar.getColumn(nomor(judul)).numFmt, judul).not.toBe("#,##0");
+    }
   });
 
   it("mencocokkan jumlah barisnya dengan isi database", async () => {
@@ -93,7 +166,20 @@ describe("unduhan kartu piutang", () => {
     const barisTotal = lembar.getRow(8 + daftar.length + 1);
     expect(barisTotal.getCell(1).value).toBe("TOTAL");
     expect(barisTotal.getCell(2).value).toBe(`${daftar.length} customer`);
-    expect(Number(barisTotal.getCell(6).value)).toBeCloseTo(Number(totalSemua.toFixed(2)), 2);
+
+    // Kolomnya dicari dari judulnya: nomor yang ditulis langsung membuat
+    // tes ini menuduh totalnya salah padahal yang bergeser letaknya.
+    const kepalaTotal = lembar.getRow(8);
+    let kolomSisa = 0;
+    for (let i = 1; i <= kepalaTotal.cellCount; i += 1) {
+      if (String(kepalaTotal.getCell(i).value ?? "").trim() === "Sisa Piutang") kolomSisa = i;
+    }
+    expect(kolomSisa, "kolom Sisa Piutang tidak ada").toBeGreaterThan(0);
+
+    expect(Number(barisTotal.getCell(kolomSisa).value)).toBeCloseTo(
+      Number(totalSemua.toFixed(2)),
+      2,
+    );
   });
 
   it("hanya membawa yang cocok ketika pencariannya diisi", async () => {
