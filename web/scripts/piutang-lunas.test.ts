@@ -100,7 +100,7 @@ describe("ambilPiutang — customer yang sudah lunas", () => {
     const { daftar, lunas } = await ambilPiutang(nama, {});
 
     expect(daftar).toHaveLength(1);
-    expect(daftar[0].total.toFixed(0)).toBe("1000");
+    expect(daftar[0].sisa.toFixed(0)).toBe("1000");
     // Daftar piutangnya tidak kosong, jadi tidak perlu penjelasan apa pun.
     expect(lunas).toHaveLength(0);
   });

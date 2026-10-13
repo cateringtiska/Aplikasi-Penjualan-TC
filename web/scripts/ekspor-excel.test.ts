@@ -86,8 +86,9 @@ describe("unduhan kartu piutang", () => {
       "Kode Customer",
       "Customer",
       "PIC",
-      "Jumlah Invoice",
-      "Jatuh Tempo Tertua",
+      "No. Invoice",
+      "Tanggal Invoice",
+      "Jatuh Tempo",
       "Hari Terlambat",
       "Sisa Piutang",
     ]);
@@ -144,18 +145,20 @@ describe("unduhan kartu piutang", () => {
       throw new Error(`Kolom "${judul}" tidak ada.`);
     };
 
-    for (const judul of ["Jumlah Invoice", "Hari Terlambat", "Sisa Piutang"]) {
+    for (const judul of ["Hari Terlambat", "Sisa Piutang"]) {
       expect(lembar.getColumn(nomor(judul)).numFmt, judul).toBe("#,##0");
     }
 
-    for (const judul of ["Kode Customer", "Customer", "PIC"]) {
+    // Nomor invoice dan tanggalnya adalah TEKS. Format rupiah di situ akan
+    // mengubah "INV-2026-0023" menjadi sesuatu yang tidak bisa dibaca.
+    for (const judul of ["Kode Customer", "Customer", "PIC", "No. Invoice", "Tanggal Invoice"]) {
       expect(lembar.getColumn(nomor(judul)).numFmt, judul).not.toBe("#,##0");
     }
   });
 
   it("mencocokkan jumlah barisnya dengan isi database", async () => {
     const { ambilPiutang } = await import("../lib/laporan-piutang");
-    const { daftar, totalSemua } = await ambilPiutang("", {});
+    const { daftar, jumlahPelanggan, totalSemua } = await ambilPiutang("", {});
 
     const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
     const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
@@ -165,7 +168,8 @@ describe("unduhan kartu piutang", () => {
     // Baris 8 kepala, lalu satu baris per customer, lalu satu baris TOTAL.
     const barisTotal = lembar.getRow(8 + daftar.length + 1);
     expect(barisTotal.getCell(1).value).toBe("TOTAL");
-    expect(barisTotal.getCell(2).value).toBe(`${daftar.length} customer`);
+    expect(barisTotal.getCell(2).value).toBe(`${jumlahPelanggan} customer`);
+    expect(barisTotal.getCell(4).value).toBe(`${daftar.length} invoice`);
 
     // Kolomnya dicari dari judulnya: nomor yang ditulis langsung membuat
     // tes ini menuduh totalnya salah padahal yang bergeser letaknya.
@@ -180,6 +184,60 @@ describe("unduhan kartu piutang", () => {
       Number(totalSemua.toFixed(2)),
       2,
     );
+  });
+
+  it("menulis TIAP BARIS sama persis dengan yang ada di layar", async () => {
+    /*
+     * Baris TOTAL saja tidak cukup. Totalnya dihitung dari sumber yang
+     * sama, jadi ia tetap cocok walaupun setiap barisnya digeser — berkas
+     * yang barisnya salah tetapi totalnya benar justru yang paling sulit
+     * disadari, sebab yang pertama diperiksa orang adalah totalnya.
+     *
+     * Dibandingkan nomor invoice, tanggal, jatuh tempo, dan sisanya, baris
+     * per baris, menurut urutan yang sama dengan layar.
+     */
+    const { ambilPiutang } = await import("../lib/laporan-piutang");
+    const { daftar } = await ambilPiutang("", {});
+    if (daftar.length === 0) return;
+
+    const modul = await import("../app/(aplikasi)/laporan/piutang/excel/route");
+    const lembar = (await unduh(modul, "http://localhost/laporan/piutang/excel")).getWorksheet(
+      "Kartu Piutang",
+    )!;
+
+    const kepala = lembar.getRow(8);
+    const nomorKolom = (judul: string) => {
+      for (let i = 1; i <= kepala.cellCount; i += 1) {
+        if (String(kepala.getCell(i).value ?? "").trim() === judul) return i;
+      }
+      throw new Error(`Kolom "${judul}" tidak ada.`);
+    };
+
+    const kNomor = nomorKolom("No. Invoice");
+    const kTanggal = nomorKolom("Tanggal Invoice");
+    const kTempo = nomorKolom("Jatuh Tempo");
+    const kSisa = nomorKolom("Sisa Piutang");
+    const kTerlambat = nomorKolom("Hari Terlambat");
+
+    const tgl = (x: Date) =>
+      `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}/${x.getFullYear()}`;
+
+    daftar.forEach((p, i) => {
+      const baris = lembar.getRow(8 + i + 1);
+
+      expect(String(baris.getCell(kNomor).value ?? ""), `nomor baris ke-${i}`).toBe(p.nomor);
+      expect(String(baris.getCell(kTanggal).value ?? ""), `tanggal ${p.nomor}`).toBe(
+        tgl(p.tanggal),
+      );
+      expect(String(baris.getCell(kTempo).value ?? ""), `tempo ${p.nomor}`).toBe(tgl(p.tempo));
+      expect(Number(baris.getCell(kTerlambat).value), `terlambat ${p.nomor}`).toBe(
+        p.hariTerlambat,
+      );
+      expect(Number(baris.getCell(kSisa).value), `sisa ${p.nomor}`).toBeCloseTo(
+        Number(p.sisa.toFixed(2)),
+        2,
+      );
+    });
   });
 
   it("hanya membawa yang cocok ketika pencariannya diisi", async () => {

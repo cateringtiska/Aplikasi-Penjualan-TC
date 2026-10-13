@@ -99,8 +99,9 @@ describe("laporan piutang", () => {
     // 10 juta - 4 juta. Dua invoice lainnya TIDAK ikut, walaupun keduanya
     // sudah lewat jatuh tempo.
     expect(hasil.totalSemua.toString()).toBe("6000000");
+    // Satu baris satu invoice: hanya invoice itu yang menyisakan piutang.
     expect(hasil.daftar).toHaveLength(1);
-    expect(hasil.daftar[0].jumlahTagihan).toBe(1);
+    expect(hasil.daftar[0].sisa.toString()).toBe("6000000");
   });
 
   it("memindahkan yang belum terjadi ke keranjangnya, bukan menghilangkannya", async () => {

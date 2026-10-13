@@ -72,16 +72,37 @@ async function piutangDashboard(sekarang: Date) {
 }
 
 describe("kedua layar sejalan", () => {
-  it("menghitung JUMLAH INVOICE yang sama", async () => {
+  it("memuat invoice yang SAMA PERSIS, nomor per nomor", async () => {
+    /*
+     * Kartu piutang kini satu baris satu invoice, sama bentuknya dengan
+     * daftar yang dibuka kartu Dashboard. Jadi keduanya bisa dibandingkan
+     * langsung lewat nomornya — bukan lagi lewat jumlah dan total, yang
+     * bisa kebetulan cocok sementara isinya berbeda.
+     */
     const sekarang = new Date();
     const dashboard = await piutangDashboard(sekarang);
     const kartu = await ambilPiutang("", {});
 
-    const lembarKartu = kartu.daftar.reduce((j, p) => j + p.jumlahTagihan, 0);
+    const nomorKartu = kartu.daftar.map((p) => p.nomor).sort();
+    const nomorDashboard = dashboard.map((b) => b.nomor).sort();
 
-    expect(lembarKartu, "kartu piutang dan kartu Dashboard tidak sejalan").toBe(
-      dashboard.length,
+    expect(nomorKartu, "kartu piutang dan kartu Dashboard memuat invoice berbeda").toEqual(
+      nomorDashboard,
     );
+  });
+
+  it("menyebut SISA yang sama untuk tiap invoice", async () => {
+    // Himpunannya bisa saja sama sementara angkanya berbeda, dan yang
+    // dipakai menagih adalah angkanya.
+    const sekarang = new Date();
+    const dashboard = await piutangDashboard(sekarang);
+    const kartu = await ambilPiutang("", {});
+
+    const sisaDashboard = new Map(dashboard.map((b) => [b.nomor, b.hasil.piutang.toString()]));
+
+    for (const p of kartu.daftar) {
+      expect(p.sisa.toString(), `sisa ${p.nomor}`).toBe(sisaDashboard.get(p.nomor));
+    }
   });
 
   it("menghitung TOTAL yang sama sampai rupiahnya", async () => {
@@ -93,54 +114,48 @@ describe("kedua layar sejalan", () => {
     expect(kartu.totalSemua.toString()).toBe(totalDashboard.toString());
   });
 
-  it("membagi ke customer yang sama, dengan jumlah lembar yang sama", async () => {
-    // Totalnya bisa saja cocok sementara pembagiannya menyimpang, dan yang
-    // dipakai menagih adalah pembagian per customernya.
-    const sekarang = new Date();
-    const dashboard = await piutangDashboard(sekarang);
-
-    const perPelanggan = new Map<string, number>();
-    for (const b of dashboard) {
-      perPelanggan.set(b.idPelanggan, (perPelanggan.get(b.idPelanggan) ?? 0) + 1);
-    }
-
+  it("menyebut banyaknya customer dengan benar", async () => {
     const kartu = await ambilPiutang("", {});
+    const unik = new Set(kartu.daftar.map((p) => p.idPelanggan));
 
-    expect(kartu.daftar.length, "banyaknya customer berbeda").toBe(perPelanggan.size);
-
-    for (const p of kartu.daftar) {
-      expect(p.jumlahTagihan, `lembar ${p.nama}`).toBe(perPelanggan.get(p.idPelanggan));
-    }
+    expect(kartu.jumlahPelanggan).toBe(unik.size);
   });
 });
 
-describe("tanggal pada kartu piutang", () => {
-  it("adalah yang TERTUA di antara invoice customer itu", async () => {
+describe("urutan barisnya", () => {
+  it("menjaga invoice satu customer tetap BERDAMPINGAN", async () => {
     /*
-     * Kolomnya berlabel "Invoice tertua" dan "Tempo tertua". Kalau isinya
-     * bukan yang tertua, labelnya berbohong — dan Telkomsat yang merangkum
-     * lima invoice akan terbaca seolah punya satu invoice bertanggal lain
-     * daripada yang ada di daftar invoicenya.
+     * Penagihan dilakukan dengan menelepon orangnya sekali, bukan sekali
+     * per lembar. Baris satu customer yang tersebar di seluruh tabel
+     * memaksa penagih mencarinya satu per satu, dan mudah ada yang
+     * terlewat.
      */
-    const sekarang = new Date();
-    const dashboard = await piutangDashboard(sekarang);
     const kartu = await ambilPiutang("", {});
+    if (kartu.daftar.length < 2) return;
 
-    expect(kartu.daftar.length, "tidak ada piutang untuk diuji").toBeGreaterThan(0);
+    const terlihat = new Set<string>();
+    let sebelumnya = "";
 
     for (const p of kartu.daftar) {
-      const miliknya = dashboard.filter((b) => b.idPelanggan === p.idPelanggan);
-      expect(miliknya.length, `invoice ${p.nama}`).toBeGreaterThan(0);
+      if (p.idPelanggan !== sebelumnya) {
+        expect(terlihat.has(p.idPelanggan), `baris ${p.nama} terpisah`).toBe(false);
+        terlihat.add(p.idPelanggan);
+        sebelumnya = p.idPelanggan;
+      }
+    }
+  });
 
-      const invoiceTertua = miliknya
-        .map((b) => b.invoiceDate.getTime())
-        .reduce((a, b) => Math.min(a, b));
-      const tempoTertua = miliknya
-        .map((b) => b.dueDate.getTime())
-        .reduce((a, b) => Math.min(a, b));
+  it("menaruh yang jatuh temponya paling dulu di atas, dalam satu customer", async () => {
+    const kartu = await ambilPiutang("", {});
 
-      expect(p.tanggalTertua.getTime(), `tanggal invoice tertua ${p.nama}`).toBe(invoiceTertua);
-      expect(p.tempoTertua.getTime(), `jatuh tempo tertua ${p.nama}`).toBe(tempoTertua);
+    for (let i = 1; i < kartu.daftar.length; i += 1) {
+      const a = kartu.daftar[i - 1];
+      const b = kartu.daftar[i];
+      if (a.idPelanggan !== b.idPelanggan) continue;
+
+      expect(a.tempo.getTime(), `${a.nomor} vs ${b.nomor}`).toBeLessThanOrEqual(
+        b.tempo.getTime(),
+      );
     }
   });
 });

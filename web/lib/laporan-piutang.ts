@@ -34,18 +34,28 @@ export const KELOMPOK = [
 
 export type KunciKelompok = (typeof KELOMPOK)[number]["kunci"];
 
+/**
+ * Satu baris = SATU INVOICE, bukan satu customer.
+ *
+ * Dulu dirangkum per customer: satu baris "Telkomsat · 5 lembar ·
+ * Rp 34.210.750" beserta tanggal TERTUA di antara kelimanya. Angkanya
+ * benar, tetapi tidak bisa dipakai menagih — yang ditagih adalah lembar
+ * invoice, masing-masing dengan nomor, tanggal, dan jatuh temponya
+ * sendiri. Pasangan tanggal yang ditampilkan pun milik dua invoice yang
+ * berbeda, dan tidak pernah ada satu dokumen yang berisi keduanya.
+ */
 export type BarisPiutang = {
+  idTagihan: string;
+  nomor: string;
+  idPelanggan: string;
   nama: string;
   kode: string;
   /** Siapa yang dihubungi saat menagih. Boleh kosong. */
   pic: string | null;
-  idPelanggan: string;
-  jumlahTagihan: number;
-  total: Decimal;
-  /** Tanggal invoice PALING TUA yang masih menyisakan piutang. */
-  tanggalTertua: Date;
-  tempoTertua: Date;
+  tanggal: Date;
+  tempo: Date;
   hariTerlambat: number;
+  sisa: Decimal;
 };
 
 /** Customer yang punya invoice tetapi tidak menyisakan piutang sama sekali. */
@@ -58,7 +68,10 @@ export type CustomerLunas = {
 };
 
 export type HasilPiutang = {
+  /** Satu baris per invoice, dikelompokkan berurutan per customer. */
   daftar: BarisPiutang[];
+  /** Banyaknya customer yang punya piutang. Dipakai ringkasan di kaki tabel. */
+  jumlahPelanggan: number;
   umur: Record<KunciKelompok, Decimal>;
   totalSemua: Decimal;
   /**
@@ -120,9 +133,10 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     },
   });
 
-  // Dikelompokkan per pelanggan, karena penagihan dilakukan per pelanggan —
-  // bukan per lembar tagihan.
-  const perPelanggan = new Map<string, BarisPiutang>();
+  // Dikumpulkan apa adanya per invoice. Urutannya disusun di bawah: baris
+  // satu customer tetap berdampingan, supaya penagihan per customer masih
+  // bisa dibaca sekali lihat.
+  const baris: BarisPiutang[] = [];
 
   const umur: Record<KunciKelompok, Decimal> = {
     belum: d(0),
@@ -167,44 +181,55 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       terlambat <= 0 ? "belum" : terlambat <= 30 ? "h1" : terlambat <= 60 ? "h31" : "h60";
     umur[kelompok] = umur[kelompok].plus(sisa);
 
-    const id = t.customer_id.toString();
-    const ada = perPelanggan.get(id);
-
-    if (ada) {
-      ada.jumlahTagihan += 1;
-      ada.total = ada.total.plus(sisa);
-      // Tanggal invoice dan jatuh tempo dilacak TERPISAH. Invoice tertua
-      // belum tentu yang jatuh temponya paling dulu — tempo bisa berbeda
-      // per invoice, dan menurunkan keduanya dari satu baris yang sama akan
-      // menampilkan pasangan tanggal yang tidak pernah ada.
-      if (t.invoice_date < ada.tanggalTertua) ada.tanggalTertua = t.invoice_date;
-      if (t.due_date < ada.tempoTertua) {
-        ada.tempoTertua = t.due_date;
-        ada.hariTerlambat = Math.max(0, terlambat);
-      }
-    } else {
-      perPelanggan.set(id, {
-        nama: t.customers.name,
-        kode: t.customers.customer_code,
-        pic: (t.customers.pic_name ?? "").trim() || null,
-        idPelanggan: id,
-        jumlahTagihan: 1,
-        total: sisa,
-        tanggalTertua: t.invoice_date,
-        tempoTertua: t.due_date,
-        hariTerlambat: Math.max(0, terlambat),
-      });
-    }
+    baris.push({
+      idTagihan: t.id.toString(),
+      nomor: t.invoice_number,
+      idPelanggan: t.customer_id.toString(),
+      nama: t.customers.name,
+      kode: t.customers.customer_code,
+      pic: (t.customers.pic_name ?? "").trim() || null,
+      tanggal: t.invoice_date,
+      tempo: t.due_date,
+      hariTerlambat: Math.max(0, terlambat),
+      sisa,
+    });
   }
 
-  const daftar = [...perPelanggan.values()].sort((a, b) => b.total.comparedTo(a.total));
-  const totalSemua = daftar.reduce((jumlah, p) => jumlah.plus(p.total), d(0));
+  /* ----------------------------------------------------------------------
+     URUTAN
+
+     Customer yang piutangnya paling besar lebih dulu, dan seluruh invoice
+     milik satu customer tetap berdampingan — penagihan dilakukan dengan
+     menelepon orangnya sekali, bukan sekali per lembar. Di dalam satu
+     customer, yang jatuh temponya paling dulu berada di atas.
+     ---------------------------------------------------------------------- */
+  const totalPerPelanggan = new Map<string, Decimal>();
+  for (const b of baris) {
+    totalPerPelanggan.set(
+      b.idPelanggan,
+      (totalPerPelanggan.get(b.idPelanggan) ?? d(0)).plus(b.sisa),
+    );
+  }
+
+  const daftar = [...baris].sort((a, b) => {
+    if (a.idPelanggan !== b.idPelanggan) {
+      const beda = totalPerPelanggan
+        .get(b.idPelanggan)!
+        .comparedTo(totalPerPelanggan.get(a.idPelanggan)!);
+      if (beda !== 0) return beda;
+      return a.nama.localeCompare(b.nama);
+    }
+    return a.tempo.getTime() - b.tempo.getTime();
+  });
+
+  const totalSemua = daftar.reduce((jumlah, p) => jumlah.plus(p.sisa), d(0));
+  const jumlahPelanggan = totalPerPelanggan.size;
 
   // Kueri tambahan ini hanya dijalankan saat tidak ada piutang sama sekali,
   // jadi tidak membebani pemakaian sehari-hari.
   const lunas = daftar.length === 0 ? await customerYangSudahLunas(kunci) : [];
 
-  return { daftar, umur, totalSemua, belumTerjadi, lunas };
+  return { daftar, jumlahPelanggan, umur, totalSemua, belumTerjadi, lunas };
 }
 
 async function customerYangSudahLunas(kunci: string): Promise<CustomerLunas[]> {

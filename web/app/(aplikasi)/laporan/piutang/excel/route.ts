@@ -29,7 +29,10 @@ export async function GET(request: NextRequest) {
   }
 
   const cari = request.nextUrl.searchParams.get("cari")?.trim() ?? "";
-  const { daftar, umur, totalSemua } = await ambilPiutang(cari, hanyaMiliknya(sesi));
+  const { daftar, jumlahPelanggan, umur, totalSemua } = await ambilPiutang(
+    cari,
+    hanyaMiliknya(sesi),
+  );
 
   const buku = new ExcelJS.Workbook();
   buku.creator = "Penjualan TC";
@@ -65,8 +68,13 @@ export async function GET(request: NextRequest) {
     // menagih, di tempat lain, tanpa layar aplikasinya — tanpa nama ini ia
     // harus kembali membuka aplikasinya satu per satu.
     "PIC",
-    "Jumlah Invoice",
-    "Jatuh Tempo Tertua",
+    // Satu baris satu invoice, sama dengan layarnya. Dirangkum per
+    // customer, berkas ini tidak bisa dipakai menagih: yang ditagih adalah
+    // lembar invoice, masing-masing dengan nomor dan jatuh temponya
+    // sendiri.
+    "No. Invoice",
+    "Tanggal Invoice",
+    "Jatuh Tempo",
     "Hari Terlambat",
     "Sisa Piutang",
   ];
@@ -100,18 +108,20 @@ export async function GET(request: NextRequest) {
       p.kode,
       p.nama,
       p.pic ?? "",
-      p.jumlahTagihan,
-      format(p.tempoTertua, "dd/MM/yyyy"),
+      p.nomor,
+      format(p.tanggal, "dd/MM/yyyy"),
+      format(p.tempo, "dd/MM/yyyy"),
       p.hariTerlambat,
-      Number(p.total.toFixed(2)),
+      Number(p.sisa.toFixed(2)),
     ]);
   }
 
   const barisTotal = lembar.addRow([
     "TOTAL",
-    `${daftar.length} customer`,
+    `${jumlahPelanggan} customer`,
     "",
-    daftar.reduce((j, p) => j + p.jumlahTagihan, 0),
+    `${daftar.length} invoice`,
+    "",
     "",
     "",
     Number(totalSemua.toFixed(2)),
@@ -119,12 +129,12 @@ export async function GET(request: NextRequest) {
   barisTotal.font = { bold: true };
   barisTotal.border = { top: { style: "thin", color: { argb: "FF999999" } } };
 
-  const lebar = [16, 32, 24, 16, 20, 16, 18];
+  const lebar = [16, 30, 22, 18, 16, 16, 15, 18];
   lebar.forEach((w, i) => {
     lembar.getColumn(i + 1).width = w;
   });
 
-  for (const judul of ["Jumlah Invoice", "Hari Terlambat", "Sisa Piutang"]) {
+  for (const judul of ["Hari Terlambat", "Sisa Piutang"]) {
     lembar.getColumn(kolom(judul)).numFmt = "#,##0";
     lembar.getColumn(kolom(judul)).alignment = { horizontal: "right" };
   }

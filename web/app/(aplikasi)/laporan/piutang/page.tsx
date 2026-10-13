@@ -35,7 +35,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
   const { cari } = await searchParams;
   const kunci = typeof cari === "string" ? cari.trim() : "";
 
-  const { daftar, umur, totalSemua, belumTerjadi, lunas } = await ambilPiutang(
+  const { daftar, jumlahPelanggan, umur, totalSemua, belumTerjadi, lunas } = await ambilPiutang(
     kunci,
     hanyaMiliknya(sesi),
   );
@@ -145,22 +145,21 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
             <thead>
               <tr className="border-b bg-muted/40">
                 <Th>Customer</Th>
-                <Th className="hidden w-28 sm:table-cell">Invoice</Th>
-                {/* Keduanya menyebut yang TERTUA di antara invoice customer
-                    ini, bukan tanggal satu dokumen. Berlabel "Tanggal
-                    invoice" saja, baris Telkomsat yang merangkum lima
-                    invoice terbaca seolah punya satu invoice tertanggal
-                    30 Juni — dan itu tidak cocok dengan daftar invoicenya,
-                    yang memuat empat tanggal lain. */}
-                <Th className="hidden w-36 md:table-cell">Invoice tertua</Th>
-                <Th className="hidden w-36 md:table-cell">Tempo tertua</Th>
+                {/* Satu baris satu invoice. Dirangkum per customer, kolom
+                    tanggalnya terpaksa menyebut yang TERTUA di antara
+                    beberapa invoice — pasangan tanggal yang tidak pernah
+                    ada pada satu dokumen pun, dan tidak cocok dengan daftar
+                    invoicenya. */}
+                <Th className="hidden w-36 sm:table-cell">No. Invoice</Th>
+                <Th className="hidden w-32 md:table-cell">Tanggal</Th>
+                <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
                 <Th className="w-32 text-right">Terlambat</Th>
                 <Th className="w-40 text-right">Sisa piutang</Th>
               </tr>
             </thead>
             <tbody>
               {daftar.map((p) => (
-                <tr key={p.idPelanggan} className="border-b last:border-0 hover:bg-muted/25">
+                <tr key={p.idTagihan} className="border-b last:border-0 hover:bg-muted/25">
                   <Td>
                     <Link
                       href={`/pelanggan/${p.idPelanggan}`}
@@ -176,14 +175,19 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                       {p.pic ? <span className="ml-2">· {p.pic}</span> : null}
                     </span>
                   </Td>
-                  <Td className="hidden text-muted-foreground sm:table-cell">
-                    {p.jumlahTagihan} lembar
+                  <Td className="hidden sm:table-cell">
+                    <Link
+                      href={`/tagihan/${p.idTagihan}`}
+                      className="nomor-dokumen underline-offset-4 hover:underline"
+                    >
+                      {p.nomor}
+                    </Link>
                   </Td>
                   <Td className="hidden text-muted-foreground md:table-cell">
-                    {format(p.tanggalTertua, "d MMM yyyy", { locale: localeId })}
+                    {format(p.tanggal, "d MMM yyyy", { locale: localeId })}
                   </Td>
                   <Td className="hidden text-muted-foreground md:table-cell">
-                    {format(p.tempoTertua, "d MMM yyyy", { locale: localeId })}
+                    {format(p.tempo, "d MMM yyyy", { locale: localeId })}
                   </Td>
                   <Td className="angka text-right tabular-nums">
                     {p.hariTerlambat > 0 ? (
@@ -195,7 +199,7 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                     )}
                   </Td>
                   <Td className="angka text-right font-medium tabular-nums">
-                    {rupiah(p.total)}
+                    {rupiah(p.sisa)}
                   </Td>
                 </tr>
               ))}
@@ -206,7 +210,8 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
 
       {daftar.length > 0 ? (
         <RingkasanTabel>
-          {daftar.length} customer · total piutang {rupiah(totalSemua)}
+          {daftar.length} invoice dari {jumlahPelanggan} customer · total piutang{" "}
+          {rupiah(totalSemua)}
         </RingkasanTabel>
       ) : null}
     </Halaman>
