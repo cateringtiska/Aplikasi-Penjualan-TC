@@ -63,6 +63,7 @@ const ISI_AWAL = {
   pb1_enabled: false,
   pb1_percent: "10",
   signatory_id: "",
+  po_reference: "",
   show_payment_terms: false,
   payment_terms: "",
   items: [],
@@ -195,5 +196,54 @@ describe("FormDokumen — isian pax", () => {
     const isian = screen.getByLabelText(/jumlah pax baris 1/i) as HTMLInputElement;
     expect(isian.placeholder).toBe("1");
     expect(isian.value, "pax terisi sendiri, padahal seharusnya hanya tawaran").toBe("");
+  });
+});
+
+describe("FormDokumen — referensi PO", () => {
+  /*
+   * Kolomnya HANYA ADA DI TABEL INVOICES. Memunculkannya di formulir
+   * quotation akan membuat yang mengetiknya mengira nomor itu tersimpan,
+   * padahal hilang begitu disimpan — tanpa galat apa pun, sebab nilainya
+   * memang tidak pernah dikirim ke tabel mana pun.
+   */
+  function pasangDengan(pakai: boolean) {
+    render(
+      <FormDokumen
+        isiAwal={ISI_AWAL}
+        aksi={async () => ({})}
+        istilah={ISTILAH}
+        pelanggan={PELANGGAN}
+        produk={[]}
+        penandatangan={[]}
+        pakaiReferensiPo={pakai}
+      />,
+    );
+  }
+
+  it("ada pada invoice", () => {
+    pasangDengan(true);
+    expect(screen.getByLabelText(/referensi po/i)).toBeTruthy();
+  });
+
+  it("TIDAK ADA ketika tidak diminta halamannya", () => {
+    pasangDengan(false);
+    expect(screen.queryByLabelText(/referensi po/i)).toBeNull();
+  });
+
+  it("tidak muncul kalau prop-nya tidak disebut sama sekali", () => {
+    // Bawaannya mati. Quotation tidak perlu menyebut apa pun untuk
+    // memastikan kolomnya tidak ikut.
+    render(
+      <FormDokumen
+        isiAwal={ISI_AWAL}
+        aksi={async () => ({})}
+        istilah={ISTILAH}
+        pelanggan={PELANGGAN}
+        produk={[]}
+        penandatangan={[]}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/referensi po/i)).toBeNull();
   });
 });

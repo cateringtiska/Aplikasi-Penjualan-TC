@@ -57,6 +57,8 @@ export default async function HalamanPenawaranBaru() {
           pb1_enabled: false,
           pb1_percent: "10",
           signatory_id: penandatangan[0]?.id ?? "",
+          // Quotation MENDAHULUI PO customer, jadi selalu kosong.
+          po_reference: "",
           show_payment_terms: Boolean(pengaturan?.quotation_terms_default),
           payment_terms: pengaturan?.quotation_terms_default ?? "",
           items: [],

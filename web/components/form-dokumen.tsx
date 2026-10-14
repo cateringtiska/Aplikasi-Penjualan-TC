@@ -53,6 +53,8 @@ export type IsiAwal = {
   pb1_enabled: boolean;
   pb1_percent: string;
   signatory_id: string;
+  /** Nomor PO customer. Hanya dipakai invoice. */
+  po_reference: string;
   show_payment_terms: boolean;
   payment_terms: string;
   items: BarisForm[];
@@ -145,6 +147,7 @@ export function FormDokumen({
   aksi,
   istilah,
   medanTambahan,
+  pakaiReferensiPo = false,
 }: {
   isiAwal: IsiAwal;
   pelanggan: PilihanPelanggan[];
@@ -157,6 +160,14 @@ export function FormDokumen({
   istilah: IstilahDokumen;
   /** Nilai tersembunyi yang ikut terkirim, misalnya asal penawaran. */
   medanTambahan?: Record<string, string>;
+  /**
+   * Memunculkan isian referensi PO.
+   *
+   * Disebut terang-terangan oleh halamannya, bukan ditebak dari istilah
+   * dokumennya: menebaknya dari kata "invoice" akan diam-diam salah begitu
+   * istilahnya berubah, dan kolomnya memang hanya ada di tabel invoices.
+   */
+  pakaiReferensiPo?: boolean;
 }) {
   const [keadaan, kirim, sedangKirim] = useActionState(aksi, keadaanAwal);
 
@@ -284,6 +295,7 @@ export function FormDokumen({
     pb1_enabled: f.pb1_enabled,
     pb1_percent: f.pb1_percent || null,
     signatory_id: f.signatory_id || null,
+    po_reference: f.po_reference || null,
     show_payment_terms: f.show_payment_terms,
     payment_terms: f.payment_terms,
     items: f.items.map((b) => ({
@@ -399,6 +411,27 @@ export function FormDokumen({
               />
             </Bidang>
           </div>
+
+          {/* Customer korporat membayar berdasarkan nomor PO mereka sendiri:
+              invoice tanpa nomor itu tertahan di bagian hutang mereka, dan
+              yang menagih baru mengetahuinya berminggu-minggu kemudian.
+
+              Invoice yang dibuat dari quotation sudah membawa nomor
+              quotationnya sebagai referensi awal; itu tinggal diganti
+              begitu nomor PO yang sebenarnya datang. */}
+          {pakaiReferensiPo ? (
+            <Bidang label="Referensi PO" nama="po_reference">
+              <Input
+                id="po_reference"
+                value={f.po_reference}
+                onChange={(e) => ubah("po_reference", e.target.value)}
+                placeholder="Nomor PO dari customer"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Ikut tercetak di invoice. Dikosongkan, barisnya tidak muncul sama sekali.
+              </p>
+            </Bidang>
+          ) : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

@@ -98,6 +98,8 @@ export default async function HalamanUbahPenawaran({
             : "10",
           signatory_id:
             penawaran.signatory_id?.toString() ?? penandatangan[0]?.id ?? "",
+          // Quotation MENDAHULUI PO customer, jadi selalu kosong.
+          po_reference: "",
           show_payment_terms: penawaran.show_payment_terms,
           payment_terms: penawaran.payment_terms ?? "",
           items: penawaran.quotation_items.map((b) => ({

@@ -58,6 +58,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
       />
 
       <FormDokumen
+        pakaiReferensiPo
         aksi={simpanTagihan}
         istilah={ISTILAH_TAGIHAN}
         pelanggan={pelanggan}
@@ -94,6 +95,7 @@ export default async function HalamanUbahTagihan({ params }: PageProps<"/tagihan
           pb1_percent: tagihan.pb1_percent ? Number(tagihan.pb1_percent).toString() : "10",
           signatory_id:
             tagihan.signatory_id?.toString() ?? penandatangan[0]?.id ?? "",
+          po_reference: tagihan.po_reference ?? "",
           show_payment_terms: tagihan.show_payment_terms,
           payment_terms: tagihan.payment_terms ?? "",
           items: tagihan.invoice_items.map((b) => ({

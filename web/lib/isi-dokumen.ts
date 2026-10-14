@@ -112,6 +112,7 @@ export async function isiDokumenTagihan(
     nomor: t.invoice_number,
     revisi: t.revision,
     tanggalRevisi: t.revised_at,
+    referensiPo: t.po_reference,
     tanggal: t.invoice_date,
     labelTanggalKedua: "Jatuh Tempo",
     tanggalKedua: t.due_date,

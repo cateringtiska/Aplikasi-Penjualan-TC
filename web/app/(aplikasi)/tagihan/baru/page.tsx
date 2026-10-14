@@ -50,6 +50,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
     pb1_enabled: false,
     pb1_percent: "10",
     signatory_id: penandatangan[0]?.id ?? "",
+    po_reference: "",
     show_payment_terms: Boolean(pengaturan?.payment_terms_default),
     payment_terms: pengaturan?.payment_terms_default ?? "",
     items: [],
@@ -101,6 +102,10 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       fnb_planner: p.fnb_planner ?? "",
       venue: p.venue ?? "",
       notes: `Dikonversi dari Penawaran ${p.quotation_number}`,
+      // Acuan AWAL, bukan nomor PO yang sebenarnya: sampai customer
+      // menerbitkan PO-nya, nomor quotation inilah yang mereka pegang.
+      // Tinggal diganti begitu nomor PO-nya datang.
+      po_reference: p.quotation_number,
       delivery_amount: Number(p.delivery_amount) > 0 ? Number(p.delivery_amount).toString() : "",
       // Biaya tambahan ikut pindah. Tagihan yang kehilangan baris ini akan
       // menagih lebih kecil dari penawaran yang sudah disetujui customer.
@@ -158,6 +163,7 @@ export default async function HalamanTagihanBaru({ searchParams }: PageProps<"/t
       />
 
       <FormDokumen
+        pakaiReferensiPo
         aksi={simpanTagihan}
         istilah={ISTILAH_TAGIHAN}
         pelanggan={pelanggan}

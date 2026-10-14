@@ -88,6 +88,15 @@ export const skemaDokumen = z.object({
   pb1_enabled: z.boolean().default(false),
   pb1_percent: z.string().nullable().optional(),
   signatory_id: z.string().trim().nullable().optional(),
+  /**
+   * Nomor PO dari customer, untuk invoice.
+   *
+   * TIDAK ikut ke dalam KolomDokumen, yang disebar ke tabel quotation
+   * maupun invoice: kolomnya hanya ada di invoices, dan menyebarkannya ke
+   * keduanya akan menggagalkan penyimpanan quotation. Jalur simpan invoice
+   * yang menambahkannya sendiri.
+   */
+  po_reference: z.string().trim().max(255).nullable().optional(),
   show_payment_terms: z.boolean().default(false),
   payment_terms: z.string().trim().max(BATAS_SYARAT).nullable().optional(),
   items: z.array(barisItem).min(1, "Tambahkan minimal satu item."),

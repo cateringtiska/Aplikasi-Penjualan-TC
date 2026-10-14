@@ -42,6 +42,7 @@ export default defineConfig({
       "scripts/kartu-dasbor.test.ts",
       "scripts/nilai-lama-tetap.test.ts",
       "scripts/cari-pic.test.ts",
+      "scripts/referensi-po.test.ts",
       "scripts/piutang-sejalan.test.ts",
     ],
     // Vitest tidak memuat .env sendiri; tanpa ini DATABASE_URL kosong.

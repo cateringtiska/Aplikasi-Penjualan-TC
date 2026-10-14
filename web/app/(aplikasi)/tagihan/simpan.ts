@@ -48,6 +48,11 @@ export async function simpanTagihan(
 
   const { f, items, tambahan, tanggalAcara, kolom } = siap;
 
+  // Kosong disimpan sebagai NULL, bukan sebagai teks kosong: keduanya
+  // terbaca sama di layar, tetapi hanya NULL yang bisa dibedakan saat
+  // mencari invoice yang belum punya nomor PO.
+  const referensiPo = (f.po_reference ?? "").trim() || null;
+
   // Dikirim lewat medan tersembunyi ketika tagihan dibuat dari penawaran.
   const dariPenawaran = String(data.get("dari_penawaran") ?? "").trim();
 
@@ -106,6 +111,7 @@ export async function simpanTagihan(
           where: { id: BigInt(f.id) },
           data: {
             ...kolom,
+            po_reference: referensiPo,
             invoice_date: new Date(f.tanggal),
             due_date: new Date(f.tanggal_akhir),
             ...(direvisi ? { revision: ada.revision + 1, revised_at: new Date() } : {}),
@@ -118,6 +124,7 @@ export async function simpanTagihan(
           tx.invoices.create({
             data: {
               ...kolom,
+              po_reference: referensiPo,
               invoice_date: new Date(f.tanggal),
               due_date: new Date(f.tanggal_akhir),
               invoice_number: nomor,

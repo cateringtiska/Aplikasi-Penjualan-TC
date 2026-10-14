@@ -55,6 +55,7 @@ export type IsiExcelDokumen = {
   nomor: string;
   revisi?: number;
   tanggalRevisi?: Date | null;
+  referensiPo?: string | null;
   tanggal: Date;
   labelTanggalKedua: string;
   tanggalKedua: Date;
@@ -187,6 +188,12 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
     ["", ""],
     [`${isi.labelTanggalKedua}:`, format(isi.tanggalKedua, "dd/MM/yyyy")],
   );
+
+  // Barisnya hanya ada kalau nomornya ada: "Referensi PO: -" pada dokumen
+  // yang memang tidak punya hanya mengundang pertanyaan.
+  if (isi.referensiPo) {
+    barisTiga(["", ""], ["", ""], ["Referensi PO:", isi.referensiPo]);
+  }
 
   kosong();
 

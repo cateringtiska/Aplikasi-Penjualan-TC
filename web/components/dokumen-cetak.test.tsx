@@ -251,3 +251,36 @@ function barisTabel(namaItem: string): string[] {
     (td.textContent ?? "").replace(/\s+/g, " ").trim(),
   );
 }
+
+describe("referensi PO", () => {
+  /*
+   * Customer korporat membayar berdasarkan nomor PO mereka sendiri.
+   * Invoice tanpa nomor itu tertahan di bagian hutang mereka, dan yang
+   * menagih baru mengetahuinya berminggu-minggu kemudian — tidak ada
+   * penolakan, tidak ada kabar, hanya pembayaran yang tidak kunjung datang.
+   */
+  it("tercetak di kepala dokumen ketika ada", () => {
+    pasang({}, { referensiPo: "4500123456" });
+
+    const sel = screen.getByText("Referensi PO:").closest("td");
+    expect((sel?.textContent ?? "").replace(/\s+/g, " ")).toContain("4500123456");
+  });
+
+  it("TIDAK digambar sama sekali ketika kosong", () => {
+    // Baris "Referensi PO: -" pada dokumen yang memang tidak punya nomor
+    // PO hanya mengundang pertanyaan dari bagian hutang customer.
+    pasang({}, { referensiPo: null });
+    expect(screen.queryByText("Referensi PO:")).toBeNull();
+
+    pasang({}, {});
+    expect(screen.queryByText("Referensi PO:")).toBeNull();
+  });
+
+  it("dibiarkan apa adanya, tidak dirapikan sendiri", () => {
+    // Nomor PO adalah milik customer. Mengubah huruf besar kecilnya atau
+    // membuang tanda hubungnya membuat nomor yang tercetak tidak sama
+    // dengan yang mereka cari di sistem mereka.
+    pasang({}, { referensiPo: "po/2026/iv-0087" });
+    expect(screen.getByText(/po\/2026\/iv-0087/)).toBeTruthy();
+  });
+});

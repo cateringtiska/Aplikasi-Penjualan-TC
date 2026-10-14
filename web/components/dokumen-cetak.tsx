@@ -52,6 +52,13 @@ export type IsiDokumen = {
    */
   revisi?: number;
   tanggalRevisi?: Date | null;
+  /**
+   * Nomor PO dari customer. Kosong berarti barisnya TIDAK digambar.
+   *
+   * Baris "Referensi PO: -" pada dokumen yang memang tidak punya nomor PO
+   * hanya mengundang pertanyaan dari bagian hutang customer.
+   */
+  referensiPo?: string | null;
   tanggal: Date;
   labelTanggalKedua: string;
   tanggalKedua: Date;
@@ -176,6 +183,12 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
             <TdKepala />
             <TdKepala>
               <b>{isi.labelTanggalKedua}:</b> {format(isi.tanggalKedua, "dd/MM/yyyy")}
+              {isi.referensiPo ? (
+                <>
+                  <br />
+                  <b>Referensi PO:</b> {isi.referensiPo}
+                </>
+              ) : null}
             </TdKepala>
           </tr>
         </tbody>
