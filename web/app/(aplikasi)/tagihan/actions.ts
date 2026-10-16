@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { bacaAlasanPembatalan } from "@/lib/pembatalan";
 import { prisma } from "@/lib/prisma";
 import { pastikanIzin } from "@/lib/rbac";
 
@@ -14,8 +15,15 @@ import { pastikanIzin } from "@/lib/rbac";
    pembatalan.
    ========================================================================== */
 
-export async function batalkanTagihan(id: string): Promise<void> {
-  await pastikanIzin("tagihan");
+export async function batalkanTagihan(id: string, alasan: string): Promise<void> {
+  const sesi = await pastikanIzin("tagihan");
+
+  // Alasannya diperiksa LEBIH DULU, sebelum apa pun disentuh. Memeriksanya
+  // belakangan akan membatalkan dokumennya lalu gagal menyimpan alasannya,
+  // dan yang tertinggal adalah pembatalan tanpa keterangan — persis keadaan
+  // yang hendak dihindari.
+  const baca = bacaAlasanPembatalan(alasan);
+  if (!baca.ok) throw new Error(baca.pesan);
 
   const tagihan = await prisma.invoices.findUnique({
     where: { id: BigInt(id) },
@@ -31,7 +39,13 @@ export async function batalkanTagihan(id: string): Promise<void> {
 
   await prisma.invoices.update({
     where: { id: BigInt(id) },
-    data: { status: "cancelled", updated_at: new Date() },
+    data: {
+      status: "cancelled",
+      cancel_reason: baca.alasan,
+      cancelled_at: new Date(),
+      cancelled_by: BigInt(sesi.id),
+      updated_at: new Date(),
+    },
   });
 
   revalidatePath("/tagihan");

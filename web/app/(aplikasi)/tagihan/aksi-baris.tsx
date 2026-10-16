@@ -2,7 +2,7 @@
 
 import { Ban, FileText, MoreHorizontal, PencilLine, Trash2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { DialogPembatalan } from "@/components/dialog-pembatalan";
 
 import { batalkanTagihan, hapusTagihan } from "./actions";
 
@@ -31,6 +33,7 @@ export function AksiBaris({
 }) {
   const router = useRouter();
   const [menunggu, mulai] = useTransition();
+  const [bukaBatal, setBukaBatal] = useState(false);
 
   function jalankan(kerja: () => Promise<void>, pesanSukses: string) {
     mulai(async () => {
@@ -51,6 +54,7 @@ export function AksiBaris({
   const belumLunas = ["unpaid", "partial", "overdue"].includes(status);
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
@@ -94,11 +98,7 @@ export function AksiBaris({
         {bolehKelolaUang && status !== "cancelled" && !sudahDibayar ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() =>
-                jalankan(() => batalkanTagihan(id), `${nomor} dibatalkan.`)
-              }
-            >
+            <DropdownMenuItem onClick={() => setBukaBatal(true)}>
               <Ban className="size-4" />
               Batalkan invoice
             </DropdownMenuItem>
@@ -113,5 +113,19 @@ export function AksiBaris({
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <DialogPembatalan
+      terbuka={bukaBatal}
+      onTerbukaChange={setBukaBatal}
+      judul={`Batalkan ${nomor}?`}
+      keterangan="Invoice tetap tersimpan dan tetap terlihat di daftar, tetapi ditandai dibatalkan dan tidak lagi dihitung sebagai piutang."
+      labelTombol="Batalkan invoice"
+      onBatalkan={async (alasan) => {
+        await batalkanTagihan(id, alasan);
+        toast.success(`${nomor} dibatalkan.`);
+        router.refresh();
+      }}
+    />
+    </>
   );
 }

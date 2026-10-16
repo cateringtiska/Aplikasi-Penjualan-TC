@@ -36,6 +36,8 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
     include: {
       customers: true,
       quotations: { select: { id: true, quotation_number: true } },
+      // Siapa yang membatalkan, untuk catatan pembatalannya di bawah.
+      users_invoices_cancelled_byTousers: { select: { name: true } },
       payment_details: {
         orderBy: { id: "desc" },
         include: {
@@ -195,7 +197,25 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
 
       {t.status === "cancelled" ? (
         <KunciDokumen>
-          Invoice ini sudah dibatalkan, jadi rinciannya tidak bisa diubah lagi.
+          {/* Alasannya ditampilkan di sini, bukan hanya tersimpan. Catatan
+              yang tidak pernah terlihat sama saja dengan tidak dicatat —
+              yang bertanya "kenapa ini dibatalkan" membuka halaman ini,
+              bukan database. */}
+          <b>Invoice ini dibatalkan</b>
+          {t.cancelled_at
+            ? ` pada ${format(t.cancelled_at, "d MMMM yyyy", { locale: localeId })}`
+            : ""}
+          {t.users_invoices_cancelled_byTousers
+            ? ` oleh ${t.users_invoices_cancelled_byTousers.name}`
+            : ""}
+          {t.cancel_reason ? (
+            <>
+              {" — "}
+              {t.cancel_reason}
+            </>
+          ) : (
+            ". Alasannya tidak tercatat; pembatalan ini terjadi sebelum alasannya diwajibkan."
+          )}
         </KunciDokumen>
       ) : null}
 

@@ -46,14 +46,52 @@ describe("AksiStatusPenawaran", () => {
     expect(ubahStatus).toHaveBeenCalledWith("7", "sent");
   });
 
-  it("menawarkan disetujui dan ditolak pada quotation terkirim", async () => {
+  it("menyetujui langsung pada quotation terkirim", async () => {
     pasang("sent");
 
     await userEvent.click(screen.getByRole("button", { name: /tandai disetujui/i }));
     expect(ubahStatus).toHaveBeenCalledWith("7", "approved");
+  });
+
+  it("MENANYAKAN ALASAN dulu sebelum menolak, tidak langsung menolak", async () => {
+    /*
+     * Dulu tombol ini langsung mengubah statusnya. Penolakan tanpa
+     * keterangan menghasilkan dokumen yang beberapa minggu kemudian tidak
+     * bisa dijelaskan siapa pun — dan yang bertanya biasanya customer itu
+     * sendiri, atau akuntan saat menutup bulan.
+     */
+    pasang("sent");
 
     await userEvent.click(screen.getByRole("button", { name: /ditolak/i }));
-    expect(ubahStatus).toHaveBeenCalledWith("7", "rejected");
+
+    expect(ubahStatus, "quotation ditolak tanpa menanyakan alasannya").not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/alasan pembatalan/i)).toBeTruthy();
+  });
+
+  it("menolak setelah alasannya diisi, dan mengirimkan alasannya", async () => {
+    pasang("sent");
+
+    await userEvent.click(screen.getByRole("button", { name: /ditolak/i }));
+    await userEvent.type(
+      screen.getByLabelText(/alasan pembatalan/i),
+      "Customer memilih vendor lain",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /tandai ditolak/i }));
+
+    expect(ubahStatus).toHaveBeenCalledWith("7", "rejected", "Customer memilih vendor lain");
+  });
+
+  it("TIDAK menolak ketika alasannya dibiarkan kosong", async () => {
+    // Pemeriksaan di layar hanya kenyamanan — server memeriksanya lagi —
+    // tetapi tanpa ini pemakainya menekan tombol lalu melihat galat yang
+    // tidak ia mengerti asalnya.
+    pasang("sent");
+
+    await userEvent.click(screen.getByRole("button", { name: /ditolak/i }));
+    await userEvent.click(screen.getByRole("button", { name: /tandai ditolak/i }));
+
+    expect(ubahStatus).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toMatch(/belum diisi/i);
   });
 
   it("menawarkan kirim ulang pada quotation yang ditolak atau kadaluarsa", async () => {

@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { DialogPembatalan } from "@/components/dialog-pembatalan";
 
 import { hapusPenawaran, ubahStatusPenawaran } from "./actions";
 
@@ -35,6 +37,7 @@ export function AksiBaris({
 }) {
   const router = useRouter();
   const [menunggu, mulai] = useTransition();
+  const [bukaTolak, setBukaTolak] = useState(false);
 
   function jalankan(kerja: () => Promise<void>, pesanSukses: string) {
     mulai(async () => {
@@ -51,6 +54,7 @@ export function AksiBaris({
   const bolehHapus = status === "draft";
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
@@ -110,7 +114,7 @@ export function AksiBaris({
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
-                jalankan(() => ubahStatusPenawaran(id, "rejected"), `${nomor} ditandai ditolak.`)
+                setBukaTolak(true)
               }
             >
               <X className="size-4" />
@@ -144,5 +148,19 @@ export function AksiBaris({
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <DialogPembatalan
+      terbuka={bukaTolak}
+      onTerbukaChange={setBukaTolak}
+      judul={`Tandai ${nomor} ditolak?`}
+      keterangan="Quotation tetap tersimpan. Statusnya menjadi ditolak, dan nilainya tidak lagi dihitung sebagai proyeksi penjualan."
+      labelTombol="Tandai ditolak"
+      onBatalkan={async (alasan) => {
+        await ubahStatusPenawaran(id, "rejected", alasan);
+        toast.success(`${nomor} ditandai ditolak.`);
+        router.refresh();
+      }}
+    />
+    </>
   );
 }

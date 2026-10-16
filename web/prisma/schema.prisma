@@ -140,51 +140,55 @@ model invoice_margins {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model invoices {
-  id                     BigInt                @id @default(autoincrement())
-  invoice_number         String                @unique(map: "invoices_invoice_number_unique") @db.VarChar(255)
-  quotation_id           BigInt?
-  customer_id            BigInt
-  invoice_date           DateTime              @db.Date
-  due_date               DateTime              @db.Date
-  status                 String                @default("unpaid") @db.VarChar(255)
-  notes                  String?
-  subtotal               Decimal               @default(0) @db.Decimal(15, 2)
-  paid_amount            Decimal               @default(0) @db.Decimal(15, 2)
-  created_by             BigInt?
-  created_at             DateTime?             @db.Timestamp(0)
-  updated_at             DateTime?             @db.Timestamp(0)
-  contact_person         String?               @db.VarChar(255)
-  contact_phone          String?               @db.VarChar(255)
-  event_date             DateTime?             @db.Date
-  event_days             Int?
-  event_type             String?               @db.VarChar(255)
-  event_time             String?               @db.VarChar(255)
-  guest_count            Int?
-  fnb_planner            String?               @db.VarChar(255)
-  venue                  String?               @db.VarChar(255)
-  service_charge_percent Decimal?              @db.Decimal(5, 2)
-  service_charge_amount  Decimal               @default(0) @db.Decimal(15, 2)
-  grand_total            Decimal               @default(0) @db.Decimal(15, 2)
-  show_payment_terms     Boolean               @default(false)
-  payment_terms          String?
-  pb1_enabled            Boolean               @default(false)
-  pb1_percent            Decimal?              @default(10) @db.Decimal(5, 2)
-  pb1_amount             Decimal               @default(0) @db.Decimal(15, 2)
-  delivery_amount        Decimal               @default(0) @db.Decimal(15, 2)
-  signatory_id           BigInt?
-  revision               Int                   @default(0)
-  revised_at             DateTime?             @db.Timestamp(0)
-  po_reference           String?               @db.VarChar(255)
-  invoice_charges        invoice_charges[]
-  invoice_costs          invoice_costs[]
-  invoice_event_dates    invoice_event_dates[]
-  invoice_items          invoice_items[]
-  invoice_margins        invoice_margins?
-  users                  users?                @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "invoices_created_by_foreign")
-  customers              customers             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "invoices_customer_id_foreign")
-  quotations             quotations?           @relation(fields: [quotation_id], references: [id], onUpdate: NoAction, map: "invoices_quotation_id_foreign")
-  signatories            signatories?          @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "invoices_signatory_id_foreign")
-  payment_details        payment_details[]
+  id                                 BigInt                @id @default(autoincrement())
+  invoice_number                     String                @unique(map: "invoices_invoice_number_unique") @db.VarChar(255)
+  quotation_id                       BigInt?
+  customer_id                        BigInt
+  invoice_date                       DateTime              @db.Date
+  due_date                           DateTime              @db.Date
+  status                             String                @default("unpaid") @db.VarChar(255)
+  notes                              String?
+  subtotal                           Decimal               @default(0) @db.Decimal(15, 2)
+  paid_amount                        Decimal               @default(0) @db.Decimal(15, 2)
+  created_by                         BigInt?
+  created_at                         DateTime?             @db.Timestamp(0)
+  updated_at                         DateTime?             @db.Timestamp(0)
+  contact_person                     String?               @db.VarChar(255)
+  contact_phone                      String?               @db.VarChar(255)
+  event_date                         DateTime?             @db.Date
+  event_days                         Int?
+  event_type                         String?               @db.VarChar(255)
+  event_time                         String?               @db.VarChar(255)
+  guest_count                        Int?
+  fnb_planner                        String?               @db.VarChar(255)
+  venue                              String?               @db.VarChar(255)
+  service_charge_percent             Decimal?              @db.Decimal(5, 2)
+  service_charge_amount              Decimal               @default(0) @db.Decimal(15, 2)
+  grand_total                        Decimal               @default(0) @db.Decimal(15, 2)
+  show_payment_terms                 Boolean               @default(false)
+  payment_terms                      String?
+  pb1_enabled                        Boolean               @default(false)
+  pb1_percent                        Decimal?              @default(10) @db.Decimal(5, 2)
+  pb1_amount                         Decimal               @default(0) @db.Decimal(15, 2)
+  delivery_amount                    Decimal               @default(0) @db.Decimal(15, 2)
+  signatory_id                       BigInt?
+  revision                           Int                   @default(0)
+  revised_at                         DateTime?             @db.Timestamp(0)
+  po_reference                       String?               @db.VarChar(255)
+  cancel_reason                      String?
+  cancelled_at                       DateTime?             @db.Timestamp(0)
+  cancelled_by                       BigInt?
+  invoice_charges                    invoice_charges[]
+  invoice_costs                      invoice_costs[]
+  invoice_event_dates                invoice_event_dates[]
+  invoice_items                      invoice_items[]
+  invoice_margins                    invoice_margins?
+  users_invoices_cancelled_byTousers users?                @relation("invoices_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction, map: "invoices_cancelled_by_foreign")
+  users                              users?                @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "invoices_created_by_foreign")
+  customers                          customers             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "invoices_customer_id_foreign")
+  quotations                         quotations?           @relation(fields: [quotation_id], references: [id], onUpdate: NoAction, map: "invoices_quotation_id_foreign")
+  signatories                        signatories?          @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "invoices_signatory_id_foreign")
+  payment_details                    payment_details[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -307,44 +311,48 @@ model quotation_items {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model quotations {
-  id                     BigInt                  @id @default(autoincrement())
-  quotation_number       String                  @unique(map: "quotations_quotation_number_unique") @db.VarChar(255)
-  customer_id            BigInt
-  quotation_date         DateTime                @db.Date
-  valid_until            DateTime                @db.Date
-  status                 String                  @default("draft") @db.VarChar(255)
-  notes                  String?
-  subtotal               Decimal                 @default(0) @db.Decimal(15, 2)
-  created_by             BigInt?
-  created_at             DateTime?               @db.Timestamp(0)
-  updated_at             DateTime?               @db.Timestamp(0)
-  contact_person         String?                 @db.VarChar(255)
-  contact_phone          String?                 @db.VarChar(255)
-  event_date             DateTime?               @db.Date
-  event_days             Int?
-  event_type             String?                 @db.VarChar(255)
-  event_time             String?                 @db.VarChar(255)
-  guest_count            Int?
-  fnb_planner            String?                 @db.VarChar(255)
-  venue                  String?                 @db.VarChar(255)
-  service_charge_percent Decimal?                @db.Decimal(5, 2)
-  service_charge_amount  Decimal                 @default(0) @db.Decimal(15, 2)
-  grand_total            Decimal                 @default(0) @db.Decimal(15, 2)
-  show_payment_terms     Boolean                 @default(false)
-  payment_terms          String?
-  pb1_enabled            Boolean                 @default(false)
-  pb1_percent            Decimal?                @default(10) @db.Decimal(5, 2)
-  pb1_amount             Decimal                 @default(0) @db.Decimal(15, 2)
-  delivery_amount        Decimal                 @default(0) @db.Decimal(15, 2)
-  signatory_id           BigInt?
-  invoices               invoices[]
-  quotation_charges      quotation_charges[]
-  quotation_costs        quotation_costs[]
-  quotation_event_dates  quotation_event_dates[]
-  quotation_items        quotation_items[]
-  users                  users?                  @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
-  customers              customers               @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
-  signatories            signatories?            @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "quotations_signatory_id_foreign")
+  id                                   BigInt                  @id @default(autoincrement())
+  quotation_number                     String                  @unique(map: "quotations_quotation_number_unique") @db.VarChar(255)
+  customer_id                          BigInt
+  quotation_date                       DateTime                @db.Date
+  valid_until                          DateTime                @db.Date
+  status                               String                  @default("draft") @db.VarChar(255)
+  notes                                String?
+  subtotal                             Decimal                 @default(0) @db.Decimal(15, 2)
+  created_by                           BigInt?
+  created_at                           DateTime?               @db.Timestamp(0)
+  updated_at                           DateTime?               @db.Timestamp(0)
+  contact_person                       String?                 @db.VarChar(255)
+  contact_phone                        String?                 @db.VarChar(255)
+  event_date                           DateTime?               @db.Date
+  event_days                           Int?
+  event_type                           String?                 @db.VarChar(255)
+  event_time                           String?                 @db.VarChar(255)
+  guest_count                          Int?
+  fnb_planner                          String?                 @db.VarChar(255)
+  venue                                String?                 @db.VarChar(255)
+  service_charge_percent               Decimal?                @db.Decimal(5, 2)
+  service_charge_amount                Decimal                 @default(0) @db.Decimal(15, 2)
+  grand_total                          Decimal                 @default(0) @db.Decimal(15, 2)
+  show_payment_terms                   Boolean                 @default(false)
+  payment_terms                        String?
+  pb1_enabled                          Boolean                 @default(false)
+  pb1_percent                          Decimal?                @default(10) @db.Decimal(5, 2)
+  pb1_amount                           Decimal                 @default(0) @db.Decimal(15, 2)
+  delivery_amount                      Decimal                 @default(0) @db.Decimal(15, 2)
+  signatory_id                         BigInt?
+  cancel_reason                        String?
+  cancelled_at                         DateTime?               @db.Timestamp(0)
+  cancelled_by                         BigInt?
+  invoices                             invoices[]
+  quotation_charges                    quotation_charges[]
+  quotation_costs                      quotation_costs[]
+  quotation_event_dates                quotation_event_dates[]
+  quotation_items                      quotation_items[]
+  users_quotations_cancelled_byTousers users?                  @relation("quotations_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction, map: "quotations_cancelled_by_foreign")
+  users                                users?                  @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
+  customers                            customers               @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
+  signatories                          signatories?            @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "quotations_signatory_id_foreign")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -363,27 +371,29 @@ model sessions {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model users {
-  id                BigInt            @id @default(autoincrement())
-  name              String            @db.VarChar(255)
-  email             String?           @unique(map: "users_email_unique") @db.VarChar(255)
-  email_verified_at DateTime?         @db.Timestamp(0)
-  password          String            @db.VarChar(255)
-  remember_token    String?           @db.VarChar(100)
-  created_at        DateTime?         @db.Timestamp(0)
-  updated_at        DateTime?         @db.Timestamp(0)
-  role              String            @default("sales") @db.VarChar(255)
-  is_active         Boolean           @default(true)
-  username          String            @unique(map: "users_username_unique") @db.VarChar(50)
-  gagal_masuk       Int               @default(0)
-  terkunci_sampai   DateTime?         @db.Timestamp(0)
-  customers         customers[]
-  invoice_costs     invoice_costs[]
-  invoice_margins   invoice_margins[]
-  invoices          invoices[]
-  payments          payments[]
-  products          products[]
-  quotation_costs   quotation_costs[]
-  quotations        quotations[]
+  id                                        BigInt            @id @default(autoincrement())
+  name                                      String            @db.VarChar(255)
+  email                                     String?           @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at                         DateTime?         @db.Timestamp(0)
+  password                                  String            @db.VarChar(255)
+  remember_token                            String?           @db.VarChar(100)
+  created_at                                DateTime?         @db.Timestamp(0)
+  updated_at                                DateTime?         @db.Timestamp(0)
+  role                                      String            @default("sales") @db.VarChar(255)
+  is_active                                 Boolean           @default(true)
+  username                                  String            @unique(map: "users_username_unique") @db.VarChar(50)
+  gagal_masuk                               Int               @default(0)
+  terkunci_sampai                           DateTime?         @db.Timestamp(0)
+  customers                                 customers[]
+  invoice_costs                             invoice_costs[]
+  invoice_margins                           invoice_margins[]
+  invoices_invoices_cancelled_byTousers     invoices[]        @relation("invoices_cancelled_byTousers")
+  invoices                                  invoices[]
+  payments                                  payments[]
+  products                                  products[]
+  quotation_costs                           quotation_costs[]
+  quotations_quotations_cancelled_byTousers quotations[]      @relation("quotations_cancelled_byTousers")
+  quotations                                quotations[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

@@ -37,6 +37,8 @@ export default async function HalamanDetailPenawaran({
     where: { id: BigInt(id), ...hanyaMiliknya(sesi) },
     include: {
       customers: true,
+      // Siapa yang menolaknya, untuk catatan pembatalan di bawah.
+      users_quotations_cancelled_byTousers: { select: { name: true } },
       // Di skema, satu penawaran bisa punya banyak tagihan. Dalam praktiknya
       // hanya satu, jadi cukup ambil yang pertama.
       invoices: { take: 1, select: { id: true, invoice_number: true } },
@@ -151,6 +153,30 @@ export default async function HalamanDetailPenawaran({
           ) : null}
         </div>
       </header>
+
+      {p.status === "rejected" ? (
+        <KunciDokumen>
+          {/* Alasannya ditampilkan di sini, bukan hanya tersimpan. Catatan
+              yang tidak pernah terlihat sama saja dengan tidak dicatat —
+              yang bertanya "kenapa ini ditolak" membuka halaman ini, bukan
+              database. */}
+          <b>Quotation ini ditandai ditolak</b>
+          {p.cancelled_at
+            ? ` pada ${format(p.cancelled_at, "d MMMM yyyy", { locale: localeId })}`
+            : ""}
+          {p.users_quotations_cancelled_byTousers
+            ? ` oleh ${p.users_quotations_cancelled_byTousers.name}`
+            : ""}
+          {p.cancel_reason ? (
+            <>
+              {" — "}
+              {p.cancel_reason}
+            </>
+          ) : (
+            ". Alasannya tidak tercatat; penolakan ini terjadi sebelum alasannya diwajibkan."
+          )}
+        </KunciDokumen>
+      ) : null}
 
       {p.status === "approved" ? (
         <KunciDokumen>
