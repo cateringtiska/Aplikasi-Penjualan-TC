@@ -85,7 +85,25 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* --------------------------------------------------------------------------
+   WARNA MEREK TISKA
+
+   Diambil dari piksel logonya sendiri, bukan ditebak: ornamennya teal pucat
+   (#b5eae8 sampai #9bc9c7) dan huruf T beserta tulisan TISKA emas
+   (#d4ab54 sampai #bb883d).
+
+   Dipakai TERBATAS — latar, sidebar, dan penanda aktif. Warna status uang
+   tidak disentuh sama sekali: kalau emas dan teal ikut muncul di tabel,
+   satu baris "Jatuh Tempo" tidak lagi menonjol, dan itulah satu-satunya
+   hal yang benar-benar harus terlihat di halaman penuh angka.
+   -------------------------------------------------------------------------- */
 :root {
+  --emas: oklch(0.7 0.105 78);
+  --emas-pekat: oklch(0.6 0.11 70);
+  --emas-halus: oklch(0.965 0.028 85);
+  --teal: oklch(0.72 0.055 195);
+  --teal-halus: oklch(0.975 0.016 195);
+
   /* Radius kecil dan tegas. Sudut yang terlalu bulat membuat tabel angka
      terasa seperti kartu promosi, bukan dokumen kerja. */
   --radius: 0.375rem;
@@ -138,13 +156,13 @@
   --chart-4: oklch(0.735 0.008 250);
   --chart-5: oklch(0.875 0.005 250);
 
-  --sidebar: oklch(0.978 0.003 250);
-  --sidebar-foreground: oklch(0.325 0.01 250);
+  --sidebar: oklch(0.982 0.008 195);
+  --sidebar-foreground: oklch(0.325 0.012 220);
   --sidebar-primary: oklch(0.215 0.01 250);
   --sidebar-primary-foreground: oklch(0.99 0.002 250);
-  --sidebar-accent: oklch(0.938 0.005 250);
-  --sidebar-accent-foreground: oklch(0.185 0.01 250);
-  --sidebar-border: oklch(0.915 0.004 250);
+  --sidebar-accent: oklch(0.945 0.022 195);
+  --sidebar-accent-foreground: oklch(0.26 0.03 210);
+  --sidebar-border: oklch(0.918 0.012 195);
   --sidebar-ring: oklch(0.62 0.02 250);
 }
 
@@ -197,13 +215,19 @@
   --chart-4: oklch(0.478 0.012 250);
   --chart-5: oklch(0.348 0.011 250);
 
-  --sidebar: oklch(0.178 0.009 250);
-  --sidebar-foreground: oklch(0.792 0.008 250);
+  --emas: oklch(0.8 0.1 82);
+  --emas-pekat: oklch(0.86 0.09 84);
+  --emas-halus: oklch(0.255 0.028 80);
+  --teal: oklch(0.78 0.05 195);
+  --teal-halus: oklch(0.235 0.022 200);
+
+  --sidebar: oklch(0.192 0.014 200);
+  --sidebar-foreground: oklch(0.8 0.012 200);
   --sidebar-primary: oklch(0.93 0.004 250);
   --sidebar-primary-foreground: oklch(0.185 0.01 250);
-  --sidebar-accent: oklch(0.262 0.011 250);
-  --sidebar-accent-foreground: oklch(0.965 0.003 250);
-  --sidebar-border: oklch(0.288 0.01 250);
+  --sidebar-accent: oklch(0.278 0.026 200);
+  --sidebar-accent-foreground: oklch(0.968 0.008 195);
+  --sidebar-border: oklch(0.3 0.018 200);
   --sidebar-ring: oklch(0.548 0.018 250);
 }
 
@@ -230,6 +254,22 @@
 
   body {
     @apply bg-background text-foreground;
+
+    /* Latar bernuansa logo, bergeser dari krem keemasan di atas ke teal di
+       bawah mengikuti guliran. --gulir diisi components/latar-merek.tsx;
+       tanpa JavaScript nilainya 0 dan halamannya tetap terbaca. */
+    background-image:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--emas-halus) calc((1 - var(--gulir, 0)) * 70%), transparent) 0%,
+        transparent 38%
+      ),
+      linear-gradient(
+        0deg,
+        color-mix(in oklab, var(--teal-halus) calc(var(--gulir, 0) * 80%), transparent) 0%,
+        transparent 42%
+      );
+    background-attachment: fixed;
     font-feature-settings: "cv05" 1, "ss03" 1;
     text-rendering: optimizeLegibility;
   }

@@ -1,5 +1,6 @@
 import { KerangkaAplikasi } from "@/components/kerangka-aplikasi";
 import { bacaIzin } from "@/lib/izin";
+import { prisma } from "@/lib/prisma";
 import { menuUntukIzin } from "@/lib/navigasi";
 import { wajibSesi } from "@/lib/rbac";
 
@@ -21,8 +22,19 @@ export default async function LayoutAplikasi({ children }: LayoutProps<"/">) {
   // membingungkan untuk memberitahu orang bahwa ia tidak punya akses.
   const kelompok = menuUntukIzin(sesi.peran, await bacaIzin());
 
+  // Logo perusahaan untuk sudut kanan atas. Gagal dibaca bukan alasan
+  // menggagalkan halaman: yang hilang hanya hiasannya.
+  const perusahaan = await prisma.company_settings
+    .findUnique({ where: { id: BigInt(1) }, select: { logo_path: true } })
+    .catch(() => null);
+
   return (
-    <KerangkaAplikasi sesi={sesi} kelompok={kelompok} onKeluar={aksiKeluar}>
+    <KerangkaAplikasi
+      sesi={sesi}
+      kelompok={kelompok}
+      onKeluar={aksiKeluar}
+      logo={perusahaan?.logo_path ?? null}
+    >
       {children}
     </KerangkaAplikasi>
   );

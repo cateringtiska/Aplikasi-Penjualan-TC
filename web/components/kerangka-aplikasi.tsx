@@ -1,10 +1,26 @@
 "use client";
 
-import { LogOut, Menu } from "lucide-react";
+import {
+  Building2,
+  Calculator,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  type LucideIcon,
+  Menu,
+  Package,
+  ReceiptText,
+  TrendingUp,
+  UserCog,
+  Users,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { LatarMerek, LogoSudut } from "@/components/latar-merek";
 import { Monogram } from "@/components/monogram";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +32,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import type { Sesi } from "@/lib/auth";
-import { type KelompokMenu, LABEL_PERAN } from "@/lib/navigasi";
+import { type KelompokMenu, type KunciMenu, LABEL_PERAN } from "@/lib/navigasi";
+
+/**
+ * Ikon tiap butir menu.
+ *
+ * Bertipe Record<KunciMenu, …> dengan sengaja: menambah halaman baru tanpa
+ * memberinya ikon akan GAGAL DIKOMPILASI, bukan diam-diam menyisakan satu
+ * baris menu yang bentuknya berbeda dari tetangganya.
+ */
+const IKON: Record<KunciMenu, LucideIcon> = {
+  dasbor: LayoutDashboard,
+  penawaran: FileText,
+  tagihan: ReceiptText,
+  pembayaran: Wallet,
+  "laporan-penjualan": TrendingUp,
+  "laporan-piutang": CreditCard,
+  "laporan-margin": Calculator,
+  pelanggan: Users,
+  produk: Package,
+  pengguna: UserCog,
+  perusahaan: Building2,
+};
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,6 +69,7 @@ export function KerangkaAplikasi({
   kelompok,
   onKeluar,
   children,
+  logo,
 }: {
   sesi: Sesi;
   /**
@@ -45,22 +83,28 @@ export function KerangkaAplikasi({
   kelompok: KelompokMenu[];
   onKeluar: () => Promise<void>;
   children: React.ReactNode;
+  /** Logo perusahaan untuk sudut kanan atas. Null berarti tidak digambar. */
+  logo?: string | null;
 }) {
   const [bukaMenu, setBukaMenu] = useState(false);
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="relative flex min-h-dvh">
+      <LatarMerek />
+      <LogoSudut tautan={logo ?? null} />
       {/* Navigasi tetap — layar lebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
-        <div className="flex h-14 items-center gap-2.5 border-b px-5">
+      <aside className="relative z-10 hidden w-60 shrink-0 flex-col border-r bg-sidebar bg-gradient-to-b from-[var(--teal-halus)] via-sidebar to-[var(--emas-halus)] lg:flex">
+        <div className="flex h-14 items-center gap-2.5 border-b border-[var(--emas)]/25 px-5">
           <Monogram ukuran={26} />
-          <span className="text-sm font-semibold tracking-[-0.01em]">Penjualan TC</span>
+          <span className="text-sm font-semibold tracking-[-0.01em]">
+            Penjualan <span className="text-[var(--emas-pekat)]">TC</span>
+          </span>
         </div>
         <IsiNavigasi kelompok={kelompok} />
         <KartuPengguna sesi={sesi} onKeluar={onKeluar} />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         {/* Bilah atas — hanya muncul di layar sempit */}
         <header className="flex h-14 items-center gap-3 border-b px-4 lg:hidden">
           <Sheet open={bukaMenu} onOpenChange={setBukaMenu}>
@@ -103,10 +147,19 @@ function IsiNavigasi({
     <nav className="flex-1 overflow-y-auto px-3 py-5">
       {kelompok.map((k) => (
         <div key={k.judul} className="mb-5 last:mb-0">
-          <p className="eyebrow px-2.5 pb-1.5">{k.judul}</p>
-          <ul className="flex flex-col gap-px">
+          {/* Judul kelompok diberi warna emas logonya dan satu garis tipis:
+              tanpa itu, empat kelompok menu terbaca sebagai satu daftar
+              panjang yang harus dibaca seluruhnya untuk menemukan satu
+              halaman. */}
+          <p className="eyebrow flex items-center gap-2 px-2.5 pb-2 text-[var(--emas-pekat)]">
+            {k.judul}
+            <span className="h-px flex-1 bg-[var(--emas)]/25" />
+          </p>
+          <ul className="flex flex-col gap-0.5">
             {k.butir.map((butir) => {
               const aktif = jalur === butir.href || jalur.startsWith(`${butir.href}/`);
+              const Ikon = IKON[butir.kunci];
+
               return (
                 <li key={butir.href}>
                   <Link
@@ -114,12 +167,31 @@ function IsiNavigasi({
                     onClick={onPilih}
                     aria-current={aktif ? "page" : undefined}
                     className={cn(
-                      "block rounded-md px-2.5 py-1.5 text-[0.8125rem] transition-colors",
+                      "group relative flex items-center gap-2.5 rounded-md py-1.5 pr-2.5 pl-3 text-[0.8125rem] transition-colors",
                       aktif
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                         : "text-muted-foreground hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground",
                     )}
                   >
+                    {/* Penanda halaman aktif TIDAK hanya warna: ada batang
+                        emas di tepi kiri dan tebal huruf yang menguat,
+                        supaya tetap terbaca di layar yang warnanya pudar
+                        atau oleh yang sulit membedakan warna. */}
+                    {aktif ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-full bg-[var(--emas)]"
+                      />
+                    ) : null}
+                    <Ikon
+                      aria-hidden="true"
+                      className={cn(
+                        "size-4 shrink-0 transition-colors",
+                        aktif
+                          ? "text-[var(--emas-pekat)]"
+                          : "text-muted-foreground/70 group-hover:text-[var(--teal)]",
+                      )}
+                    />
                     {butir.label}
                   </Link>
                 </li>
