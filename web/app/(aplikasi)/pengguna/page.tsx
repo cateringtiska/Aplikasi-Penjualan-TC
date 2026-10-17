@@ -18,6 +18,8 @@ import { wajibPeran } from "@/lib/rbac";
 import { AksiBaris } from "./aksi-baris";
 import { DialogPengguna } from "./dialog-pengguna";
 
+import { KepalaTabel, Th } from "@/components/tabel";
+
 export const metadata: Metadata = { title: "User" };
 export const dynamic = "force-dynamic";
 
@@ -77,16 +79,14 @@ export default async function HalamanPengguna() {
           <KeadaanKosong judul="Belum ada user" aksi={<DialogPengguna />} />
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th>Nama</Th>
-                <Th className="w-40">Nama user</Th>
-                <Th className="hidden lg:table-cell">Email</Th>
-                <Th className="w-28">Peran</Th>
-                <Th className="w-32">Status</Th>
-                <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th>Nama</Th>
+              <Th className="w-40">Nama user</Th>
+              <Th className="hidden lg:table-cell">Email</Th>
+              <Th className="w-28">Peran</Th>
+              <Th className="w-32">Status</Th>
+              <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
+            </KepalaTabel>
             <tbody>
               {daftar.map((p) => {
                 const diriSendiri = p.id.toString() === sesi.id;
@@ -171,16 +171,6 @@ function Lencana({ children }: { children: React.ReactNode }) {
       <span className="size-1.5 rounded-full ring-1 ring-current" aria-hidden="true" />
       {children}
     </span>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

@@ -9,6 +9,7 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
 import { wajibIzin } from "@/lib/rbac";
 
@@ -81,16 +82,14 @@ export default async function HalamanPelanggan({
           />
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th className="w-28">Kode</Th>
-                <Th>Nama</Th>
-                <Th className="hidden md:table-cell">PIC</Th>
-                <Th className="hidden sm:table-cell">Telepon</Th>
-                <Th className="w-24">Status</Th>
-                <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th className="w-28">Kode</Th>
+              <Th>Nama</Th>
+              <Th className="hidden md:table-cell">PIC</Th>
+              <Th className="hidden sm:table-cell">Telepon</Th>
+              <Th className="w-24">Status</Th>
+              <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
+            </KepalaTabel>
             <tbody>
               {daftar.map((p) => {
                 const aktif = p.status === "active";
@@ -146,16 +145,6 @@ export default async function HalamanPelanggan({
         </RingkasanTabel>
       ) : null}
     </Halaman>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { KepalaTabel, Th } from "@/components/tabel";
 import {
   type BarisBiaya,
   KATEGORI_BIAYA,
@@ -108,16 +109,14 @@ export function PanelBiaya({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40">
-                    <Th className="w-40">Kategori</Th>
-                    <Th>Keterangan</Th>
-                    <Th className="w-32 text-right">Estimasi</Th>
-                    <Th className="w-32 text-right">Aktual</Th>
-                    <Th className="w-32 text-right">Dipakai</Th>
-                    {bolehUbah ? <Th className="w-20" /> : null}
-                  </tr>
-                </thead>
+                <KepalaTabel>
+                  <Th className="w-40">Kategori</Th>
+                  <Th>Keterangan</Th>
+                  <Th className="w-32 text-right">Estimasi</Th>
+                  <Th className="w-32 text-right">Aktual</Th>
+                  <Th className="w-32 text-right">Dipakai</Th>
+                  {bolehUbah ? <Th className="w-20" /> : null}
+                </KepalaTabel>
                 <tbody>
                   {biaya.map((b) => (
                     <tr key={b.id} className="border-b align-top last:border-0">
@@ -346,16 +345,6 @@ function Bidang({
       {children}
       {galat ? <p className="text-xs text-destructive">{galat}</p> : null}
     </div>
-  );
-}
-
-function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

@@ -17,6 +17,7 @@ import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { BarisKontak } from "@/components/baris-kontak";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { cariPic, namaPic } from "@/lib/kontak";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
@@ -119,17 +120,15 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
           />
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th className="w-36">Nomor</Th>
-                <Th>Customer</Th>
-                <Th className="hidden w-32 md:table-cell">Tanggal</Th>
-                <Th className="hidden w-32 lg:table-cell">Berlaku sampai</Th>
-                <Th className="w-36 text-right">Nilai</Th>
-                <Th className="w-32">Status</Th>
-                <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th className="w-36">Nomor</Th>
+              <Th>Customer</Th>
+              <Th className="hidden w-32 md:table-cell">Tanggal</Th>
+              <Th className="hidden w-32 lg:table-cell">Berlaku sampai</Th>
+              <Th className="w-36 text-right">Nilai</Th>
+              <Th className="w-32">Status</Th>
+              <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
+            </KepalaTabel>
             <tbody>
               {daftar.map((p) => (
                 <tr key={p.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
@@ -180,16 +179,6 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
         </RingkasanTabel>
       ) : null}
     </Halaman>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

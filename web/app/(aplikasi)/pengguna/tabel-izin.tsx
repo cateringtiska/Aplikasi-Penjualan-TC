@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { KepalaTabel, Th } from "@/components/tabel";
 import type { Peran } from "@/lib/auth";
 import { type KunciMenu, LABEL_PERAN } from "@/lib/navigasi";
 
@@ -63,17 +64,15 @@ export function TabelIzin({
   return (
     <>
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40">
-            <Th>Halaman</Th>
-            <Th className="w-24 text-center">{LABEL_PERAN.admin}</Th>
-            {peranDiatur.map((p) => (
-              <Th key={p} className="w-24 text-center">
-                {LABEL_PERAN[p]}
-              </Th>
-            ))}
-          </tr>
-        </thead>
+        <KepalaTabel>
+          <Th>Halaman</Th>
+          <Th className="w-24 text-center">{LABEL_PERAN.admin}</Th>
+          {peranDiatur.map((p) => (
+            <Th key={p} className="w-24 text-center">
+              {LABEL_PERAN[p]}
+            </Th>
+          ))}
+        </KepalaTabel>
         <tbody>
           {baris.map((b) => (
             <tr key={b.kunci} className="border-b last:border-0">
@@ -150,16 +149,6 @@ export function TabelIzin({
         </Button>
       </div>
     </>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

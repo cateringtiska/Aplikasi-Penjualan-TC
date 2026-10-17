@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Halaman } from "@/components/halaman";
 import { KartuAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
 import { wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
@@ -128,15 +129,13 @@ export default async function HalamanDetailPembayaran({
         <div className="overflow-hidden rounded-lg border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <Th>Invoice</Th>
-                  <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
-                  <Th className="w-36 text-right">Nilai invoice</Th>
-                  <Th className="w-36 text-right">Dialokasikan</Th>
-                  <Th className="w-32">Status kini</Th>
-                </tr>
-              </thead>
+              <KepalaTabel>
+                <Th>Invoice</Th>
+                <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
+                <Th className="w-36 text-right">Nilai invoice</Th>
+                <Th className="w-36 text-right">Dialokasikan</Th>
+                <Th className="w-32">Status kini</Th>
+              </KepalaTabel>
               <tbody>
                 {p.payment_details.map((baris) => (
                   <tr key={baris.id.toString()} className="border-b last:border-0">
@@ -179,17 +178,6 @@ export default async function HalamanDetailPembayaran({
         </section>
       ) : null}
     </Halaman>
-  );
-}
-
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
 import { wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
@@ -97,16 +98,14 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
           />
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th className="w-36">Nomor</Th>
-                <Th>Customer</Th>
-                <Th className="hidden w-32 md:table-cell">Tanggal</Th>
-                <Th className="hidden w-40 lg:table-cell">Cara bayar</Th>
-                <Th className="w-36 text-right">Jumlah</Th>
-                <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th className="w-36">Nomor</Th>
+              <Th>Customer</Th>
+              <Th className="hidden w-32 md:table-cell">Tanggal</Th>
+              <Th className="hidden w-40 lg:table-cell">Cara bayar</Th>
+              <Th className="w-36 text-right">Jumlah</Th>
+              <Th className="w-12"><span className="sr-only">Tindakan</span></Th>
+            </KepalaTabel>
             <tbody>
               {daftar.map((p) => (
                 <tr key={p.id.toString()} className="border-b last:border-0 hover:bg-muted/25">
@@ -150,16 +149,6 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
         </RingkasanTabel>
       ) : null}
     </Halaman>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

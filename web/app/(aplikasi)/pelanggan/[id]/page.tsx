@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { BingkaiTabel, Halaman, KeadaanKosong } from "@/components/halaman";
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Button } from "@/components/ui/button";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { ambilKartuPiutang } from "@/lib/kartu-piutang";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
@@ -94,16 +95,14 @@ export default async function HalamanKartuCustomer({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <Th className="w-28">Tanggal</Th>
-                  <Th className="w-40">Dokumen</Th>
-                  <Th>Keterangan</Th>
-                  <Th className="w-36 text-right">Invoice</Th>
-                  <Th className="w-36 text-right">Bayar</Th>
-                  <Th className="w-36 text-right">Saldo</Th>
-                </tr>
-              </thead>
+              <KepalaTabel>
+                <Th className="w-28">Tanggal</Th>
+                <Th className="w-40">Dokumen</Th>
+                <Th>Keterangan</Th>
+                <Th className="w-36 text-right">Invoice</Th>
+                <Th className="w-36 text-right">Bayar</Th>
+                <Th className="w-36 text-right">Saldo</Th>
+              </KepalaTabel>
               <tbody>
                 {baris.map((b) => (
                   <tr key={b.kunci} className="border-b last:border-0 hover:bg-muted/25">
@@ -150,16 +149,6 @@ export default async function HalamanKartuCustomer({
         )}
       </BingkaiTabel>
     </Halaman>
-  );
-}
-
-function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

@@ -14,6 +14,7 @@ import {
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
@@ -142,21 +143,19 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
           )
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th>Customer</Th>
-                {/* Satu baris satu invoice. Dirangkum per customer, kolom
-                    tanggalnya terpaksa menyebut yang TERTUA di antara
-                    beberapa invoice — pasangan tanggal yang tidak pernah
-                    ada pada satu dokumen pun, dan tidak cocok dengan daftar
-                    invoicenya. */}
-                <Th className="hidden w-36 sm:table-cell">No. Invoice</Th>
-                <Th className="hidden w-32 md:table-cell">Tanggal</Th>
-                <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
-                <Th className="w-32 text-right">Terlambat</Th>
-                <Th className="w-40 text-right">Sisa piutang</Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th>Customer</Th>
+              {/* Satu baris satu invoice. Dirangkum per customer, kolom
+                  tanggalnya terpaksa menyebut yang TERTUA di antara
+                  beberapa invoice — pasangan tanggal yang tidak pernah
+                  ada pada satu dokumen pun, dan tidak cocok dengan daftar
+                  invoicenya. */}
+              <Th className="hidden w-36 sm:table-cell">No. Invoice</Th>
+              <Th className="hidden w-32 md:table-cell">Tanggal</Th>
+              <Th className="hidden w-32 md:table-cell">Jatuh tempo</Th>
+              <Th className="w-32 text-right">Terlambat</Th>
+              <Th className="w-40 text-right">Sisa piutang</Th>
+            </KepalaTabel>
             <tbody>
               {daftar.map((p) => (
                 <tr key={p.idTagihan} className="border-b last:border-0 hover:bg-muted/25">
@@ -215,16 +214,6 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
         </RingkasanTabel>
       ) : null}
     </Halaman>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

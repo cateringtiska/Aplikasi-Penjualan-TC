@@ -309,9 +309,14 @@
     @apply text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground;
   }
 
-  /* Nomor dokumen: QUO-2026-0001, INV-2026-0014, PAY-2026-0003. */
+  /* Nomor dokumen: QUO-2026-0001, INV-2026-0014, PAY-2026-0003.
+
+     TIDAK BOLEH PATAH. Kolom nomor di daftar sempit, dan tanpa ini
+     "INV-2026-0041" terbelah menjadi tiga baris — barisnya jadi tiga kali
+     lebih tinggi, dan nomornya justru lebih sulit dibaca daripada kalau
+     kolomnya sendiri yang digeser mendatar. */
   .nomor-dokumen {
-    @apply font-mono text-[0.8125rem] tracking-tight;
+    @apply font-mono text-[0.8125rem] tracking-tight whitespace-nowrap;
   }
 }
 

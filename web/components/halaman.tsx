@@ -44,7 +44,7 @@ export function BingkaiTabel({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
+    <div className={cn("overflow-hidden rounded-xl border border-border-strong bg-card shadow-sm", className)}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   );

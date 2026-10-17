@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { labelPelanggan } from "@/lib/kontak";
 import { d, rupiah, uraikanRupiah } from "@/lib/uang";
 
@@ -334,14 +335,12 @@ export function FormPembayaran({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40">
-                    <th className="w-10 px-4 py-2.5" />
-                    <Th>Invoice</Th>
-                    <Th className="w-36 text-right">Sisa</Th>
-                    <Th className="w-44 text-right">Dialokasikan</Th>
-                  </tr>
-                </thead>
+                <KepalaTabel>
+                  <th className="w-10 px-4 py-2.5" />
+                  <Th>Invoice</Th>
+                  <Th className="w-36 text-right">Sisa</Th>
+                  <Th className="w-44 text-right">Dialokasikan</Th>
+                </KepalaTabel>
                 <tbody>
                   {tagihan.map((t) => {
                     const dicentang = t.id in alokasi;
@@ -437,16 +436,6 @@ export function FormPembayaran({
         </div>
       </div>
     </form>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

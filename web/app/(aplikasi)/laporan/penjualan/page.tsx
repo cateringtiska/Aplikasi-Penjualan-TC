@@ -14,6 +14,7 @@ import {
 import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
@@ -115,17 +116,15 @@ export default async function HalamanLaporanPenjualan({
           />
         ) : (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <Th className="w-36">Nomor</Th>
-                <Th className="hidden w-28 md:table-cell">Tanggal</Th>
-                <Th>Customer</Th>
-                <Th className="w-36 text-right">Nilai</Th>
-                <Th className="hidden w-36 text-right lg:table-cell">Terbayar</Th>
-                <Th className="w-36 text-right">Sisa</Th>
-                <Th className="w-32">Status</Th>
-              </tr>
-            </thead>
+            <KepalaTabel>
+              <Th className="w-36">Nomor</Th>
+              <Th className="hidden w-28 md:table-cell">Tanggal</Th>
+              <Th>Customer</Th>
+              <Th className="w-36 text-right">Nilai</Th>
+              <Th className="hidden w-36 text-right lg:table-cell">Terbayar</Th>
+              <Th className="w-36 text-right">Sisa</Th>
+              <Th className="w-32">Status</Th>
+            </KepalaTabel>
             <tbody>
               {baris.map((b) => (
                 <tr key={b.id} className="border-b last:border-0 hover:bg-muted/25">
@@ -173,17 +172,6 @@ export default async function HalamanLaporanPenjualan({
         </RingkasanTabel>
       ) : null}
     </Halaman>
-  );
-}
-
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 

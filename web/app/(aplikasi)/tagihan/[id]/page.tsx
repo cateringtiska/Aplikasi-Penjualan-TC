@@ -12,6 +12,7 @@ import { StatusTagihan } from "@/components/lencana-status";
 import { KunciDokumen } from "@/components/kunci-dokumen";
 import { KotakRincian } from "@/components/kotak-rincian";
 import { Button } from "@/components/ui/button";
+import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
@@ -243,16 +244,14 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           <div className="overflow-hidden rounded-xl border border-border-strong bg-card shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-strong bg-muted/60">
-                    <Th className="w-12">No</Th>
-                    <Th>Uraian</Th>
-                    <Th className="w-16 text-right">Hari</Th>
-                    <Th className="w-24 text-right">Jumlah</Th>
-                    <Th className="w-32 text-right">Harga</Th>
-                    <Th className="w-36 text-right">Nilai</Th>
-                  </tr>
-                </thead>
+                <KepalaTabel>
+                  <Th className="w-12">No</Th>
+                  <Th>Uraian</Th>
+                  <Th className="w-16 text-right">Hari</Th>
+                  <Th className="w-24 text-right">Jumlah</Th>
+                  <Th className="w-32 text-right">Harga</Th>
+                  <Th className="w-36 text-right">Nilai</Th>
+                </KepalaTabel>
                 <tbody>
                   {t.invoice_items.map((b, i) => {
                     // Sub-item berharga mendapat barisnya sendiri, bernomor
@@ -494,16 +493,6 @@ function AngkaBesar({
         <p className="mt-0.5 text-xs text-muted-foreground">{keterangan}</p>
       ) : null}
     </div>
-  );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-semibold tracking-[0.08em] text-foreground/75 uppercase ${className ?? ""}`}
-    >
-      {children}
-    </th>
   );
 }
 
