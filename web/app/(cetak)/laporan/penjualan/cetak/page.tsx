@@ -27,6 +27,11 @@ export default async function CetakLaporanPenjualan({
         {format(new Date(), "d MMMM yyyy HH:mm", { locale: localeId })}
       </p>
 
+      {/* Nilai invoice MEMUAT penjualan yang belum diakui, dan itu pernah
+          ditanyakan: kartu Dashboard menyebut "penjualan diakui" yang lebih
+          kecil, dan tanpa rinciannya kedua angka terbaca seolah
+          bertentangan. Ketiga baris di bawahnya menjumlah tepat ke nilai
+          invoice, jadi selisihnya bisa ditelusuri sendiri. */}
       <table className="mt-4 w-full border-collapse">
         <tbody>
           <tr>
@@ -37,6 +42,36 @@ export default async function CetakLaporanPenjualan({
           </tr>
         </tbody>
       </table>
+
+      <table className="mt-2 w-full border-collapse">
+        <tbody>
+          <tr>
+            <Ringkas
+              label="Penjualan diakui — acaranya sudah terjadi"
+              nilai={rupiah(ringkasan.penjualanDiakui)}
+            />
+            <Ringkas
+              label="Diterima di muka — lunas, acaranya belum"
+              nilai={rupiah(ringkasan.diterimaDiMuka)}
+            />
+            <Ringkas
+              label="Proyeksi — acaranya belum terjadi"
+              nilai={rupiah(ringkasan.proyeksiPenjualan)}
+            />
+            <Ringkas
+              label="Uang muka sudah masuk"
+              nilai={rupiah(ringkasan.uangMuka)}
+            />
+          </tr>
+        </tbody>
+      </table>
+
+      <p className="mt-1.5 text-[10px] text-[#666]">
+        Nilai invoice = penjualan diakui + diterima di muka + proyeksi. Yang diakui sebagai
+        penjualan hanya baris pertama; dua sisanya belum, karena acaranya belum terjadi.
+        Piutang pun hanya dihitung dari penjualan yang sudah diakui, jadi ia tidak sama
+        dengan nilai invoice dikurangi yang sudah dibayar.
+      </p>
 
       <table className="mt-4 w-full border-collapse">
         <thead>
