@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { Halaman } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
 import { KunciDokumen } from "@/components/kunci-dokumen";
+import { KotakRincian } from "@/components/kotak-rincian";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
@@ -201,11 +202,11 @@ export default async function HalamanDetailPenawaran({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="lg:col-span-2">
-          <div className="overflow-hidden rounded-lg border bg-card">
+          <div className="overflow-hidden rounded-xl border border-border-strong bg-card shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/40">
+                  <tr className="border-b border-border-strong bg-muted/60">
                     <Th className="w-12">No</Th>
                     <Th>Uraian</Th>
                     <Th className="w-16 text-right">Hari</Th>
@@ -355,22 +356,22 @@ export default async function HalamanDetailPenawaran({
           </div>
 
           {p.show_payment_terms && p.payment_terms ? (
-            <Kotak judul="Syarat pembayaran" className="mt-6">
+            <KotakRincian judul="Syarat pembayaran" className="mt-6">
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">
                 {p.payment_terms}
               </p>
-            </Kotak>
+            </KotakRincian>
           ) : null}
 
           {p.notes ? (
-            <Kotak judul="Catatan" className="mt-6">
+            <KotakRincian judul="Catatan" className="mt-6">
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">{p.notes}</p>
-            </Kotak>
+            </KotakRincian>
           ) : null}
         </section>
 
         <aside className="flex flex-col gap-6">
-          <Kotak judul="Customer">
+          <KotakRincian judul="Customer">
             <p className="text-sm font-medium">{p.customers.name}</p>
             <p className="nomor-dokumen text-muted-foreground">{p.customers.customer_code}</p>
             {p.customers.address ? (
@@ -385,10 +386,10 @@ export default async function HalamanDetailPenawaran({
                 {p.contact_phone}
               </p>
             ) : null}
-          </Kotak>
+          </KotakRincian>
 
           {acara.length > 0 ? (
-            <Kotak judul="Detail acara">
+            <KotakRincian judul="Detail acara">
               <dl className="flex flex-col gap-2 text-sm">
                 {acara.map(([label, nilai]) => (
                   <div key={label} className="flex justify-between gap-4">
@@ -397,7 +398,7 @@ export default async function HalamanDetailPenawaran({
                   </div>
                 ))}
               </dl>
-            </Kotak>
+            </KotakRincian>
           ) : null}
         </aside>
       </div>
@@ -408,7 +409,7 @@ export default async function HalamanDetailPenawaran({
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
+      className={`px-4 py-2.5 text-left text-[0.6875rem] font-semibold tracking-[0.08em] text-foreground/75 uppercase ${className ?? ""}`}
     >
       {children}
     </th>
@@ -425,22 +426,5 @@ function BarisTotal({ label, nilai }: { label: string; nilai: string }) {
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="angka tabular-nums">{nilai}</dd>
     </div>
-  );
-}
-
-function Kotak({
-  judul,
-  children,
-  className,
-}: {
-  judul: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={`rounded-lg border bg-card p-4 ${className ?? ""}`}>
-      <h2 className="eyebrow pb-2.5">{judul}</h2>
-      {children}
-    </section>
   );
 }

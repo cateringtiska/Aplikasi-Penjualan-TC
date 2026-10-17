@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { Halaman } from "@/components/halaman";
 import { StatusTagihan } from "@/components/lencana-status";
 import { KunciDokumen } from "@/components/kunci-dokumen";
+import { KotakRincian } from "@/components/kotak-rincian";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
@@ -160,8 +161,13 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
         </div>
       </header>
 
-      {/* Ringkasan uang — bagian yang paling sering dicari orang di halaman ini */}
-      <section className="mb-6 grid grid-cols-1 divide-border rounded-lg border bg-card sm:grid-cols-3 sm:divide-x">
+      {/* Ringkasan uang — bagian yang paling sering dicari orang di halaman ini.
+
+          Ketiganya kartu TERPISAH, bukan satu bilah yang dibagi garis tipis:
+          nilai invoice, yang sudah masuk, dan yang masih ditagih adalah tiga
+          angka yang berbeda sifatnya, dan disatukan dalam satu kotak ketiganya
+          terbaca seperti satu rincian yang sama. */}
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <AngkaBesar label="Nilai invoice" nilai={rupiah(t.grand_total)} />
         <AngkaBesar label="Sudah dibayar" nilai={rupiah(t.paid_amount)} />
         <AngkaBesar
@@ -234,11 +240,11 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="lg:col-span-2">
-          <div className="overflow-hidden rounded-lg border bg-card">
+          <div className="overflow-hidden rounded-xl border border-border-strong bg-card shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/40">
+                  <tr className="border-b border-border-strong bg-muted/60">
                     <Th className="w-12">No</Th>
                     <Th>Uraian</Th>
                     <Th className="w-16 text-right">Hari</Th>
@@ -382,22 +388,22 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
           </div>
 
           {t.show_payment_terms && t.payment_terms ? (
-            <Kotak judul="Syarat pembayaran" className="mt-6">
+            <KotakRincian judul="Syarat pembayaran" className="mt-6">
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">
                 {t.payment_terms}
               </p>
-            </Kotak>
+            </KotakRincian>
           ) : null}
 
           {t.notes ? (
-            <Kotak judul="Catatan" className="mt-6">
+            <KotakRincian judul="Catatan" className="mt-6">
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">{t.notes}</p>
-            </Kotak>
+            </KotakRincian>
           ) : null}
         </section>
 
         <aside className="flex flex-col gap-6">
-          <Kotak judul="Customer">
+          <KotakRincian judul="Customer">
             <p className="text-sm font-medium">{t.customers.name}</p>
             <p className="nomor-dokumen text-muted-foreground">{t.customers.customer_code}</p>
             {t.customers.address ? (
@@ -412,9 +418,9 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                 {t.contact_phone}
               </p>
             ) : null}
-          </Kotak>
+          </KotakRincian>
 
-          <Kotak judul="Riwayat payment">
+          <KotakRincian judul="Riwayat payment">
             {t.payment_details.length === 0 ? (
               <p className="text-sm text-muted-foreground">Belum ada payment masuk.</p>
             ) : (
@@ -439,10 +445,10 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                 ))}
               </ul>
             )}
-          </Kotak>
+          </KotakRincian>
 
           {acara.length > 0 ? (
-            <Kotak judul="Detail acara">
+            <KotakRincian judul="Detail acara">
               <dl className="flex flex-col gap-2 text-sm">
                 {acara.map(([label, nilai]) => (
                   <div key={label} className="flex justify-between gap-4">
@@ -451,7 +457,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
                   </div>
                 ))}
               </dl>
-            </Kotak>
+            </KotakRincian>
           ) : null}
         </aside>
       </div>
@@ -473,8 +479,10 @@ function AngkaBesar({
   peringatan?: boolean;
 }) {
   return (
-    <div className="px-5 py-4">
-      <p className="eyebrow">{label}</p>
+    <div className="rounded-xl border border-border-strong bg-card px-5 py-4 shadow-sm">
+      <p className="text-[0.6875rem] font-semibold tracking-[0.08em] text-foreground/75 uppercase">
+        {label}
+      </p>
       <p
         className={`angka mt-1.5 font-semibold tracking-[-0.025em] tabular-nums ${
           menonjol ? "text-[1.375rem]" : "text-lg"
@@ -492,7 +500,7 @@ function AngkaBesar({
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <th
-      className={`px-4 py-2.5 text-left text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase ${className ?? ""}`}
+      className={`px-4 py-2.5 text-left text-[0.6875rem] font-semibold tracking-[0.08em] text-foreground/75 uppercase ${className ?? ""}`}
     >
       {children}
     </th>
@@ -509,22 +517,5 @@ function BarisTotal({ label, nilai }: { label: string; nilai: string }) {
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="angka tabular-nums">{nilai}</dd>
     </div>
-  );
-}
-
-function Kotak({
-  judul,
-  children,
-  className,
-}: {
-  judul: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={`rounded-lg border bg-card p-4 ${className ?? ""}`}>
-      <h2 className="eyebrow pb-2.5">{judul}</h2>
-      {children}
-    </section>
   );
 }
