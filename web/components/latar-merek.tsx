@@ -63,6 +63,10 @@ export function LatarMerek() {
  * galat apa pun, hanya tombol yang tiba-tiba tidak menanggapi.
  *
  * Tidak ikut tercetak: dokumen cetak punya kop logonya sendiri.
+ *
+ * Kepekatannya aman dinaikkan karena berkas logonya 87% tembus pandang dan
+ * tidak punya satu piksel putih pekat pun — menaikkannya tidak memunculkan
+ * kotak putih di sudut, hanya ornamennya yang menguat.
  */
 export function LogoSudut({ tautan }: { tautan: string | null }) {
   if (!tautan) return null;
@@ -70,10 +74,10 @@ export function LogoSudut({ tautan }: { tautan: string | null }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed top-0 right-0 z-0 hidden select-none p-4 opacity-[0.13] sm:block print:hidden"
+      className="pointer-events-none fixed top-0 right-0 z-0 hidden select-none p-5 opacity-[0.38] sm:block print:hidden"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={tautan} alt="" className="h-28 w-auto" />
+      <img src={tautan} alt="" className="h-40 w-auto" />
     </div>
   );
 }
