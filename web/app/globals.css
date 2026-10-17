@@ -318,6 +318,24 @@
 /* Dokumen cetak: A4 dengan tepi 12mm, dan warna latar tabel tetap tercetak.
    Tanpa print-color-adjust, browser membuang latar abu pada bilah judul dan
    baris total — persis bagian yang membuat dokumen terbaca sebagai dokumen. */
+/* --------------------------------------------------------------------------
+   NOMOR BAGIAN FORMULIR
+
+   Dihitung CSS, bukan ditulis tangan di tiap pemanggilan. Nomor yang
+   ditulis tangan akan meleset begitu satu bagian disisipkan di tengah atau
+   disembunyikan — dan formulir yang melompat dari "3" ke "5" terbaca
+   seolah ada langkah yang hilang. Penghitung CSS hanya menghitung yang
+   benar-benar tergambar.
+   -------------------------------------------------------------------------- */
+.daftar-bagian {
+  counter-reset: bagian;
+}
+
+.nomor-bagian::before {
+  counter-increment: bagian;
+  content: counter(bagian);
+}
+
 /* Skala dokumen cetak, diatur dari halaman cetaknya sendiri.
    Dipakai zoom, bukan transform: transform tidak mengubah tinggi yang
    dipakai browser memotong halaman, jadi dokumen yang terlihat mengecil

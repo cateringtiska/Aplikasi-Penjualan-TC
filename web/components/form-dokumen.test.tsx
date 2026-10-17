@@ -247,3 +247,74 @@ describe("FormDokumen — referensi PO", () => {
     expect(screen.queryByLabelText(/referensi po/i)).toBeNull();
   });
 });
+
+describe("FormDokumen — kepala bagian", () => {
+  /*
+   * Formulir ini panjang. Tanpa kepala bagian yang jelas ia terbaca sebagai
+   * satu daftar isian tanpa ujung, dan yang mengisinya tidak punya cara
+   * mengetahui sudah sampai mana.
+   *
+   * Nomornya dihitung CSS, bukan ditulis di tiap pemanggilan. jsdom tidak
+   * menjalankan penghitung CSS, jadi yang diuji di sini adalah MEKANISMENYA
+   * TERPASANG: wadahnya mengatur ulang penghitung, dan tiap bagian membawa
+   * penandanya. Kalau salah satu lepas, nomornya hilang atau mengulang dari
+   * satu di tiap bagian — dan tidak ada galat apa pun yang menunjukkannya.
+   */
+  function pasangFormulir() {
+    return render(
+      <FormDokumen
+        isiAwal={ISI_AWAL}
+        aksi={async () => ({})}
+        istilah={ISTILAH}
+        pelanggan={PELANGGAN}
+        produk={[]}
+        penandatangan={[]}
+      />,
+    );
+  }
+
+  it("wadahnya mengatur ulang penghitung bagian", () => {
+    const { container } = pasangFormulir();
+    expect(container.querySelector("form")?.className).toContain("daftar-bagian");
+  });
+
+  it("tiap bagian punya penanda nomornya", () => {
+    const { container } = pasangFormulir();
+
+    const judul = container.querySelectorAll("h2");
+    const nomor = container.querySelectorAll(".nomor-bagian");
+
+    expect(judul.length, "formulirnya kehilangan kepala bagian").toBeGreaterThan(3);
+    expect(nomor.length, "ada bagian tanpa nomor").toBe(judul.length);
+  });
+
+  it("nomornya tidak ditulis sebagai teks, supaya tidak bisa meleset", () => {
+    // Angka yang ditulis tangan meleset begitu satu bagian disisipkan di
+    // tengah — dan bagian Penandatangan memang hanya muncul ketika
+    // penandatangannya lebih dari satu.
+    const { container } = pasangFormulir();
+
+    for (const tanda of container.querySelectorAll(".nomor-bagian")) {
+      expect(tanda.textContent, "nomornya ditulis tangan").toBe("");
+    }
+  });
+
+  it("dipakai quotation maupun invoice, dengan istilahnya masing-masing", () => {
+    // Satu komponen melayani keduanya. Judul bagian rinciannya mengikuti
+    // istilah dokumennya, jadi quotation tidak menyebut "Rincian invoice".
+    const { container } = render(
+      <FormDokumen
+        isiAwal={ISI_AWAL}
+        aksi={async () => ({})}
+        istilah={{ ...ISTILAH, kata: "quotation" }}
+        pelanggan={PELANGGAN}
+        produk={[]}
+        penandatangan={[]}
+      />,
+    );
+
+    const judul = Array.from(container.querySelectorAll("h2")).map((h) => h.textContent);
+    expect(judul).toContain("Rincian quotation");
+    expect(judul).not.toContain("Rincian invoice");
+  });
+});

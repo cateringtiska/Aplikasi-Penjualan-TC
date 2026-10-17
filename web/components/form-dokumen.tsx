@@ -321,7 +321,7 @@ export function FormDokumen({
   });
 
   return (
-    <form action={kirim} className="flex flex-col gap-8 pb-28">
+    <form action={kirim} className="daftar-bagian flex flex-col gap-5 pb-28">
       <input type="hidden" name="muatan" value={muatan} />
       {Object.entries(medanTambahan ?? {}).map(([nama, nilai]) => (
         <input key={nama} type="hidden" name={nama} value={nilai} />
@@ -1139,6 +1139,18 @@ function BarisItem({
 
 /* ------------------------------------------------------------------------- */
 
+/**
+ * Satu bagian formulir: kartu bernomor dengan kepala yang jelas.
+ *
+ * Dulu hanya baris tebal kecil di antara isian, dan formulir sepanjang ini
+ * terbaca sebagai satu daftar isian tanpa ujung — yang mengisinya tidak
+ * punya cara mengetahui sudah sampai mana.
+ *
+ * Nomornya dihitung CSS lewat .nomor-bagian, bukan ditulis di tiap
+ * pemanggilan: nomor yang ditulis tangan meleset begitu ada bagian yang
+ * disisipkan atau disembunyikan — dan bagian Penandatangan memang hanya
+ * muncul ketika penandatangannya lebih dari satu.
+ */
 function Bagian({
   judul,
   keterangan,
@@ -1149,14 +1161,21 @@ function Bagian({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-sm font-semibold tracking-[-0.01em]">{judul}</h2>
-        {keterangan ? (
-          <p className="mt-0.5 text-xs text-muted-foreground">{keterangan}</p>
-        ) : null}
+    <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+      <div className="flex items-start gap-3.5">
+        <span
+          aria-hidden="true"
+          className="nomor-bagian mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--emas)] text-xs font-semibold text-[oklch(0.22_0.03_80)] shadow-sm"
+        />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold tracking-[-0.015em]">{judul}</h2>
+          {keterangan ? (
+            <p className="mt-0.5 text-sm text-muted-foreground">{keterangan}</p>
+          ) : null}
+        </div>
       </div>
-      {children}
+
+      <div className="mt-5 flex flex-col gap-4">{children}</div>
     </section>
   );
 }
