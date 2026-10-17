@@ -74,10 +74,13 @@ export function LogoSudut({ tautan }: { tautan: string | null }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed top-0 right-0 z-0 hidden select-none p-5 opacity-[0.38] sm:block print:hidden"
+      className="pointer-events-none fixed top-0 right-0 z-0 hidden select-none p-5 opacity-[0.4] sm:block print:hidden"
     >
+      {/* Dikecilkan supaya SELURUH logonya muat di sudut. Yang terlalu
+          besar terpotong tepi layar dan terbaca sebagai noda, bukan
+          sebagai logo — makin besar justru makin tidak terlihat. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={tautan} alt="" className="h-40 w-auto" />
+      <img src={tautan} alt="" className="h-24 w-auto" />
     </div>
   );
 }

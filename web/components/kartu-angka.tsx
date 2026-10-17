@@ -50,22 +50,61 @@ export type WarnaKartu =
 /** Penegasan latar saat kartu yang bertautan disentuh kursor. */
 const SOROT = "hover:brightness-[0.97] dark:hover:brightness-[1.12]";
 
-const WARNA: Record<WarnaKartu, { angka: string; latar: string; keterangan: string }> = {
-  hijau: { angka: "text-lunas", latar: "bg-lunas-halus", keterangan: "text-lunas/80" },
+const WARNA: Record<
+  WarnaKartu,
+  { angka: string; latar: string; tepi: string; keterangan: string }
+> = {
+  hijau: {
+    angka: "text-lunas",
+    latar: "bg-lunas-halus",
+    tepi: "border-lunas/30",
+    keterangan: "text-lunas/80",
+  },
   kuning: {
     angka: "text-sebagian",
     latar: "bg-sebagian-halus",
+    tepi: "border-sebagian/30",
     keterangan: "text-sebagian/80",
   },
-  oranye: { angka: "text-oranye", latar: "bg-oranye-halus", keterangan: "text-oranye/80" },
-  merah: { angka: "text-tempo", latar: "bg-tempo-halus", keterangan: "text-tempo/80" },
-  biru: { angka: "text-biru", latar: "bg-biru-halus", keterangan: "text-biru/80" },
-  ungu: { angka: "text-ungu", latar: "bg-ungu-halus", keterangan: "text-ungu/80" },
-  toska: { angka: "text-toska", latar: "bg-toska-halus", keterangan: "text-toska/80" },
+  oranye: {
+    angka: "text-oranye",
+    latar: "bg-oranye-halus",
+    tepi: "border-oranye/30",
+    keterangan: "text-oranye/80",
+  },
+  merah: {
+    angka: "text-tempo",
+    latar: "bg-tempo-halus",
+    tepi: "border-tempo/35",
+    keterangan: "text-tempo/80",
+  },
+  biru: {
+    angka: "text-biru",
+    latar: "bg-biru-halus",
+    tepi: "border-biru/30",
+    keterangan: "text-biru/80",
+  },
+  ungu: {
+    angka: "text-ungu",
+    latar: "bg-ungu-halus",
+    tepi: "border-ungu/30",
+    keterangan: "text-ungu/80",
+  },
+  toska: {
+    angka: "text-toska",
+    latar: "bg-toska-halus",
+    tepi: "border-toska/30",
+    keterangan: "text-toska/80",
+  },
 };
 
 /**
- * Wadah kartu angka: satu papan, bukan beberapa kartu terpisah.
+ * Wadah kartu angka: beberapa kotak TERPISAH, berjarak.
+ *
+ * Dulu satu papan utuh yang dibagi garis tipis. Dipisah atas permintaan
+ * pemiliknya, dan bentuk ini memang lebih mudah dipindai: tiap angka punya
+ * batas sendiri, jadi mata tidak perlu mencari di mana satu kartu berakhir
+ * dan kartu berikutnya dimulai.
  *
  * `kolom` menentukan jumlah kolom pada layar lebar; di ponsel selalu dua,
  * supaya angkanya tidak terpotong.
@@ -83,7 +122,7 @@ export function PapanAngka({
 
   return (
     <section
-      className={`grid grid-cols-2 divide-border overflow-hidden rounded-lg border bg-card ${sebar} sm:divide-x ${className}`}
+      className={`grid grid-cols-2 gap-3 ${sebar} ${className}`}
     >
       {children}
     </section>
@@ -122,11 +161,15 @@ export function KartuAngka({
 
   const isi = (
     <>
-      <p className={`eyebrow ${href ? "group-hover:underline" : ""}`}>{label}</p>
+      {/* Yang berwarna adalah LABELNYA, bukan angkanya. Angka ringkasan
+          dibaca berdampingan dan sering dibandingkan satu sama lain;
+          tujuh angka bertujuh warna membuat mata membandingkan warnanya
+          lebih dulu daripada besarnya. */}
+      <p className={`eyebrow ${w.angka} ${href ? "group-hover:underline" : ""}`}>{label}</p>
       <p
-        className={`mt-1.5 font-semibold tracking-[-0.025em] ${
+        className={`mt-1.5 font-semibold tracking-[-0.025em] text-foreground ${
           teks ? "text-base" : `angka tabular-nums ${menonjol ? "text-[1.375rem]" : "text-lg"}`
-        } ${w.angka}`}
+        }`}
       >
         {nilai}
       </p>
@@ -138,12 +181,12 @@ export function KartuAngka({
     return (
       <Link
         href={href}
-        className={`group block px-4 py-4 transition-colors sm:px-5 ${w.latar} ${SOROT} focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none`}
+        className={`group block px-4 py-4 sm:px-5 rounded-xl border shadow-sm transition-colors ${w.latar} ${w.tepi} ${SOROT} focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none`}
       >
         {isi}
       </Link>
     );
   }
 
-  return <div className={`px-4 py-4 sm:px-5 ${w.latar}`}>{isi}</div>;
+  return <div className={`px-4 py-4 sm:px-5 rounded-xl border shadow-sm transition-colors ${w.latar} ${w.tepi}`}>{isi}</div>;
 }
