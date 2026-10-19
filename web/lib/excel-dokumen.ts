@@ -279,7 +279,9 @@ export async function buatExcelDokumen(isi: IsiExcelDokumen): Promise<ArrayBuffe
     // seperti di kertasnya.
     const deskripsi =
       b.rincian.length > 0
-        ? `${b.nama}\n${b.rincian.map((r) => `   - ${r}`).join("\n")}`
+        ? `${b.nama}\n${b.rincian
+            .map((r) => `   - ${r.nama}${r.keterangan ? ` (${r.keterangan})` : ""}`)
+            .join("\n")}`
         : b.menjorok
           ? `   ${b.nama}`
           : b.nama;

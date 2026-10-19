@@ -61,17 +61,24 @@ export type BarisTabel =
       kunci: string;
       nomor: string;
       nama: string;
-      /** Isi paket yang tidak berharga, ditulis di bawah namanya. */
       /**
        * Isi paket yang tidak berharga, ditulis di bawah nama induknya.
        *
-       * Jumlahnya ikut dibawa walaupun dokumen customer tidak
-       * menggambarnya: sebagian isi paket punya jumlah sungguhan — tiga
-       * ratus porsi Indomie di stall tambahan — dan lembar dapur TIDAK
-       * BISA dipakai kalau angka itu hilang. Yang membedakan hanya siapa
-       * yang menggambarnya, bukan apa yang tersedia.
+       * Jumlah dan pax-nya ikut digambar di SEMUA dokumen — kertas
+       * customer, lembar dapur, maupun berkas Excel. Sebagian isi paket
+       * punya jumlah sungguhan: tiga ratus porsi Indomie di stall
+       * tambahan, sembilan puluh pax Udang Balado. Angka itu diketik
+       * orang, dan dokumen yang membuangnya membuat yang membacanya
+       * mengira isinya tidak dibatasi.
        */
-      rincian: { nama: string; qty: string; satuan: string }[];
+      rincian: {
+        nama: string;
+        qty: string;
+        satuan: string;
+        pax: string;
+        /** "90 pax · 2 pax" — jumlah dan pax yang diketik, sudah dirangkai. */
+        keterangan: string;
+      }[];
       /** Kosong berarti baris judul: kolomnya memang dikosongkan. */
       hari: string;
       qty: string;
@@ -162,6 +169,27 @@ function paxAngkaBaris(pax: number | null): number {
   return pax === null || pax === 0 ? 1 : pax;
 }
 
+/**
+ * Keterangan jumlah pada satu isi paket: "90 pax", "300 porsi · 2 pax".
+ *
+ * Isi paket tidak berharga dan tidak punya total, jadi angkanya tidak ikut
+ * menghitung apa pun — ia KETERANGAN. Tetapi angka itu diketik orang, dan
+ * dulu hanya lembar dapur yang menggambarnya: dokumen customer dan berkas
+ * Excel membuangnya diam-diam, sehingga "Udang Balado 90 pax" sampai ke
+ * customer sebagai "Udang Balado" saja.
+ *
+ * Pax yang kosong TIDAK dijadikan 1 di sini, berbeda dengan baris berharga.
+ * Pada baris berharga 1 adalah pengali sungguhan yang harus bisa
+ * ditelusuri; di sini tidak ada perkalian apa pun, jadi "x 1" pada setiap
+ * isi paket hanya angka yang tidak pernah diketik siapa pun.
+ */
+export function keteranganRincian(qty: string, satuan: string, pax: string): string {
+  const bagian: string[] = [];
+  if (qty) bagian.push(satuan ? `${qty} ${satuan}` : qty);
+  if (pax) bagian.push(`${pax} pax`);
+  return bagian.join(" · ");
+}
+
 /** Baris tabel rincian, berurutan dari atas ke bawah. */
 export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
   const hasil: BarisTabel[] = [];
@@ -179,13 +207,12 @@ export function barisTabelDokumen(daftar: ItemCetak[]): BarisTabel[] {
       kunci: b.id,
       nomor: nomorInduk,
       nama: b.item_name,
-      rincian: anakRincian.map((a) => ({
-        nama: a.item_name,
-        // Jumlahnya ikut dibawa walaupun dokumen customer tidak
-        // menggambarnya. Lihat catatan pada tipenya.
-        qty: Number(a.qty) > 0 ? angka(a.qty) : "",
-        satuan: a.unit ?? "",
-      })),
+      rincian: anakRincian.map((a) => {
+        const qty = Number(a.qty) > 0 ? angka(a.qty) : "";
+        const satuan = a.unit ?? "";
+        const pax = a.pax && a.pax > 0 ? angka(String(a.pax)) : "";
+        return { nama: a.item_name, qty, satuan, pax, keterangan: keteranganRincian(qty, satuan, pax) };
+      }),
       // Aturan 2: dikosongkan, bukan diisi nol.
       hari: bernilai ? angka(b.day) : "",
       qty: bernilai ? angka(b.qty) : "",

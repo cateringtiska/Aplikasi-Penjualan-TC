@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { barisTabelDokumen, barisTotalDokumen, type ItemCetak } from "./baris-cetak";
+import {
+  barisTabelDokumen,
+  barisTotalDokumen,
+  type ItemCetak,
+  keteranganRincian,
+} from "./baris-cetak";
 
 /* ==========================================================================
    SUSUNAN BARIS DOKUMEN
@@ -280,23 +285,65 @@ describe("pax yang tercetak", () => {
   });
 });
 
-describe("jumlah pada isi paket", () => {
-  it("dibawa serta, supaya lembar dapur bisa memakainya", () => {
-    // Sebagian isi paket punya jumlah sungguhan — tiga ratus porsi Indomie
-    // di stall tambahan. Tanpa angka itu lembar dapur tidak bisa dipakai
-    // memasak, walaupun dokumen customer memang tidak menggambarnya.
+describe("jumlah dan pax pada isi paket", () => {
+  // Aturannya BERUBAH. Dulu angka isi paket hanya digambar di lembar
+  // dapur, dan dokumen customer membuangnya dengan sengaja — sehingga
+  // "Udang Balado 90 pax" sampai ke customer sebagai "Udang Balado" saja,
+  // seolah isinya tidak dibatasi. Sekarang keduanya digambar di semua
+  // dokumen, sebagai keterangan: isi paket tidak berharga dan tidak punya
+  // total, jadi angkanya tidak ikut menghitung apa pun.
+
+  it("membawa jumlah, satuan, dan pax yang diketik", () => {
     const hasil = barisTabelDokumen([
       induk({
         anak: [
-          anak({ id: "a1", item_name: "Keripik Kentang", qty: "30", unit: "pax", price: "0", subtotal: "0" }),
-          anak({ id: "a2", item_name: "Nasi Putih", qty: "0", price: "0", subtotal: "0" }),
+          anak({ id: "a1", item_name: "Keripik Kentang", qty: "30", unit: "pax", pax: null, price: "0", subtotal: "0" }),
+          anak({ id: "a2", item_name: "Udang Balado", qty: "90", unit: "porsi", pax: 2, price: "0", subtotal: "0" }),
+          anak({ id: "a3", item_name: "Nasi Putih", qty: "0", unit: "pax", pax: null, price: "0", subtotal: "0" }),
         ],
       }),
     ]);
 
     expect(item(hasil, 0).rincian).toEqual([
-      { nama: "Keripik Kentang", qty: "30", satuan: "pax" },
-      { nama: "Nasi Putih", qty: "", satuan: "pax" },
+      { nama: "Keripik Kentang", qty: "30", satuan: "pax", pax: "", keterangan: "30 pax" },
+      { nama: "Udang Balado", qty: "90", satuan: "porsi", pax: "2", keterangan: "90 porsi · 2 pax" },
+      { nama: "Nasi Putih", qty: "", satuan: "pax", pax: "", keterangan: "" },
     ]);
+  });
+
+  it("tidak mengarang pax 1 pada isi paket yang tidak mengetikkannya", () => {
+    // Pada baris BERHARGA, pax kosong dicetak 1 karena ia pengali
+    // sungguhan yang harus bisa ditelusuri. Di sini tidak ada perkalian
+    // apa pun, jadi "· 1 pax" pada setiap isi paket hanya angka yang tidak
+    // pernah diketik siapa pun.
+    const hasil = barisTabelDokumen([
+      induk({
+        anak: [anak({ id: "a1", item_name: "Nasi Putih", qty: "40", unit: "pax", pax: null, price: "0", subtotal: "0" })],
+      }),
+    ]);
+
+    expect(item(hasil, 0).rincian[0].keterangan).toBe("40 pax");
+  });
+});
+
+describe("keteranganRincian", () => {
+  it("merangkai jumlah dengan satuannya", () => {
+    expect(keteranganRincian("300", "porsi", "")).toBe("300 porsi");
+  });
+
+  it("merangkai keduanya ketika dua-duanya diketik", () => {
+    expect(keteranganRincian("90", "pax", "2")).toBe("90 pax · 2 pax");
+  });
+
+  it("menuliskan pax saja ketika jumlahnya tidak diketik", () => {
+    expect(keteranganRincian("", "", "50")).toBe("50 pax");
+  });
+
+  it("menuliskan jumlah tanpa satuan ketika satuannya kosong", () => {
+    expect(keteranganRincian("12", "", "")).toBe("12");
+  });
+
+  it("kosong ketika tidak ada yang diketik", () => {
+    expect(keteranganRincian("", "", "")).toBe("");
   });
 });

@@ -292,12 +292,18 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                   )}
                   {b.rincian.length > 0 ? (
                     <div className="mt-0.5">
-                      {/* Jumlahnya sengaja TIDAK digambar di sini: bagi
-                          customer ini rincian isi paket, bukan daftar
-                          tagihan. Lembar dapur yang menggambarnya. */}
+                      {/* Jumlah dan pax-nya ikut digambar, sebagai
+                          keterangan — isi paket ini tidak berharga dan
+                          tidak punya total. Dulu angkanya dibuang di
+                          sini, sehingga "Udang Balado 90 pax" sampai ke
+                          customer sebagai "Udang Balado" saja, seolah
+                          isinya tidak dibatasi. */}
                       {b.rincian.map((r) => (
                         <div key={r.nama} className="ml-3 text-[10px] text-[#666]">
                           - {r.nama}
+                          {r.keterangan ? (
+                            <span className="ml-1">({r.keterangan})</span>
+                          ) : null}
                         </div>
                       ))}
                     </div>

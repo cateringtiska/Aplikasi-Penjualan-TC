@@ -276,3 +276,79 @@ describe("syarat pembayaran di Excel", () => {
     expect(ketemu, "klausa pertamanya tidak ketemu di lembarnya").toBe(true);
   });
 });
+
+describe("isi paket di kolom deskripsi", () => {
+  /* Berkas yang diunduh pernah menuliskan SETIAP isi paket sebagai
+     "- [object Object]". Penyebabnya satu baris yang menyisipkan objek
+     rinciannya ke dalam teks, bukan namanya — TypeScript tidak menegur
+     hal itu, sebab setiap objek memang bisa dijadikan teks.
+
+     Tidak ada tes yang menangkapnya: yang ada hanya memeriksa angka-angka
+     uangnya. Yang membaca "[object Object]" pertama kali adalah customer,
+     pada berkas yang dikirimkan untuk dicocokkan dengan anggarannya. */
+
+  it("tidak pernah menuliskan objek apa pun sebagai teks", async () => {
+    const dokumen = await prisma.invoices.findMany({
+      orderBy: { id: "desc" },
+      take: 5,
+      select: { id: true },
+    });
+
+    for (const satu of dokumen) {
+      const lembar = await lembarDari(await isiDokumenTagihan(satu.id.toString(), {}));
+
+      lembar.eachRow((baris, nomor) => {
+        for (let k = 1; k <= baris.cellCount; k += 1) {
+          const sel = baris.getCell(k);
+
+          // Sel PENGIKUT pada gabungan sel tidak punya isinya sendiri —
+          // nilainya rujukan ke sel induknya, dan dibaca sebagai teks ia
+          // selalu "[object Object]". Yang diperiksa isinya, jadi
+          // induknya saja yang dibaca.
+          if (sel.isMerged && sel.master !== sel) continue;
+
+          expect(sel.text, `invoice ${satu.id}, baris ${nomor} kolom ${k}`).not.toContain(
+            "[object",
+          );
+        }
+      });
+    }
+  });
+
+  it("menuliskan nama isi paket beserta jumlah yang diketik", async () => {
+    // Dicari dokumen yang BENAR-BENAR punya isi paket berjumlah, lalu
+    // dibuktikan bahwa nama dan angkanya sampai ke selnya. Tanpa langkah
+    // pertama, tesnya akan lulus pada dokumen yang memang tidak punya
+    // rincian sama sekali — dan tidak menjaga apa pun.
+    const dokumen = await prisma.invoices.findMany({
+      orderBy: { id: "desc" },
+      take: 25,
+      select: { id: true },
+    });
+
+    for (const satu of dokumen) {
+      const isi = await isiDokumenTagihan(satu.id.toString(), {});
+      const baris = barisTabelDokumen(isi!.baris);
+
+      const berjumlah = baris.flatMap((b) =>
+        b.jenis === "item" ? b.rincian.filter((r) => r.keterangan !== "") : [],
+      );
+      if (berjumlah.length === 0) continue;
+
+      const lembar = await lembarDari(isi);
+      const semua: string[] = [];
+      lembar.eachRow((r) => {
+        semua.push(r.getCell(kolomJudul(lembar, "Deskripsi")).text);
+      });
+      const teks = semua.join("\n");
+
+      for (const r of berjumlah) {
+        expect(teks, `invoice ${satu.id}: nama "${r.nama}"`).toContain(r.nama);
+        expect(teks, `invoice ${satu.id}: jumlah "${r.keterangan}"`).toContain(r.keterangan);
+      }
+      return;
+    }
+
+    throw new Error("Tidak ada invoice dengan isi paket berjumlah untuk diuji.");
+  });
+});

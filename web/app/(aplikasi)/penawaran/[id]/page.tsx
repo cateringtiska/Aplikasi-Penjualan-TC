@@ -19,6 +19,7 @@ import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 
 import { AksiStatusPenawaran } from "./aksi-status";
 import { nilaiKelompok, perluTotalKelompok, romawi, rupiah } from "@/lib/uang";
+import { keteranganRincian } from "@/lib/baris-cetak";
 
 export const metadata: Metadata = { title: "Detail quotation" };
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function HalamanDetailPenawaran({
         include: {
           other_quotation_items: {
             orderBy: { id: "asc" },
-            select: { id: true, item_name: true, unit: true, day: true, qty: true, price: true, subtotal: true },
+            select: { id: true, item_name: true, unit: true, day: true, qty: true, pax: true, price: true, subtotal: true },
           },
         },
       },
@@ -253,9 +254,21 @@ export default async function HalamanDetailPenawaran({
                         ) : null}
                         {rincian.length > 0 ? (
                           <ul className="mt-1.5 flex flex-col gap-0.5 border-l pl-3 text-xs text-muted-foreground">
-                            {rincian.map((a) => (
-                              <li key={a.id.toString()}>{a.item_name}</li>
-                            ))}
+                            {rincian.map((a) => {
+                              // Keterangan jumlahnya dirangkai dengan aturan
+                              // yang sama persis dengan dokumen cetaknya.
+                              const ket = keteranganRincian(
+                                Number(a.qty) > 0 ? Number(a.qty).toLocaleString("id-ID") : "",
+                                a.unit ?? "",
+                                a.pax && a.pax > 0 ? Number(a.pax).toLocaleString("id-ID") : "",
+                              );
+                              return (
+                                <li key={a.id.toString()}>
+                                  {a.item_name}
+                                  {ket ? <span className="ml-1">({ket})</span> : null}
+                                </li>
+                              );
+                            })}
                           </ul>
                         ) : null}
                       </Td>

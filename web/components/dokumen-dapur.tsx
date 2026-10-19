@@ -146,19 +146,14 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
                   )}
                   {b.rincian.length > 0 ? (
                     <div className="mt-0.5">
-                      {/* Jumlahnya ikut ditulis. Sebagian isi paket punya
-                          jumlah sungguhan — tiga ratus porsi Indomie di
-                          stall tambahan — dan tanpa angka itu lembarnya
-                          tidak bisa dipakai memasak. */}
+                      {/* Jumlah dan pax-nya ikut ditulis. Sebagian isi
+                          paket punya jumlah sungguhan — tiga ratus porsi
+                          Indomie di stall tambahan — dan tanpa angka itu
+                          lembarnya tidak bisa dipakai memasak. */}
                       {b.rincian.map((r) => (
                         <div key={r.nama} className="ml-4 text-[11px] text-[#555]">
                           - {r.nama}
-                          {r.qty ? (
-                            <b className="ml-1">
-                              {r.qty}
-                              {r.satuan ? ` ${r.satuan}` : ""}
-                            </b>
-                          ) : null}
+                          {r.keterangan ? <b className="ml-1">{r.keterangan}</b> : null}
                         </div>
                       ))}
                     </div>
