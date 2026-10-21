@@ -223,6 +223,23 @@ describe("yang memang harus ada", () => {
     expect(screen.getByText("- Nasi Putih")).toBeTruthy();
   });
 
+  it("menuliskan isi paketnya tebal dan navy blue, bukan abu-abu tipis", () => {
+    // Lembar ini dibaca sambil memasak — berdiri, tergesa, kertasnya kena
+    // uap dan noda. Isi paketnya dulu abu-abu 11px dan praktis hilang di
+    // atas kertas, padahal justru baris itulah yang dimasak orang.
+    //
+    // Ini SATU-SATUNYA hal yang diuji dari penampilan di berkas ini, dan
+    // itu disengaja: keterbacaannya di tangan juru masak adalah syarat
+    // lembarnya bisa dipakai, bukan selera.
+    render(<DokumenDapur isi={ISI} />);
+
+    const baris = screen.getByText("- Nasi Putih");
+
+    expect(baris.className, "isi paketnya tidak ditebalkan").toContain("font-semibold");
+    expect(baris.style.color, "isi paketnya bukan navy blue").toBe("rgb(0, 0, 128)");
+    expect(baris.className, "isi paketnya masih abu-abu").not.toContain("#555");
+  });
+
   it("membawa catatannya, karena di situlah permintaan khusus ditulis", () => {
     render(<DokumenDapur isi={ISI} />);
     expect(screen.getByText("Tanpa pedas untuk 5 box.")).toBeTruthy();

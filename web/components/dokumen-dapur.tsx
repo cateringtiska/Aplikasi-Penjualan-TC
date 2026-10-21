@@ -34,6 +34,16 @@ import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
  */
 const NAMA_DAPUR = "Tiska Catering";
 
+/**
+ * Navy blue untuk daftar isi paket.
+ *
+ * Lembar ini dibaca sambil memasak — berdiri, tergesa, kertasnya sering
+ * kena uap dan noda. Isi paketnya dulu abu-abu 11px dan praktis hilang di
+ * atas kertas, padahal justru baris itulah yang dimasak orang; angka di
+ * kolom Qty hanya memberi tahu berapa banyak.
+ */
+const NAVY = "#000080";
+
 export type IsiDapur = {
   nomor: string;
   labelNomor: string;
@@ -151,7 +161,11 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
                           Indomie di stall tambahan — dan tanpa angka itu
                           lembarnya tidak bisa dipakai memasak. */}
                       {b.rincian.map((r) => (
-                        <div key={r.nama} className="ml-4 text-[11px] text-[#555]">
+                        <div
+                          key={r.nama}
+                          className="ml-4 text-[12px] font-semibold"
+                          style={{ color: NAVY }}
+                        >
                           - {r.nama}
                           {r.keterangan ? <b className="ml-1">{r.keterangan}</b> : null}
                         </div>
