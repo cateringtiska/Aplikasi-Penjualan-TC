@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 
 import { barisTabelDokumen, barisTotalDokumen, type ItemCetak } from "@/lib/baris-cetak";
+import { NAVY } from "@/lib/warna-dokumen";
 
 /* ==========================================================================
    DOKUMEN CETAK
@@ -286,7 +287,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                   {b.menjorok ? (
                     <span className="ml-3">{b.nama}</span>
                   ) : (
-                    <span className="font-bold" style={{ color: BIRU }}>
+                    <span className="font-bold" style={{ color: NAVY }}>
                       {b.nama}
                     </span>
                   )}
@@ -299,7 +300,7 @@ export function DokumenCetak({ isi }: { isi: IsiDokumen }) {
                           customer sebagai "Udang Balado" saja, seolah
                           isinya tidak dibatasi. */}
                       {b.rincian.map((r) => (
-                        <div key={r.nama} className="ml-3 text-[10px] text-[#666]">
+                        <div key={r.nama} className="ml-3 text-[10px]">
                           - {r.nama}
                           {r.keterangan ? (
                             <span className="ml-1">({r.keterangan})</span>

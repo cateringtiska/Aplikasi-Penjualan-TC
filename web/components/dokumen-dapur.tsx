@@ -2,6 +2,7 @@ import { format } from "date-fns";
 
 import { barisTabelDokumen, type ItemCetak } from "@/lib/baris-cetak";
 import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
+import { NAVY } from "@/lib/warna-dokumen";
 
 /* ==========================================================================
    PO TO KITCHEN
@@ -34,16 +35,8 @@ import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
  */
 const NAMA_DAPUR = "Tiska Catering";
 
-/**
- * Navy blue untuk NAMA MENU-nya.
- *
- * Lembar ini dibaca sambil memasak — berdiri, tergesa, kertasnya sering
- * kena uap dan noda. Warnanya dipakai untuk menandai di mana satu menu
- * mulai, supaya mata bisa melompat dari menu ke menu tanpa membaca
- * seluruh isinya; isi paket di bawahnya hitam biasa, sebab itu yang
- * dibaca baris demi baris saat memasaknya.
- */
-const NAVY = "#000080";
+// Aturan warnanya ada di lib/warna-dokumen.ts, dan berlaku sama di
+// quotation, invoice, maupun lembar ini.
 
 export type IsiDapur = {
   nomor: string;

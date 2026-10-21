@@ -173,7 +173,61 @@ const JUDUL_KELOMPOK = {
   ],
 };
 
+/** Paket dengan isi yang TIDAK berharga — itulah yang jadi rincian. */
+const BARIS_DENGAN_ISI = {
+  id: "3",
+  item_name: "LUNCH BUFFET",
+  unit: "pax",
+  day: "1",
+  qty: "80",
+  pax: null,
+  price: "125000",
+  subtotal: "10000000",
+  is_compliment: false,
+  anak: [
+    {
+      id: "3a",
+      item_name: "Nasi Putih",
+      unit: null,
+      day: "1",
+      qty: "0",
+      pax: null,
+      price: "0",
+      subtotal: "0",
+    },
+    {
+      id: "3b",
+      item_name: "Udang Balado",
+      unit: "pax",
+      day: "1",
+      qty: "90",
+      pax: null,
+      price: "0",
+      subtotal: "0",
+    },
+  ],
+};
+
 describe("warna pada dokumen cetak", () => {
+  it("menandai NAMA MENU dengan navy blue tebal, dan isi paketnya hitam", () => {
+    // Aturan yang sama persis dengan PO To Kitchen — ketiga lembar itu
+    // keluar dari satu pesanan dan dibaca berdampingan. Warnanya menandai
+    // di mana satu menu mulai; isi paket di bawahnya hitam, sebab itu yang
+    // dibaca baris demi baris.
+    pasang({}, { baris: [BARIS_DENGAN_ISI] });
+
+    const menu = screen.getByText("LUNCH BUFFET");
+    expect(menu.className, "nama menunya tidak ditebalkan").toContain("font-bold");
+    expect(menu.style.color, "nama menunya bukan navy blue").toBe("rgb(0, 0, 128)");
+
+    // Isi paket BERKETERANGAN maupun yang tidak, dua-duanya hitam.
+    for (const nama of ["- Nasi Putih", "- Udang Balado"]) {
+      const baris = screen.getByText(nama, { exact: false });
+      expect(baris.style.color, `"${nama}" diberi warna sendiri`).toBe("");
+      expect(baris.className, `"${nama}" masih abu-abu`).not.toContain("#666");
+    }
+  });
+
   it("judul kelompok tetap dikenali tanpa warna: kolom angkanya kosong", () => {
     pasang({}, { baris: [BARIS_BERHARGA, JUDUL_KELOMPOK] });
 
