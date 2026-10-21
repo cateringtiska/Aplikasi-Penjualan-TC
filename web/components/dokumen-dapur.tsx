@@ -35,12 +35,13 @@ import { jumlahHariAcara, ringkasTanggalAcara } from "@/lib/tanggal";
 const NAMA_DAPUR = "Tiska Catering";
 
 /**
- * Navy blue untuk daftar isi paket.
+ * Navy blue untuk NAMA MENU-nya.
  *
  * Lembar ini dibaca sambil memasak — berdiri, tergesa, kertasnya sering
- * kena uap dan noda. Isi paketnya dulu abu-abu 11px dan praktis hilang di
- * atas kertas, padahal justru baris itulah yang dimasak orang; angka di
- * kolom Qty hanya memberi tahu berapa banyak.
+ * kena uap dan noda. Warnanya dipakai untuk menandai di mana satu menu
+ * mulai, supaya mata bisa melompat dari menu ke menu tanpa membaca
+ * seluruh isinya; isi paket di bawahnya hitam biasa, sebab itu yang
+ * dibaca baris demi baris saat memasaknya.
  */
 const NAVY = "#000080";
 
@@ -152,7 +153,9 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
                   {b.menjorok ? (
                     <span className="ml-4">{b.nama}</span>
                   ) : (
-                    <span className="font-bold">{b.nama}</span>
+                    <span className="font-bold" style={{ color: NAVY }}>
+                      {b.nama}
+                    </span>
                   )}
                   {b.rincian.length > 0 ? (
                     <div className="mt-0.5">
@@ -161,11 +164,7 @@ export function DokumenDapur({ isi }: { isi: IsiDapur }) {
                           Indomie di stall tambahan — dan tanpa angka itu
                           lembarnya tidak bisa dipakai memasak. */}
                       {b.rincian.map((r) => (
-                        <div
-                          key={r.nama}
-                          className="ml-4 text-[12px] font-semibold"
-                          style={{ color: NAVY }}
-                        >
+                        <div key={r.nama} className="ml-4 text-[12px]">
                           - {r.nama}
                           {r.keterangan ? <b className="ml-1">{r.keterangan}</b> : null}
                         </div>

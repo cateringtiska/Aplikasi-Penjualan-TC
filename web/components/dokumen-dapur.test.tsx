@@ -100,6 +100,16 @@ const ISI: IsiDapur = {
           price: "0",
           subtotal: "0",
         },
+        {
+          id: "a3",
+          item_name: "Ayam Bakar",
+          unit: "pax",
+          day: "1",
+          qty: "30",
+          pax: null,
+          price: "0",
+          subtotal: "0",
+        },
       ],
     },
   ],
@@ -223,21 +233,27 @@ describe("yang memang harus ada", () => {
     expect(screen.getByText("- Nasi Putih")).toBeTruthy();
   });
 
-  it("menuliskan isi paketnya tebal dan navy blue, bukan abu-abu tipis", () => {
+  it("menandai NAMA MENU dengan navy blue tebal, dan isi paketnya hitam biasa", () => {
     // Lembar ini dibaca sambil memasak — berdiri, tergesa, kertasnya kena
-    // uap dan noda. Isi paketnya dulu abu-abu 11px dan praktis hilang di
-    // atas kertas, padahal justru baris itulah yang dimasak orang.
+    // uap dan noda. Warnanya menandai di mana satu menu mulai, supaya mata
+    // bisa melompat dari menu ke menu tanpa membaca seluruh isinya; isi
+    // paket di bawahnya hitam, sebab itu yang dibaca baris demi baris.
     //
-    // Ini SATU-SATUNYA hal yang diuji dari penampilan di berkas ini, dan
-    // itu disengaja: keterbacaannya di tangan juru masak adalah syarat
-    // lembarnya bisa dipakai, bukan selera.
+    // Pernah dibuat terbalik — isi paketnya yang navy, nama menunya hitam.
+    // Keduanya diuji bersama di sini supaya tidak bisa tertukar lagi
+    // tanpa ada yang menegur.
     render(<DokumenDapur isi={ISI} />);
 
-    const baris = screen.getByText("- Nasi Putih");
+    const menu = screen.getByText("PREFFERED LUNCH BOX");
+    expect(menu.className, "nama menunya tidak ditebalkan").toContain("font-bold");
+    expect(menu.style.color, "nama menunya bukan navy blue").toBe("rgb(0, 0, 128)");
 
-    expect(baris.className, "isi paketnya tidak ditebalkan").toContain("font-semibold");
-    expect(baris.style.color, "isi paketnya bukan navy blue").toBe("rgb(0, 0, 128)");
-    expect(baris.className, "isi paketnya masih abu-abu").not.toContain("#555");
+    // Isi paket BERKETERANGAN maupun yang tidak, dua-duanya hitam.
+    for (const nama of ["- Nasi Putih", "- Ayam Bakar"]) {
+      const baris = screen.getByText(nama, { exact: false });
+      expect(baris.style.color, `"${nama}" diberi warna sendiri`).toBe("");
+      expect(baris.className, `"${nama}" masih abu-abu`).not.toContain("#555");
+    }
   });
 
   it("membawa catatannya, karena di situlah permintaan khusus ditulis", () => {
