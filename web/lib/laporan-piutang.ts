@@ -54,6 +54,14 @@ export type BarisPiutang = {
   pic: string | null;
   tanggal: Date;
   tempo: Date;
+  /**
+   * Kapan acaranya. Kosong berarti dokumen lama yang tidak menyimpannya.
+   *
+   * Piutang ini HANYA berisi acara yang sudah terjadi, jadi tanggalnya
+   * selalu di masa lalu — dan justru itu gunanya: yang menagih perlu tahu
+   * acara mana yang sedang ditagihkan, bukan sekadar nomor invoicenya.
+   */
+  tanggalAcara: Date[];
   hariTerlambat: number;
   /** Nilai penuh invoicenya. */
   penjualan: Decimal;
@@ -161,12 +169,14 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
     // PIUTANG HANYA DARI ACARA YANG SUDAH TERJADI. Menagih sesuatu yang
     // belum diserahkan bukan piutang, dan memasukkannya ke sini membuat umur
     // piutang terbaca jauh lebih buruk daripada keadaan sebenarnya.
+    const tanggalAcara = tanggalAcaraDokumen(
+      t.invoice_event_dates,
+      t.event_date,
+      t.event_days,
+    );
+
     const pengakuan = pengakuanDokumen(
-      {
-        grand_total: t.grand_total,
-        paid_amount: t.paid_amount,
-        tanggalAcara: tanggalAcaraDokumen(t.invoice_event_dates, t.event_date, t.event_days),
-      },
+      { grand_total: t.grand_total, paid_amount: t.paid_amount, tanggalAcara },
       hariIni,
     );
 
@@ -195,6 +205,7 @@ export async function ambilPiutang(kunci: string, milik: SaringMilik): Promise<H
       pic: (t.customers.pic_name ?? "").trim() || null,
       tanggal: t.invoice_date,
       tempo: t.due_date,
+      tanggalAcara,
       hariTerlambat: Math.max(0, terlambat),
       penjualan: d(t.grand_total),
       // Dibatasi nilai invoicenya: pembayaran berlebih tidak boleh membuat

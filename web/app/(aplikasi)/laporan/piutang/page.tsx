@@ -15,6 +15,7 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
+import { ringkasTanggalAcaraPendek } from "@/lib/tanggal";
 import { ambilPiutang, KELOMPOK } from "@/lib/laporan-piutang";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
@@ -181,11 +182,21 @@ export default async function HalamanPiutang({ searchParams }: PageProps<"/lapor
                     >
                       {p.nomor}
                     </Link>
+                    {/* Tanggal acaranya menempel pada nomor invoicenya,
+                        bukan di kolom sendiri: halaman ini sudah punya dua
+                        kolom tanggal — invoice dan jatuh tempo — dan yang
+                        ketiga membuat ketiganya tertukar saat dibaca
+                        sekilas. */}
+                    {ringkasTanggalAcaraPendek(p.tanggalAcara) ? (
+                      <span className="block text-xs text-muted-foreground">
+                        {ringkasTanggalAcaraPendek(p.tanggalAcara)}
+                      </span>
+                    ) : null}
                   </Td>
-                  <Td className="hidden text-muted-foreground md:table-cell">
+                  <Td className="hidden text-muted-foreground md:table-cell whitespace-nowrap">
                     {format(p.tanggal, "d MMM yyyy", { locale: localeId })}
                   </Td>
-                  <Td className="hidden text-muted-foreground md:table-cell">
+                  <Td className="hidden text-muted-foreground md:table-cell whitespace-nowrap">
                     {format(p.tempo, "d MMM yyyy", { locale: localeId })}
                   </Td>
                   <Td className="angka text-right tabular-nums">

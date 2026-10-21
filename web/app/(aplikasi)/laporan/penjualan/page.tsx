@@ -15,6 +15,7 @@ import { KartuAngka, PapanAngka } from "@/components/kartu-angka";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
+import { ringkasTanggalAcaraPendek } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { rupiah } from "@/lib/uang";
 
@@ -136,13 +137,15 @@ export default async function HalamanLaporanPenjualan({
                       {b.nomor}
                     </Link>
                   </Td>
-                  <Td className="hidden text-muted-foreground md:table-cell">
+                  <Td className="hidden text-muted-foreground md:table-cell whitespace-nowrap">
                     {format(b.tanggal, "d MMM yy", { locale: localeId })}
                   </Td>
                   <Td>
                     <span className="font-medium">{b.pelanggan}</span>
-                    {b.acara ? (
-                      <span className="block text-xs text-muted-foreground">{b.acara}</span>
+                    {keterangan(b.acara, ringkasTanggalAcaraPendek(b.tanggalAcara)) ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {keterangan(b.acara, ringkasTanggalAcaraPendek(b.tanggalAcara))}
+                      </span>
                     ) : null}
                   </Td>
                   <Td className="angka text-right tabular-nums">{rupiah(b.total)}</Td>
@@ -177,4 +180,10 @@ export default async function HalamanLaporanPenjualan({
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 align-middle ${className ?? ""}`}>{children}</td>;
+}
+
+/** Jenis acara dan tanggalnya, dirangkai dan dibuang yang kosong. */
+function keterangan(acara: string | null, tanggal: string | null): string | null {
+  const bagian = [acara, tanggal].filter((x) => x && x.trim() !== "");
+  return bagian.length > 0 ? bagian.join(" · ") : null;
 }

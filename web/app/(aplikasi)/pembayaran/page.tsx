@@ -14,6 +14,7 @@ import {
 import { Pencarian } from "@/components/pencarian";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
+import { ringkasTanggalAcaraPendek, tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import { wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
@@ -56,6 +57,19 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
       total_amount: true,
       customers: { select: { name: true } },
       _count: { select: { payment_details: true } },
+      payment_details: {
+        select: {
+          invoices: {
+            select: {
+              // Kolom lamanya ikut diambil — lihat catatan di
+              // tanggalAcaraDokumen().
+              event_date: true,
+              event_days: true,
+              invoice_event_dates: { select: { event_date: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -120,8 +134,15 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
                       {p._count.payment_details} invoice
                     </span>
                   </Td>
-                  <Td className="font-medium">{p.customers.name}</Td>
-                  <Td className="hidden text-muted-foreground md:table-cell">
+                  <Td>
+                    <span className="font-medium">{p.customers.name}</span>
+                    {acaraPayment(p.payment_details) ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {acaraPayment(p.payment_details)}
+                      </span>
+                    ) : null}
+                  </Td>
+                  <Td className="hidden text-muted-foreground md:table-cell whitespace-nowrap">
                     {format(p.payment_date, "d MMM yyyy", { locale: localeId })}
                   </Td>
                   <Td className="hidden text-muted-foreground lg:table-cell">
@@ -154,4 +175,33 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 align-middle ${className ?? ""}`}>{children}</td>;
+}
+
+/**
+ * Tanggal acara di balik satu payment.
+ *
+ * Payment TIDAK punya tanggal acaranya sendiri — yang punya adalah invoice
+ * yang dibayarnya, dan satu payment bisa menutup beberapa invoice sekaligus.
+ * Tanggalnya dikumpulkan dari semua invoice itu lalu diringkas sekali, jadi
+ * payment yang menutup acara dua hari berturut-turut terbaca sebagai satu
+ * rentang, bukan dua baris yang sama.
+ */
+function acaraPayment(
+  rincian: {
+    invoices: {
+      event_date: Date | null;
+      event_days: number | null;
+      invoice_event_dates: { event_date: Date }[];
+    };
+  }[],
+): string | null {
+  return ringkasTanggalAcaraPendek(
+    rincian.flatMap((r) =>
+      tanggalAcaraDokumen(
+        r.invoices.invoice_event_dates,
+        r.invoices.event_date,
+        r.invoices.event_days,
+      ),
+    ),
+  );
 }

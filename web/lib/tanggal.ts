@@ -145,3 +145,51 @@ export function tanggalAcaraDokumen(
     return t;
   });
 }
+
+/**
+ * Bentuk PENDEK tanggal acara, untuk kolom daftar dan laporan di layar.
+ *
+ * Bentuk panjangnya — "Minggu 10 – Selasa 12 Mei 2026" — dibuat untuk
+ * dokumen yang dibaca orang satu per satu. Ditaruh di kolom tabel, kalimat
+ * sepanjang itu membungkus menjadi tiga baris dan membuat seluruh daftar
+ * tiga kali lebih tinggi, sehingga yang terlihat dalam satu layar tinggal
+ * sepertiganya.
+ *
+ * Nama harinya sengaja TIDAK ikut di sini, berbeda dengan dokumen cetak.
+ * Di daftar, tanggal acara adalah keterangan untuk mengenali barisnya —
+ * "yang acaranya bulan depan" — bukan angka yang dipakai memasak atau
+ * mengantar. Yang butuh harinya membuka dokumennya.
+ *
+ *     satu hari     10 Mei 2026
+ *     berurutan     10 – 12 Mei 2026
+ *     meloncat      10 Mei 2026 · 3 hari
+ *
+ * Yang meloncat TIDAK dirangkai satu per satu: jumlah harinya yang
+ * disebutkan. Daftar tanggal yang memanjang justru mengembalikan masalah
+ * yang membuat bentuk pendek ini ada.
+ */
+export function ringkasTanggalAcaraPendek(daftar: Date[]): string | null {
+  const t = rapikanTanggal(daftar);
+  if (t.length === 0) return null;
+
+  const pendek = (x: Date) => format(x, "d MMM yyyy", { locale: localeId });
+
+  if (t.length === 1) return pendek(t[0]);
+
+  const awal = t[0];
+  const akhir = t[t.length - 1];
+
+  if (berurutan(t)) {
+    // Bagian yang sama disebut sekali di ujung kanan, sama seperti bentuk
+    // panjangnya: "10 – 12 Mei 2026", bukan "10 Mei 2026 – 12 Mei 2026".
+    if (samaBulan(awal, akhir)) {
+      return `${format(awal, "d", { locale: localeId })} – ${pendek(akhir)}`;
+    }
+    if (awal.getFullYear() === akhir.getFullYear()) {
+      return `${format(awal, "d MMM", { locale: localeId })} – ${pendek(akhir)}`;
+    }
+    return `${pendek(awal)} – ${pendek(akhir)}`;
+  }
+
+  return `${pendek(awal)} · ${t.length} hari`;
+}

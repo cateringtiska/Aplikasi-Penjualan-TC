@@ -25,7 +25,7 @@ import {
   pengakuanDokumen,
   saringPengakuanSah,
 } from "@/lib/pengakuan";
-import { tanggalAcaraDokumen } from "@/lib/tanggal";
+import { ringkasTanggalAcaraPendek, tanggalAcaraDokumen } from "@/lib/tanggal";
 import { hanyaMiliknya, wajibIzin } from "@/lib/rbac";
 import { d, rupiah } from "@/lib/uang";
 
@@ -219,7 +219,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
                           disembunyikan di layar sempit, dan tanggal invoice
                           adalah keterangan yang dicari bersama nomornya —
                           "invoice bulan lalu yang mana". */}
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="block text-xs whitespace-nowrap text-muted-foreground">
                         {format(t.invoice_date, "d MMM yyyy", { locale: localeId })}
                       </span>
                     </Td>
@@ -228,9 +228,16 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
                       <BarisKontak
                         pic={namaPic(t.contact_person, t.customers.pic_name)}
                         acara={t.event_type}
+                        tanggalAcara={ringkasTanggalAcaraPendek(
+                          tanggalAcaraDokumen(
+                            t.invoice_event_dates,
+                            t.event_date,
+                            t.event_days,
+                          ),
+                        )}
                       />
                     </Td>
-                    <Td className="hidden text-muted-foreground lg:table-cell">
+                    <Td className="hidden text-muted-foreground lg:table-cell whitespace-nowrap">
                       {format(t.due_date, "d MMM yyyy", { locale: localeId })}
                     </Td>
                     <Td className="angka text-right tabular-nums text-muted-foreground">
