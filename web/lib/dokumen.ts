@@ -179,11 +179,20 @@ function kosongkanStrip(nilai: string | null | undefined): string | null {
   return bersih;
 }
 
-function angkaBulat(teks: unknown): number | null {
-  const nilai = uraikanRupiah(teks);
-  if (nilai === null) return null;
-  const bulat = nilai.toNumber();
-  return Number.isFinite(bulat) ? Math.trunc(bulat) : null;
+/**
+ * Jumlah tamu dari isian bebas.
+ *
+ * Dulu memakai pengurai rupiah yang hanya menerima angka murni, sehingga
+ * "300 pax", "± 300", atau "300 orang" diam-diam tersimpan KOSONG — dan di
+ * cetakan quotation/invoice jumlah tamunya muncul sebagai "-". Sekarang
+ * angka pertama di isiannya yang diambil; titik ribuan dibuang ("1.000").
+ */
+export function angkaTamu(teks: unknown): number | null {
+  if (teks === null || teks === undefined) return null;
+  const cocok = String(teks).match(/\d[\d.]*/);
+  if (!cocok) return null;
+  const angka = Number.parseInt(cocok[0].replace(/\./g, ""), 10);
+  return Number.isFinite(angka) && angka > 0 ? angka : null;
 }
 
 /**
@@ -511,7 +520,7 @@ export function siapkanDokumen(
       event_days: tanggalRapi.length > 0 ? tanggalRapi.length : null,
       event_type: kosongkanStrip(f.event_type),
       event_time: kosongkanStrip(f.event_time),
-      guest_count: angkaBulat(f.guest_count),
+      guest_count: angkaTamu(f.guest_count),
       fnb_planner: kosongkanStrip(f.fnb_planner),
       venue: kosongkanStrip(f.venue),
       notes: kosongkanStrip(f.notes),

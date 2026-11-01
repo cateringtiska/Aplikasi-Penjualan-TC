@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PilihCari } from "@/components/pilih-cari";
 import { Textarea } from "@/components/ui/textarea";
 import { type BarisTanggalForm, tanggalKosong } from "@/lib/bentuk-form";
 import { labelPelanggan } from "@/lib/kontak";
@@ -170,6 +171,15 @@ export function FormDokumen({
   pakaiReferensiPo?: boolean;
 }) {
   const [keadaan, kirim, sedangKirim] = useActionState(aksi, keadaanAwal);
+
+  const opsiPelanggan = useMemo(
+    () =>
+      pelanggan.map((p) => ({
+        nilai: p.id,
+        label: labelPelanggan({ nama: p.nama, kode: p.kode, pic: p.contact_person }),
+      })),
+    [pelanggan],
+  );
 
   // Formulir tidak pernah dibuka dalam keadaan tanpa baris sama sekali —
   // baris kosong pertama disiapkan di sini supaya halaman baru langsung
@@ -340,11 +350,13 @@ export function FormDokumen({
       <Bagian judul="Customer" keterangan={`Kepada siapa ${istilah.kata} ini ditujukan.`}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Bidang label="Customer" nama="customer_id" galat={keadaan.galat?.customer_id} wajib>
-            <select
+            <PilihCari
               id="customer_id"
-              value={f.customer_id}
-              onChange={(e) => {
-                const dipilih = pelanggan.find((x) => x.id === e.target.value);
+              nilai={f.customer_id}
+              opsi={opsiPelanggan}
+              placeholder="Ketik nama customer…"
+              onPilih={(idBaru) => {
+                const dipilih = pelanggan.find((x) => x.id === idBaru);
 
                 setF((lama) => {
                   const sebelumnya = pelanggan.find((x) => x.id === lama.customer_id);
@@ -368,7 +380,7 @@ export function FormDokumen({
 
                   return {
                     ...lama,
-                    customer_id: e.target.value,
+                    customer_id: idBaru,
                     contact_person: ikut(
                       lama.contact_person,
                       sebelumnya?.contact_person,
@@ -382,15 +394,7 @@ export function FormDokumen({
                   };
                 });
               }}
-              className="h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              <option value="">— Pilih customer —</option>
-              {pelanggan.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {labelPelanggan({ nama: p.nama, kode: p.kode, pic: p.contact_person })}
-                </option>
-              ))}
-            </select>
+            />
           </Bidang>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -548,7 +552,9 @@ export function FormDokumen({
               id="guest_count"
               inputMode="numeric"
               value={f.guest_count}
-              onChange={(e) => ubah("guest_count", e.target.value)}
+              // Hanya angka yang diterima, supaya yang terlihat di sini sama
+              // dengan yang tersimpan dan tercetak.
+              onChange={(e) => ubah("guest_count", e.target.value.replace(/\D/g, ""))}
               placeholder="300"
             />
           </Bidang>

@@ -82,17 +82,24 @@ function pasang() {
   );
 
   return {
-    pilihan: screen.getByLabelText(/^customer/i) as HTMLSelectElement,
+    pilihan: screen.getByLabelText(/^customer/i) as HTMLInputElement,
     kontak: screen.getByLabelText(/nama kontak/i) as HTMLInputElement,
     telepon: screen.getByLabelText(/telepon/i) as HTMLInputElement,
   };
+}
+
+/** Mengetik sebagian nama lalu mengklik pilihan yang muncul. */
+async function pilihCustomer(kotak: HTMLInputElement, potongan: string) {
+  await userEvent.clear(kotak);
+  await userEvent.type(kotak, potongan);
+  await userEvent.click(screen.getByRole("option", { name: new RegExp(potongan, "i") }));
 }
 
 describe("FormDokumen — memilih customer", () => {
   it("mengisi kontak dari customer yang dipilih", async () => {
     const { pilihan, kontak, telepon } = pasang();
 
-    await userEvent.selectOptions(pilihan, "1");
+    await pilihCustomer(pilihan, "Sekar");
 
     expect(kontak.value).toBe("Ibu Yuniar");
     expect(telepon.value).toBe("0811-111");
@@ -101,8 +108,8 @@ describe("FormDokumen — memilih customer", () => {
   it("MENGGANTI kontak ketika customernya diganti", async () => {
     const { pilihan, kontak, telepon } = pasang();
 
-    await userEvent.selectOptions(pilihan, "1");
-    await userEvent.selectOptions(pilihan, "2");
+    await pilihCustomer(pilihan, "Sekar");
+    await pilihCustomer(pilihan, "Bakery");
 
     // Inti bug-nya: dulu keduanya tetap milik House of Sekar.
     expect(kontak.value).toBe("Ibu Amey");
@@ -112,8 +119,8 @@ describe("FormDokumen — memilih customer", () => {
   it("mengosongkan kontak kalau customer barunya tidak punya PIC", async () => {
     const { pilihan, kontak, telepon } = pasang();
 
-    await userEvent.selectOptions(pilihan, "1");
-    await userEvent.selectOptions(pilihan, "3");
+    await pilihCustomer(pilihan, "Sekar");
+    await pilihCustomer(pilihan, "Tanpa");
 
     // Membiarkan "Ibu Yuniar" di sini lebih berbahaya daripada kosong: nama
     // itu akan tercetak di dokumen untuk customer yang sama sekali lain.
@@ -124,11 +131,11 @@ describe("FormDokumen — memilih customer", () => {
   it("tidak menghapus kontak yang diketik sendiri", async () => {
     const { pilihan, kontak } = pasang();
 
-    await userEvent.selectOptions(pilihan, "1");
+    await pilihCustomer(pilihan, "Sekar");
     await userEvent.clear(kontak);
     await userEvent.type(kontak, "Pak Dedi dari WO");
 
-    await userEvent.selectOptions(pilihan, "2");
+    await pilihCustomer(pilihan, "Bakery");
 
     // Sebuah acara bisa ditangani orang lain, bukan PIC yang tercatat.
     expect(kontak.value).toBe("Pak Dedi dari WO");

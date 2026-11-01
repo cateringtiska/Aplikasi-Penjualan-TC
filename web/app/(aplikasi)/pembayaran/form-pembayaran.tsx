@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PilihCari } from "@/components/pilih-cari";
 import { Textarea } from "@/components/ui/textarea";
 import { KepalaTabel, Th } from "@/components/tabel";
 import { labelPelanggan } from "@/lib/kontak";
@@ -76,6 +77,10 @@ export function FormPembayaran({
   const [memuat, mulaiMuat] = useTransition();
 
   const [idPelanggan, setIdPelanggan] = useState(pelangganAwal);
+  const opsiPelanggan = useMemo(
+    () => pelanggan.map((p) => ({ nilai: p.id, label: labelPelanggan(p) })),
+    [pelanggan],
+  );
   const [tagihan, setTagihan] = useState<BarisTagihan[]>(tagihanAwal);
   const [tanggal, setTanggal] = useState(tanggalAwal);
   const [pph23, setPph23] = useState(isiAwal?.pph23 ?? "");
@@ -178,19 +183,13 @@ export function FormPembayaran({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Bidang label="Customer" nama="customer_id" galat={keadaan.galat?.customer_id} wajib>
-            <select
+            <PilihCari
               id="customer_id"
-              value={idPelanggan}
-              onChange={(e) => gantiPelanggan(e.target.value)}
-              className="h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              <option value="">— Pilih customer —</option>
-              {pelanggan.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {labelPelanggan(p)}
-                </option>
-              ))}
-            </select>
+              nilai={idPelanggan}
+              opsi={opsiPelanggan}
+              placeholder="Ketik nama customer…"
+              onPilih={gantiPelanggan}
+            />
           </Bidang>
 
           <Bidang label="Tanggal terima" nama="payment_date" wajib>

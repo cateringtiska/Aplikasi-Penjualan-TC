@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { barisUntukDisimpan, siapkanDokumen } from "./dokumen";
+import { angkaTamu, barisUntukDisimpan, siapkanDokumen } from "./dokumen";
 
 /* ==========================================================================
    TANDA HUBUNG YANG DIKETIK BERARTI KOSONG
@@ -600,5 +600,21 @@ describe("hari pada sub-item", () => {
 
     if (!hasil.ok) throw new Error(JSON.stringify(hasil.keadaan));
     expect(hasil.kolom.subtotal).toBe("22815000.00"); // 3 x 130 x 58.500
+  });
+});
+
+describe("jumlah tamu", () => {
+  // Dulu semua isian selain angka murni tersimpan kosong, dan cetakannya
+  // menampilkan "Jumlah Tamu: -".
+  it.each([
+    ["300", 300],
+    ["300 pax", 300],
+    ["± 300 orang", 300],
+    ["1.000", 1000],
+    ["", null],
+    ["-", null],
+    ["0", null],
+  ])("%s -> %s", (isian, hasil) => {
+    expect(angkaTamu(isian)).toBe(hasil);
   });
 });
