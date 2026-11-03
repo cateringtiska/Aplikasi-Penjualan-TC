@@ -3,7 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { penggunaAktif } from "@/lib/auth";
 import { buatBukuPenjualan } from "@/lib/excel-penjualan";
-import { ambilLaporan, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
+import { tambahLembarRincian, judulBulan } from "@/lib/excel-rincian";
+import { ambilLaporan, ambilRincianItem, bacaSaring, judulPeriode } from "@/lib/laporan-penjualan";
 import { prisma } from "@/lib/prisma";
 import { hanyaMiliknya } from "@/lib/rbac";
 
@@ -32,8 +33,9 @@ export async function GET(request: NextRequest) {
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const saring = bacaSaring(params);
 
-  const [{ baris }, perusahaan] = await Promise.all([
+  const [{ baris }, rincian, perusahaan] = await Promise.all([
     ambilLaporan(saring, hanyaMiliknya(sesi)),
+    ambilRincianItem(saring, hanyaMiliknya(sesi)),
     prisma.company_settings.findUnique({
       where: { id: BigInt(1) },
       select: { company_name: true, logo_path: true },
@@ -48,6 +50,14 @@ export async function GET(request: NextRequest) {
       logo: await ambilLogo(perusahaan?.logo_path ?? null),
     },
     dicetakOleh: sesi.nama,
+  });
+
+  // Lembar tambahan bergaya laporan bulanan lama: satu blok per invoice,
+  // setiap item satu baris, lalu subtotal.
+  tambahLembarRincian(buku, {
+    invoices: rincian,
+    namaPerusahaan: perusahaan?.company_name ?? "Perusahaan",
+    periode: judulBulan(saring.dari, saring.sampai, judulPeriode(saring)),
   });
 
   const isi = await buku.xlsx.writeBuffer();

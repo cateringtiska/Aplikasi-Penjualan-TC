@@ -4,6 +4,7 @@ import { pengakuanDokumen, ringkasPengakuan } from "@/lib/pengakuan";
 import { tanggalAcaraDokumen } from "@/lib/tanggal";
 import { prisma } from "@/lib/prisma";
 import type { SaringMilik } from "@/lib/rbac";
+import type { InvoiceRincian } from "@/lib/excel-rincian";
 import { d, labelStatusInvoice } from "@/lib/uang";
 
 /* ==========================================================================
@@ -198,4 +199,81 @@ export function judulPeriode(saring: SaringLaporan): string {
   if (saring.dari && !saring.sampai) return `Sejak ${saring.dari}`;
   if (!saring.dari && saring.sampai) return `Sampai ${saring.sampai}`;
   return `${saring.dari} sampai ${saring.sampai}`;
+}
+
+/**
+ * Data untuk lembar "Rincian Item" di Excel: per invoice, siapa salesnya dan
+ * apa saja itemnya. Dipisah dari ambilLaporan() supaya halaman laporan tidak
+ * ikut memuat ratusan baris item yang tidak ditampilkannya.
+ *
+ * Invoice yang dibatalkan tidak ikut — lembar ini dibaca sebagai "apa yang
+ * terjual", dan invoice batal tidak terjual.
+ */
+export async function ambilRincianItem(
+  saring: SaringLaporan,
+  milik: SaringMilik,
+): Promise<InvoiceRincian[]> {
+  const tanggal = kondisiTanggal(saring);
+  const pelangganId = saring.pelanggan ? BigInt(saring.pelanggan) : undefined;
+
+  const tagihan = await prisma.invoices.findMany({
+    where: {
+      ...milik,
+      status: { not: "cancelled" },
+      ...(tanggal ? { invoice_date: tanggal } : {}),
+      ...(pelangganId ? { customer_id: pelangganId } : {}),
+    },
+    orderBy: [{ invoice_date: "asc" }, { invoice_number: "asc" }],
+    select: {
+      invoice_number: true,
+      invoice_date: true,
+      grand_total: true,
+      service_charge_amount: true,
+      pb1_amount: true,
+      delivery_amount: true,
+      customers: { select: { name: true } },
+      users: { select: { name: true } },
+      invoice_charges: { select: { label: true, amount: true }, orderBy: { id: "asc" } },
+      invoice_items: {
+        select: {
+          item_name: true,
+          parent_id: true,
+          qty: true,
+          price: true,
+          subtotal: true,
+          is_compliment: true,
+        },
+        orderBy: { id: "asc" },
+      },
+    },
+  });
+
+  return tagihan.map((t) => ({
+    nomor: t.invoice_number,
+    tanggal: t.invoice_date,
+    sales: t.users?.name ?? "-",
+    pelanggan: t.customers.name,
+    // Sub-item tanpa nilai hanya rincian isi paket — tidak dijadikan baris
+    // sendiri, supaya laporannya tetap seringkas contoh aslinya.
+    items: t.invoice_items
+      .filter((i) => i.parent_id === null || !d(i.subtotal).isZero())
+      .map((i) => {
+        const harga = i.is_compliment ? d(0) : d(i.price);
+        // Qty yang dicetak adalah total ÷ harga satuan, supaya qty x harga
+        // selalu sama dengan totalnya walau barisnya dikali hari dan pax.
+        const qty =
+          !harga.isZero() && !d(i.subtotal).isZero() ? d(i.subtotal).dividedBy(harga) : d(i.qty);
+        return {
+          nama: i.is_compliment ? `${i.item_name} (Compliment)` : i.item_name,
+          qty: qty.toDecimalPlaces(2).toString(),
+          harga: harga.toString(),
+          total: i.subtotal.toString(),
+        };
+      }),
+    serviceCharge: t.service_charge_amount.toString(),
+    pb1: t.pb1_amount.toString(),
+    delivery: t.delivery_amount.toString(),
+    biayaTambahan: t.invoice_charges.map((c) => ({ label: c.label, nilai: c.amount.toString() })),
+    total: t.grand_total.toString(),
+  }));
 }
