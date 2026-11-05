@@ -15,4 +15,18 @@ describe("Riwayat input", () => {
     expect(screen.getByText("Ida Ayu")).toBeTruthy();
     expect(screen.queryByText("Terakhir diubah")).toBeNull();
   });
+
+  it("menyebut nama pengubahnya", () => {
+    render(
+      <KotakRiwayat
+        dibuatOleh="Ariz Rakhma"
+        dibuatPada={new Date("2026-11-01T09:37:00Z")}
+        diubahPada={new Date("2026-11-05T02:41:00Z")}
+        diubahOleh="Ida Ayu"
+      />,
+    );
+    expect(screen.getByText("Terakhir diubah oleh")).toBeTruthy();
+    expect(screen.getByText("Ida Ayu")).toBeTruthy();
+    expect(screen.getByText(/5 Nov 2026.*09[.:]41 WIB/)).toBeTruthy();
+  });
 });

@@ -63,6 +63,7 @@ export async function ubahStatusPenawaran(
     data: {
       status: tujuan,
       updated_at: new Date(),
+      updated_by: BigInt(sesi.id),
       ...(baca?.ok
         ? {
             cancel_reason: baca.alasan,

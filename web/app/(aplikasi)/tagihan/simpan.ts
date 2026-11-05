@@ -111,6 +111,7 @@ export async function simpanTagihan(
           where: { id: BigInt(f.id) },
           data: {
             ...kolom,
+            updated_by: BigInt(sesi.id),
             po_reference: referensiPo,
             invoice_date: new Date(f.tanggal),
             due_date: new Date(f.tanggal_akhir),

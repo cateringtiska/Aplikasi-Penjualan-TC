@@ -178,6 +178,7 @@ model invoices {
   cancel_reason                      String?
   cancelled_at                       DateTime?             @db.Timestamp(0)
   cancelled_by                       BigInt?
+  updated_by                         BigInt?
   invoice_charges                    invoice_charges[]
   invoice_costs                      invoice_costs[]
   invoice_event_dates                invoice_event_dates[]
@@ -185,6 +186,7 @@ model invoices {
   invoice_margins                    invoice_margins?
   users_invoices_cancelled_byTousers users?                @relation("invoices_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction, map: "invoices_cancelled_by_foreign")
   users                              users?                @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "invoices_created_by_foreign")
+  users_invoices_updated_byTousers   users?                @relation("invoices_updated_byTousers", fields: [updated_by], references: [id], onUpdate: NoAction, map: "invoices_updated_by_foreign")
   customers                          customers             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "invoices_customer_id_foreign")
   quotations                         quotations?           @relation(fields: [quotation_id], references: [id], onUpdate: NoAction, map: "invoices_quotation_id_foreign")
   signatories                        signatories?          @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "invoices_signatory_id_foreign")
@@ -344,6 +346,7 @@ model quotations {
   cancel_reason                        String?
   cancelled_at                         DateTime?               @db.Timestamp(0)
   cancelled_by                         BigInt?
+  updated_by                           BigInt?
   invoices                             invoices[]
   quotation_charges                    quotation_charges[]
   quotation_costs                      quotation_costs[]
@@ -351,6 +354,7 @@ model quotations {
   quotation_items                      quotation_items[]
   users_quotations_cancelled_byTousers users?                  @relation("quotations_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction, map: "quotations_cancelled_by_foreign")
   users                                users?                  @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "quotations_created_by_foreign")
+  users_quotations_updated_byTousers   users?                  @relation("quotations_updated_byTousers", fields: [updated_by], references: [id], onUpdate: NoAction, map: "quotations_updated_by_foreign")
   customers                            customers               @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quotations_customer_id_foreign")
   signatories                          signatories?            @relation(fields: [signatory_id], references: [id], onUpdate: NoAction, map: "quotations_signatory_id_foreign")
 }
@@ -388,11 +392,13 @@ model users {
   invoice_costs                             invoice_costs[]
   invoice_margins                           invoice_margins[]
   invoices_invoices_cancelled_byTousers     invoices[]        @relation("invoices_cancelled_byTousers")
+  invoices_invoices_updated_byTousers       invoices[]        @relation("invoices_updated_byTousers")
   invoices                                  invoices[]
   payments                                  payments[]
   products                                  products[]
   quotation_costs                           quotation_costs[]
   quotations_quotations_cancelled_byTousers quotations[]      @relation("quotations_cancelled_byTousers")
+  quotations_quotations_updated_byTousers   quotations[]      @relation("quotations_updated_byTousers")
   quotations                                quotations[]
 }
 

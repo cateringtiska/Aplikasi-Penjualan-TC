@@ -11,6 +11,7 @@ export function KotakRiwayat({
   dibuatOleh,
   dibuatPada,
   diubahPada,
+  diubahOleh,
   revisi,
   dibatalkanOleh,
   dibatalkanPada,
@@ -18,6 +19,7 @@ export function KotakRiwayat({
   dibuatOleh: string | null | undefined;
   dibuatPada: Date | null;
   diubahPada: Date | null;
+  diubahOleh?: string | null;
   revisi?: number | null;
   dibatalkanOleh?: string | null;
   dibatalkanPada?: Date | null;
@@ -28,11 +30,12 @@ export function KotakRiwayat({
 
   // "Terakhir diubah" hanya ditampilkan kalau memang berbeda dari saat dibuat.
   if (diubahPada && (!dibuatPada || diubahPada.getTime() - dibuatPada.getTime() > 60_000)) {
-    baris.push([
-      "Terakhir diubah",
-      jamWib(diubahPada),
-      revisi && revisi > 0 ? `Revisi ke-${revisi}` : null,
-    ]);
+    // Dokumen yang diubah sebelum kolom penanda pengubah ada tidak punya
+    // namanya; jamnya tetap ditampilkan.
+    const keterangan = [jamWib(diubahPada), revisi && revisi > 0 ? `Revisi ke-${revisi}` : null]
+      .filter(Boolean)
+      .join(" · ");
+    baris.push(["Terakhir diubah oleh", diubahOleh || "Tidak tercatat", keterangan]);
   }
 
   if (dibatalkanPada || dibatalkanOleh) {

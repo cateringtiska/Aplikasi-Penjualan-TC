@@ -57,6 +57,7 @@ export async function simpanPenawaran(
           where: { id: BigInt(f.id) },
           data: {
             ...kolom,
+            updated_by: BigInt(sesi.id),
             quotation_date: new Date(f.tanggal),
             valid_until: new Date(f.tanggal_akhir),
           },

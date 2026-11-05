@@ -44,6 +44,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
       users_invoices_cancelled_byTousers: { select: { name: true } },
       // Siapa yang menginput, untuk panel Riwayat input.
       users: { select: { name: true } },
+      users_invoices_updated_byTousers: { select: { name: true } },
       payment_details: {
         orderBy: { id: "desc" },
         include: {
@@ -479,6 +480,7 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
             dibuatOleh={t.users?.name}
             dibuatPada={t.created_at}
             diubahPada={t.updated_at}
+            diubahOleh={t.users_invoices_updated_byTousers?.name}
             revisi={t.revision}
             dibatalkanOleh={t.users_invoices_cancelled_byTousers?.name}
             dibatalkanPada={t.cancelled_at}

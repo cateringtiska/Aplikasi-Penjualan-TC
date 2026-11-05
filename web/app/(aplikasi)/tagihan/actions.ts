@@ -45,6 +45,7 @@ export async function batalkanTagihan(id: string, alasan: string): Promise<void>
       cancelled_at: new Date(),
       cancelled_by: BigInt(sesi.id),
       updated_at: new Date(),
+      updated_by: BigInt(sesi.id),
     },
   });
 

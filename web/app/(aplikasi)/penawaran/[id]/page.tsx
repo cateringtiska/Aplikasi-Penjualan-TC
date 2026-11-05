@@ -45,6 +45,7 @@ export default async function HalamanDetailPenawaran({
       users_quotations_cancelled_byTousers: { select: { name: true } },
       // Siapa yang menginput, untuk panel Riwayat input.
       users: { select: { name: true } },
+      users_quotations_updated_byTousers: { select: { name: true } },
       // Di skema, satu penawaran bisa punya banyak tagihan. Dalam praktiknya
       // hanya satu, jadi cukup ambil yang pertama.
       invoices: { take: 1, select: { id: true, invoice_number: true } },
@@ -420,6 +421,7 @@ export default async function HalamanDetailPenawaran({
             dibuatOleh={p.users?.name}
             dibuatPada={p.created_at}
             diubahPada={p.updated_at}
+            diubahOleh={p.users_quotations_updated_byTousers?.name}
             dibatalkanOleh={p.users_quotations_cancelled_byTousers?.name}
             dibatalkanPada={p.cancelled_at}
           />
