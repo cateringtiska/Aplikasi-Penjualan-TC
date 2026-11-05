@@ -11,6 +11,7 @@ import { Halaman } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
 import { KunciDokumen } from "@/components/kunci-dokumen";
 import { KotakRincian } from "@/components/kotak-rincian";
+import { KotakRiwayat } from "@/components/kotak-riwayat";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
@@ -42,6 +43,8 @@ export default async function HalamanDetailPenawaran({
       customers: true,
       // Siapa yang menolaknya, untuk catatan pembatalan di bawah.
       users_quotations_cancelled_byTousers: { select: { name: true } },
+      // Siapa yang menginput, untuk panel Riwayat input.
+      users: { select: { name: true } },
       // Di skema, satu penawaran bisa punya banyak tagihan. Dalam praktiknya
       // hanya satu, jadi cukup ambil yang pertama.
       invoices: { take: 1, select: { id: true, invoice_number: true } },
@@ -412,6 +415,14 @@ export default async function HalamanDetailPenawaran({
               </dl>
             </KotakRincian>
           ) : null}
+
+          <KotakRiwayat
+            dibuatOleh={p.users?.name}
+            dibuatPada={p.created_at}
+            diubahPada={p.updated_at}
+            dibatalkanOleh={p.users_quotations_cancelled_byTousers?.name}
+            dibatalkanPada={p.cancelled_at}
+          />
         </aside>
       </div>
     </Halaman>

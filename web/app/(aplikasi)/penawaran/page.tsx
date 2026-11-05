@@ -13,6 +13,7 @@ import {
 } from "@/components/halaman";
 import { StatusPenawaran } from "@/components/lencana-status";
 import { Pencarian } from "@/components/pencarian";
+import { Penginput } from "@/components/penginput";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
@@ -62,6 +63,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
               // Nama PIC ikut dicari, dengan aturan yang sama persis dengan
               // yang menentukan nama mana yang TAMPIL di barisnya.
               ...cariPic(kunci),
+              { users: { name: { contains: kunci, mode: "insensitive" } } },
             ],
           }
         : {}),
@@ -81,6 +83,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
       status: true,
       contact_person: true,
       customers: { select: { name: true, pic_name: true } },
+      users: { select: { name: true } },
     },
   });
 
@@ -143,6 +146,7 @@ export default async function HalamanPenawaran({ searchParams }: PageProps<"/pen
                     >
                       {p.quotation_number}
                     </Link>
+                    <Penginput nama={p.users?.name} />
                   </Td>
                   <Td>
                     <span className="font-medium">{p.customers.name}</span>

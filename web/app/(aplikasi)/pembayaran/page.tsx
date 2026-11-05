@@ -12,6 +12,7 @@ import {
   RingkasanTabel,
 } from "@/components/halaman";
 import { Pencarian } from "@/components/pencarian";
+import { Penginput } from "@/components/penginput";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
 import { ringkasTanggalAcaraPendek, tanggalAcaraDokumen } from "@/lib/tanggal";
@@ -44,6 +45,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
             { payment_number: { contains: kunci, mode: "insensitive" } },
             { customers: { name: { contains: kunci, mode: "insensitive" } } },
             { bank_cash: { contains: kunci, mode: "insensitive" } },
+            { users: { name: { contains: kunci, mode: "insensitive" } } },
           ],
         }
       : undefined,
@@ -55,6 +57,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
       payment_method: true,
       bank_cash: true,
       total_amount: true,
+      users: { select: { name: true } },
       customers: { select: { name: true } },
       _count: { select: { payment_details: true } },
       payment_details: {
@@ -133,6 +136,7 @@ export default async function HalamanPembayaran({ searchParams }: PageProps<"/pe
                     <span className="block text-xs text-muted-foreground">
                       {p._count.payment_details} invoice
                     </span>
+                    <Penginput nama={p.users?.name} />
                   </Td>
                   <Td>
                     <span className="font-medium">{p.customers.name}</span>

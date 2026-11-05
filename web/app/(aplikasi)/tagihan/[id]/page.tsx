@@ -11,6 +11,7 @@ import { Halaman } from "@/components/halaman";
 import { StatusTagihan } from "@/components/lencana-status";
 import { KunciDokumen } from "@/components/kunci-dokumen";
 import { KotakRincian } from "@/components/kotak-rincian";
+import { KotakRiwayat } from "@/components/kotak-riwayat";
 import { Button } from "@/components/ui/button";
 import { KepalaTabel, Th } from "@/components/tabel";
 import { prisma } from "@/lib/prisma";
@@ -41,6 +42,8 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
       quotations: { select: { id: true, quotation_number: true } },
       // Siapa yang membatalkan, untuk catatan pembatalannya di bawah.
       users_invoices_cancelled_byTousers: { select: { name: true } },
+      // Siapa yang menginput, untuk panel Riwayat input.
+      users: { select: { name: true } },
       payment_details: {
         orderBy: { id: "desc" },
         include: {
@@ -471,6 +474,15 @@ export default async function HalamanDetailTagihan({ params }: PageProps<"/tagih
               </dl>
             </KotakRincian>
           ) : null}
+
+          <KotakRiwayat
+            dibuatOleh={t.users?.name}
+            dibuatPada={t.created_at}
+            diubahPada={t.updated_at}
+            revisi={t.revision}
+            dibatalkanOleh={t.users_invoices_cancelled_byTousers?.name}
+            dibatalkanPada={t.cancelled_at}
+          />
         </aside>
       </div>
     </Halaman>

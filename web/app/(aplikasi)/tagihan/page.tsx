@@ -13,6 +13,7 @@ import {
 } from "@/components/halaman";
 import { StatusTagihan } from "@/components/lencana-status";
 import { Pencarian } from "@/components/pencarian";
+import { Penginput } from "@/components/penginput";
 import { SaringStatus } from "@/components/saring-status";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
@@ -73,6 +74,8 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
               // Nama PIC ikut dicari, dengan aturan yang sama persis dengan
               // yang menentukan nama mana yang TAMPIL di barisnya.
               ...cariPic(kunci),
+              // Nama penginput ikut dicari: "invoice yang diinput Ida".
+              { users: { name: { contains: kunci, mode: "insensitive" } } },
             ],
           }
         : {}),
@@ -89,6 +92,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
       status: true,
       contact_person: true,
       customers: { select: { name: true, pic_name: true } },
+      users: { select: { name: true } },
       // Hanya dibutuhkan penyaring pengakuan. Kolom lamanya ikut diambil:
       // sebagian besar invoice menyimpan tanggal acaranya HANYA di situ.
       event_date: true,
@@ -222,6 +226,7 @@ export default async function HalamanTagihan({ searchParams }: PageProps<"/tagih
                       <span className="block text-xs whitespace-nowrap text-muted-foreground">
                         {format(t.invoice_date, "d MMM yyyy", { locale: localeId })}
                       </span>
+                      <Penginput nama={t.users?.name} />
                     </Td>
                     <Td>
                       <span className="font-medium">{t.customers.name}</span>
